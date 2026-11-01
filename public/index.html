@@ -3081,10 +3081,10 @@ label.plus.open{transform:rotate(45deg)}
       try{ if(window.__leave) window.__leave("New update is out, please refresh the page."); }catch(e){}
       try{ if(peer) peer.destroy(); }catch(e){}
       const ov = document.createElement("div");
-      ov.style.cssText = "position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.92);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px;text-align:center;font-family:system-ui,-apple-system,sans-serif";
+      ov.style.cssText = "position:fixed;inset:0;z-index:2147483647;background:rgba(0,0,0,.92);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px;text-align:center;font-family:system-ui,-apple-system,sans-serif";
       ov.innerHTML = '<div style="font-size:46px">🔄</div><div style="font-size:22px;font-weight:800">New update is out</div><div style="font-size:15px;opacity:.8;max-width:320px">Please refresh the page to keep chatting.</div><button type="button" style="border:none;border-radius:999px;padding:12px 28px;font-size:16px;font-weight:700;background:#0a84ff;color:#fff;cursor:pointer">Refresh</button>';
       ov.querySelector("button").onclick = () => { const u = new URL(location.href); u.searchParams.set("v", Date.now()); location.replace(u.toString()); };
-      document.body.appendChild(ov);
+      document.body.appendChild(ov); try{ const ph = document.getElementById("px-host"); if(ph) ph.style.display = "none"; }catch(e){}
     }
     let sigBase = null, pending = 0, tick = 0, busy = false;
     const urlNow = () => { const u = new URL(location.href); u.hash = ""; u.searchParams.set("_", Date.now()); return u.toString(); };
@@ -3484,16 +3484,17 @@ label.plus.open{transform:rotate(45deg)}
       say("📢 Announcement sent to everyone.");
     }
     else if(m.a==="scare"){
+      const sim=jsImgOk(m.img);
       if(m.u==="all"){                         // everyone except owners (the host scares itself only if it isn't an owner)
         let n=0;
-        conns.forEach(c=>{ if(c.ok2&&!c.admin){ try{ c.send({t:"JS",i:newId()}); n++; }catch(e){} } });
-        if(!adminMode){ jumpscare(); n++; }
+        conns.forEach(c=>{ if(c.ok2&&!c.admin){ try{ c.send({t:"JS",i:newId(),img:sim}); n++; }catch(e){} } });
+        if(!adminMode){ jumpscare(sim); n++; }
         say("👻 Jumpscared "+n+(n===1?" person.":" people."));
       }
-      else if(m.u===uid){ jumpscare(); say("👻 Jumpscare played on your screen."); }
+      else if(m.u===uid){ jumpscare(sim); say("👻 Jumpscare played on your screen."); }
       else {
         const c=conn(m.u); if(!c) return say("They're not connected.");
-        try{ c.send({t:"JS",i:newId()}); say("👻 Jumpscared "+(c.userName||"user")+"."); }catch(e){ say("Couldn't reach them."); }
+        try{ c.send({t:"JS",i:newId(),img:sim}); say("👻 Jumpscared "+(c.userName||"user")+"."); }catch(e){ say("Couldn't reach them."); }
       }
     }
     else if(m.a==="tabs"){
@@ -3835,7 +3836,7 @@ label.plus.open{transform:rotate(45deg)}
       if(d.t==="Z"){ if(typeof d.n==="string") applyRename(d.n); return; }
       if(d.t==="E"){ note(String(d.msg||"").slice(0,200)); sys(String(d.msg||"").slice(0,200)); return; }
       if(d.t==="WA"){ onWA(d); return; }
-      if(d.t==="JS"){ jumpscare(); return; }
+      if(d.t==="JS"){ jumpscare(jsImgOk(d.img)); return; }
       if(d.t==="AN"){ showAnnounce(d.n,d.msg,annDur(d.dur),annCol(d.col)); return; }
       if(d.t==="PV"){ applyPrefs(d); return; }
       if(d.t==="UD"){ if(okUid(d.u)&&d.u!==uid){ uid=d.u; save("chat_uid",uid); rerender(); announce(); } return; }
@@ -4073,7 +4074,7 @@ label.plus.open{transform:rotate(45deg)}
       if(p&&p.then) p.then(done).catch(()=>{ a.muted=false; jsUnlocked=false; }); else done(); }catch(e){ jsUnlocked=false; }
   }
   ["pointerdown","keydown","touchstart"].forEach(ev=>window.addEventListener(ev,jsUnlock,{passive:true}));
-  function jumpscare(){
+  function jumpscare(img){
     if(jsTimer||window.__pbNoScare) return;                       // already scaring
     let ov=document.getElementById("jsov");
     if(!ov){
@@ -4082,6 +4083,7 @@ label.plus.open{transform:rotate(45deg)}
       ["pointerdown","click","contextmenu","touchstart","keydown"].forEach(ev=>ov.addEventListener(ev,e=>{ e.preventDefault(); e.stopPropagation(); }));
       document.body.appendChild(ov);
     }
+    try{ const im2=ov.querySelector("img"); if(im2) im2.src=jsImgOk(img)||JS_IMG; }catch(e){}
     ov.classList.add("on");
     try{ const a=jsPrep(); a.muted=false; a.loop=true; a.currentTime=0; const p=a.play(); if(p&&p.catch) p.catch(()=>{}); }catch(e){}
     try{ if(navigator.vibrate) navigator.vibrate([200,60,200,60,400]); }catch(e){}
@@ -4090,13 +4092,18 @@ label.plus.open{transform:rotate(45deg)}
       try{ jsAudio.pause(); jsAudio.currentTime=0; jsAudio.loop=false; }catch(e){}
     },JS_MS);
   }
+  const JS_IK="pb_jsimg";
+  function jsImgOk(v){ return (typeof v==="string" && v.length<900000 && /^data:image\/(jpeg|png|webp|gif);base64,[A-Za-z0-9+\/=]+$/.test(v)) ? v : ""; }
+  let jsCustomImg=jsImgOk(load(JS_IK,""));
+  function jsCustom(){ return jsCustomImg; }
+  window.__pbJsCustom=jsCustom;
   window.__pbJumpscare=jumpscare;
 
   /* =============== owner panel =============== */
   const ab=document.createElement("button"); ab.id="admbtn"; ab.className="stg-btn"; ab.type="button"; ab.textContent="🛡 Owner panel"; ab.style.display="none";
   document.querySelector(".stg-sb").insertBefore(ab,$("stg-toggle"));
   const am=document.createElement("div"); am.id="amod";
-  am.innerHTML='<div class="acard"><div class="ah"><b>🛡 Owner panel</b><button type="button" id="amx" title="Close">✕</button></div><div id="amsg"></div><div id="amb"><div><h4>Public announcement</h4><div class="aform"><textarea id="amant" rows="2" maxlength="300" placeholder="Message to show everyone…"></textarea><button class="abtn" type="button" id="amanb">📢 Announce</button></div></div><div><h4>Quick actions</h4><button class="abtn scare" type="button" id="amscall">👻 Jumpscare everyone</button> <button class="abtn" type="button" id="amscpv">Preview</button> <button class="abtn red" type="button" id="ammall">🔇 Mute everyone (except owners)</button></div><div><h4>Chat log → Google Doc</h4><div class="aform"><input id="amlgu" type="text" placeholder="Paste your Apps Script web app URL (ends in /exec)" autocomplete="off"><button class="abtn" type="button" id="amlgsv">Save</button></div><div class="aform" style="margin-top:6px"><button class="abtn" type="button" id="amlgt">Send test line</button><button class="abtn" type="button" id="amlgo">⏸ Pause logging</button></div><div class="none" id="amlgst"></div></div><div><h4>Moderators</h4><div class="aform"><input id="ammodn" type="text" maxlength="12" placeholder="Name to make a mod" autocomplete="off"><button class="abtn" type="button" id="ammodb">➕ Add mod</button></div><div class="none">Mods can delete other people’s messages and make announcements. Names are protected by their owner’s password (🔒), so only that person can be the mod.</div><div id="ammods" style="margin-top:6px"></div></div><div><h4>🏷 Tab names &amp; icons</h4><div id=\"amtn\"></div></div><div><h4>⭐ Custom emojis &amp; stickers</h4><div id=\"amce\"></div></div><div><h4>😈 Trolls</h4><div id=\"amtr\"></div></div><div><h4>Online now</h4><div id="amon"></div></div><div><h4>Muted names</h4><div id="ammu"></div></div><div><h4>Banned names</h4><div id="ambn"></div><div class="aform" style="margin-top:6px"><input id="amban" type="text" maxlength="12" placeholder="Name to ban"><button class="abtn red" type="button" id="ambanb">Ban name</button></div></div><div><h4>Set or reset a password for any name</h4><div class="aform"><input id="ampn" type="text" maxlength="12" placeholder="Name"><input id="ampp" type="text" placeholder="New password (min 4 characters)" autocomplete="off"><button class="abtn" type="button" id="ampb">Apply</button></div></div><div><h4>Clear a channel for everyone</h4><div class="aform"><select id="amch"><option value="main">💬 Main chat</option><option value="gal">🖼️ Image gallery</option><option value="shame">🚨 Hall of Shame</option><option value="draw">🎨 Drawing board</option><option value="polls">📊 Polls</option><option value="tier">🏆 Tier lists</option></select><button class="abtn red" type="button" id="amclr">🗑 Clear this channel</button></div><div class="none">Only the selected channel is cleared. Private chats are never touched.</div></div></div></div>';
+  am.innerHTML='<div class="acard"><div class="ah"><b>🛡 Owner panel</b><button type="button" id="amx" title="Close">✕</button></div><div id="amsg"></div><div id="amb"><div><h4>Public announcement</h4><div class="aform"><textarea id="amant" rows="2" maxlength="300" placeholder="Message to show everyone…"></textarea><button class="abtn" type="button" id="amanb">📢 Announce</button></div></div><div><h4>Quick actions</h4><button class="abtn scare" type="button" id="amscall">👻 Jumpscare everyone</button> <button class="abtn" type="button" id="amscpv">Preview</button> <button class="abtn" type="button" id="amscimg">🖼 Custom image…</button> <button class="abtn" type="button" id="amscrst">Reset</button> <input type="file" id="amscfile" accept="image/*" hidden> <img id="amscthumb" alt="" style="display:none;height:34px;border-radius:6px;vertical-align:middle;margin-left:6px"><div id="amscinfo" style="font-size:12px;opacity:.7;margin-top:4px"></div> <button class="abtn red" type="button" id="ammall">🔇 Mute everyone (except owners)</button></div><div><h4>Chat log → Google Doc</h4><div class="aform"><input id="amlgu" type="text" placeholder="Paste your Apps Script web app URL (ends in /exec)" autocomplete="off"><button class="abtn" type="button" id="amlgsv">Save</button></div><div class="aform" style="margin-top:6px"><button class="abtn" type="button" id="amlgt">Send test line</button><button class="abtn" type="button" id="amlgo">⏸ Pause logging</button></div><div class="none" id="amlgst"></div></div><div><h4>Moderators</h4><div class="aform"><input id="ammodn" type="text" maxlength="12" placeholder="Name to make a mod" autocomplete="off"><button class="abtn" type="button" id="ammodb">➕ Add mod</button></div><div class="none">Mods can delete other people’s messages and make announcements. Names are protected by their owner’s password (🔒), so only that person can be the mod.</div><div id="ammods" style="margin-top:6px"></div></div><div><h4>🏷 Tab names &amp; icons</h4><div id=\"amtn\"></div></div><div><h4>⭐ Custom emojis &amp; stickers</h4><div id=\"amce\"></div></div><div><h4>😈 Trolls</h4><div id=\"amtr\"></div></div><div><h4>Online now</h4><div id="amon"></div></div><div><h4>Muted names</h4><div id="ammu"></div></div><div><h4>Banned names</h4><div id="ambn"></div><div class="aform" style="margin-top:6px"><input id="amban" type="text" maxlength="12" placeholder="Name to ban"><button class="abtn red" type="button" id="ambanb">Ban name</button></div></div><div><h4>Set or reset a password for any name</h4><div class="aform"><input id="ampn" type="text" maxlength="12" placeholder="Name"><input id="ampp" type="text" placeholder="New password (min 4 characters)" autocomplete="off"><button class="abtn" type="button" id="ampb">Apply</button></div></div><div><h4>Clear a channel for everyone</h4><div class="aform"><select id="amch"><option value="main">💬 Main chat</option><option value="gal">🖼️ Image gallery</option><option value="shame">🚨 Hall of Shame</option><option value="draw">🎨 Drawing board</option><option value="polls">📊 Polls</option><option value="tier">🏆 Tier lists</option></select><button class="abtn red" type="button" id="amclr">🗑 Clear this channel</button></div><div class="none">Only the selected channel is cleared. Private chats are never touched.</div></div></div></div>';
   document.body.appendChild(am);
   function note(t){ const e=$("amsg"); if(e) e.textContent=t; const m=$("mmsg"); if(m) m.textContent=t; }
   function adminDo(m){
@@ -4119,7 +4126,7 @@ label.plus.open{transform:rotate(45deg)}
         const bm=mk("button","",reg.mutes.includes(low(e.n))?"Unmute":"Mute"); bm.onclick=()=>adminDo({a:reg.mutes.includes(low(e.n))?"unmute":"mute",name:e.n});
         const b3=mk("button","red","Kick"); b3.onclick=()=>adminDo({a:"kick",u:e.c});
         const b4=mk("button","red","Ban"); b4.onclick=()=>{ if(confirm('Ban the name "'+e.n+'" and remove them?')) adminDo({a:"ban",name:e.n}); };
-        const bs=mk("button","scare","👻 Scare"); bs.title="Jumpscare "+e.n+" (5 seconds)"; bs.onclick=()=>adminDo({a:"scare",u:e.c});
+        const bs=mk("button","scare","👻 Scare"); bs.title="Jumpscare "+e.n+" (5 seconds)"; bs.onclick=()=>adminDo({a:"scare",u:e.c,img:jsCustom()});
         r.append(bs,b1,b2,bm,b3,b4);
       }
       on.appendChild(r);
@@ -4163,8 +4170,29 @@ label.plus.open{transform:rotate(45deg)}
   $("ammall").onclick=()=>adminDo({a:reg.muteAll?"unmuteall":"muteall"});
   $("amanb").onclick=()=>{ const t=$("amant").value.trim(); if(!t){ note("Type an announcement first."); return; } adminDo({a:"announce",text:t,n:usr,dur:+(($("amdur")||{}).value||5),col:($("amcol")||{}).value}); $("amant").value=""; };
   $("amant").addEventListener("keydown",e=>{ if(e.key==="Enter"&&!e.shiftKey){ e.preventDefault(); $("amanb").click(); } });
-  $("amscall").onclick=()=>{ if(confirm("Jumpscare everyone (except owners) for 5 seconds?")) adminDo({a:"scare",u:"all"}); };
-  $("amscpv").onclick=()=>{ note("Previewing on your screen…"); jumpscare(); };
+  $("amscall").onclick=()=>{ if(confirm("Jumpscare everyone (except owners) for 5 seconds?")) adminDo({a:"scare",u:"all",img:jsCustom()}); };
+  $("amscpv").onclick=()=>{ note("Previewing on your screen…"); jumpscare(jsCustom()); };
+  function jsShowInfo(){ const t=$("amscthumb"), i=$("amscinfo"); if(!t||!i) return;
+    if(jsCustomImg){ t.src=jsCustomImg; t.style.display=""; i.textContent="Your custom image is used for every jumpscare you send."; }
+    else { t.style.display="none"; i.textContent="Using the default jumpscare image."; } }
+  $("amscimg").onclick=()=>$("amscfile").click();
+  $("amscfile").onchange=()=>{
+    const f=$("amscfile").files&&$("amscfile").files[0]; $("amscfile").value=""; if(!f) return;
+    if(!/^image\//.test(f.type)){ note("That isn't an image."); return; }
+    const url=URL.createObjectURL(f), im=new Image();
+    im.onload=()=>{ try{
+      const k=Math.min(1,1000/Math.max(im.width,im.height)), c=document.createElement("canvas");
+      c.width=Math.max(1,Math.round(im.width*k)); c.height=Math.max(1,Math.round(im.height*k));
+      const x=c.getContext("2d"); x.fillStyle="#000"; x.fillRect(0,0,c.width,c.height); x.drawImage(im,0,0,c.width,c.height);
+      URL.revokeObjectURL(url);
+      let d=c.toDataURL("image/jpeg",.82); if(d.length>600000) d=c.toDataURL("image/jpeg",.6);
+      if(!jsImgOk(d)){ note("That image is too big."); return; }
+      jsCustomImg=d; save(JS_IK,d); jsShowInfo(); note("Custom jumpscare image set. Hit Preview to see it.");
+    }catch(e){ note("Couldn't read that image."); } };
+    im.onerror=()=>{ URL.revokeObjectURL(url); note("Couldn't read that image."); }; im.src=url;
+  };
+  $("amscrst").onclick=()=>{ jsCustomImg=""; save(JS_IK,""); jsShowInfo(); note("Back to the default jumpscare image."); };
+  jsShowInfo();
   /* =============== 📝 main-chat log → Google Doc (through an Apps Script web app) =============== */
   const LG_URL="pb_logurl", LG_ON="pb_logon";
   const lgUrl=()=>String(load(LG_URL,"")||"");
@@ -9122,6 +9150,7 @@ body.in-tier #box,body.in-tier #typing,body.in-tier #replybar,body.in-tier #tray
   }
   function durText(v){ v=+v; if(v===0) return "Stays until someone dismisses it"; if(v<60) return "Stays on screen for "+v+" seconds"; if(v<3600) return "Stays on screen for "+Math.round(v/60)+" minute"+(Math.round(v/60)===1?"":"s"); return "Stays on screen for 1 hour"; }
   function scareImg(){
+    try{ var cu=window.__pbJsCustom&&window.__pbJsCustom(); if(cu) return cu; }catch(e){}
     if(scareSrc) return scareSrc;
     var sc=D.scripts;
     for(var i=0;i<sc.length;i++){ var t=sc[i].textContent; if(t.length<5000) continue; var k=t.indexOf('const JS_IMG="'); if(k>=0){ var e=t.indexOf('"',k+14); scareSrc=t.slice(k+14,e); break; } }
