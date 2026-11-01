@@ -9990,6 +9990,7 @@ html body #stg.sx{background:var(--sx-bg);color:var(--sx-text);padding:env(safe-
         {id:"access",     t:"Accessibility",     ic:"\u267F",              bg:"#0a84ff", prev:false},
         {id:"layout",     t:"Layout",            ic:"\uD83E\uDDE9",         bg:"#5e5ce6", prev:true},
         {id:"account",    t:"Account & Privacy", ic:"\uD83D\uDD12",         bg:"#636366", prev:false},
+        {id:"custom",     t:"Customization",     ic:"\uD83D\uDDB1\uFE0F",   bg:"#ff375f", prev:false},
         {id:"anim",       t:"Animation Lab",     ic:"\uD83C\uDF9E\uFE0F",   bg:"#ff9f0a", prev:false},
         {id:"exp",        t:"Experimental",      ic:"\uD83E\uDDEA",         bg:"#af52de", prev:false}
       ], PMAP = {};
@@ -9998,6 +9999,7 @@ html body #stg.sx{background:var(--sx-bg);color:var(--sx-text);padding:env(safe-
       /* ---------- cards -> iOS grouped sections ---------- */
       function catOf(c){
         var h = c.querySelector("h3"), t = h ? h.textContent : "";
+        if(c.id === "stg-cursor") return "custom";
         if(c.id === "stg-anim") return "anim";
         if(c.id === "stg-exp") return "exp";
         if(c.dataset.a11y) return "access";
@@ -10054,7 +10056,7 @@ html body #stg.sx{background:var(--sx-bg);color:var(--sx-text);padding:env(safe-
       var av = me.querySelector(".sx-av"), nameEl = me.querySelector(".sx-name");
       function grp(items){ var g = document.createElement("div"); g.className = "sx-grp"; items.forEach(function(i){ g.appendChild(i); }); list.appendChild(g); groups.push({el:g, rows:items}); }
       grp([me]);
-      grp([mkRow(PMAP.messages), mkRow(PMAP.appearance), mkRow(PMAP.access), mkRow(PMAP.layout)]);
+      grp([mkRow(PMAP.messages), mkRow(PMAP.appearance), mkRow(PMAP.custom), mkRow(PMAP.access), mkRow(PMAP.layout)]);
       grp([mkRow(PMAP.account)]);
       grp([mkRow(PMAP.anim), mkRow(PMAP.exp)]);
       var empty = document.createElement("div"); empty.className = "sx-empty"; empty.hidden = true; empty.textContent = "No results"; list.appendChild(empty);
@@ -13987,7 +13989,7 @@ body[data-hp="right"] #hdr-arrow{right:100%;left:auto;border-radius:10px 0 0 10p
 </script>
 
 <style id="cursor-ui-css">
-@media not all and (hover:hover) and (pointer:fine){#stg-cursor{display:none !important}}
+@media not all and (hover:hover) and (pointer:fine){#stg-cursor,#stg.sx .sx-row[data-p="custom"]{display:none !important}}
 #stg-cursor .cur-grid{display:flex;flex-wrap:wrap;gap:6px}
 #stg-cursor .cur-chip{padding:7px 11px;border-radius:10px;background:var(--bg);border:1px solid var(--line);font-size:12px;font-weight:600;color:var(--text);user-select:none}
 #stg-cursor input.cdm-text{width:auto;flex:1 1 120px;min-width:100px}
@@ -14004,7 +14006,7 @@ body[data-hp="right"] #hdr-arrow{right:100%;left:auto;border-radius:10px 0 0 10p
 .cdm-nwse{cursor:nwse-resize}.cdm-zin{cursor:zoom-in}.cdm-zout{cursor:zoom-out}.cdm-help{cursor:help}
 </style>
 <script id="cursor-js">
-/* Custom cursors: a built-in macOS set, plus themes imported from .zip files
+/* Custom cursors: a built-in macOS set, plus themes imported from .zip / .tar / .tar.gz files
    (GNOME / X11 "Xcursor" themes, or plain PNG / SVG / CUR sets). Themes are kept in IndexedDB. */
 (function(){
   "use strict";
@@ -14056,6 +14058,7 @@ body[data-hp="right"] #hdr-arrow{right:100%;left:auto;border-radius:10px 0 0 10p
     return new Uint8Array(await new Response(s).arrayBuffer());
   }
   async function readEntry(u8, e){
+    if(e.data) return e.data;
     if(e.flags & 1) throw new Error("Password-protected zips aren't supported.");
     if(e.csize === 0xffffffff || e.usize === 0xffffffff) throw new Error("Zip64 files aren't supported.");
     var dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength), p = e.lo;
@@ -14064,6 +14067,74 @@ body[data-hp="right"] #hdr-arrow{right:100%;left:auto;border-radius:10px 0 0 10p
     if(e.method === 0) return raw;
     if(e.method === 8) return inflate(raw);
     throw new Error("Unsupported zip compression.");
+  }
+  /* ---- .tar / .tar.gz / .tgz support ---- */
+  async function gunzip(u8){
+    if(typeof DecompressionStream === "undefined") throw new Error("This browser can't unpack .gz files (needs a newer version).");
+    var rd = new Blob([u8]).stream().pipeThrough(new DecompressionStream("gzip")).getReader(), parts = [], total = 0, r;
+    try{
+      while(!(r = await rd.read()).done){
+        total += r.value.length;
+        if(total > 400e6){ try{ rd.cancel(); }catch(e){} throw new Error("That archive is too big once unpacked (400 MB max)."); }
+        parts.push(r.value);
+      }
+    }catch(e){ if(/too big/.test(e.message)) throw e; throw new Error("The .gz file is damaged."); }
+    var out = new Uint8Array(total), o = 0; parts.forEach(function(c){ out.set(c, o); o += c.length; });
+    return out;
+  }
+  function isTar(u8){
+    if(u8.length < 512) return false;
+    if(u8[257] === 0x75 && u8[258] === 0x73 && u8[259] === 0x74 && u8[260] === 0x61 && u8[261] === 0x72) return true;   /* "ustar" */
+    var sum = 0, i, want = parseInt(String.fromCharCode.apply(null, u8.subarray(148, 154)).replace(/[\0 ]/g, ""), 8);
+    if(isNaN(want)) return false;
+    for(i = 0; i < 512; i++) sum += (i >= 148 && i < 156) ? 32 : u8[i];
+    return sum === want;
+  }
+  function readTarDir(u8){
+    var td = new TextDecoder(), ents = [], p = 0, longName = null, longLink = null, pax = {};
+    function str(a, b){ var e = a; while(e < b && u8[e] !== 0) e++; return td.decode(u8.subarray(a, e)); }
+    function num(a, b){
+      if(u8[a] & 0x80){ var v = u8[a] & 0x7f; for(var i = a + 1; i < b; i++) v = v * 256 + u8[i]; return v; }   /* base-256 for huge files */
+      return parseInt(str(a, b).trim() || "0", 8) || 0;
+    }
+    while(p + 512 <= u8.length){
+      var z = true; for(var q = p; q < p + 512; q++){ if(u8[q]){ z = false; break; } }
+      if(z) break;
+      var size = num(p + 124, p + 136), type = String.fromCharCode(u8[p + 156] || 48), body = p + 512, next = body + Math.ceil(size / 512) * 512;
+      var name = str(p, p + 100), link = str(p + 157, p + 257);
+      if(str(p + 257, p + 262) === "ustar"){ var pre = str(p + 345, p + 500); if(pre) name = pre + "/" + name; }
+      if(type === "L"){ longName = str(body, body + size); p = next; continue; }
+      if(type === "K"){ longLink = str(body, body + size); p = next; continue; }
+      if(type === "x"){
+        pax = {}; var txt = td.decode(u8.subarray(body, body + size)), m, re = /\d+ ([^=]+)=([^\n]*)\n/g;
+        while((m = re.exec(txt))) pax[m[1]] = m[2];
+        p = next; continue;
+      }
+      if(type === "g"){ p = next; continue; }
+      if(longName != null) name = longName; if(pax.path) name = pax.path;
+      if(longLink != null) link = longLink; if(pax.linkpath) link = pax.linkpath;
+      longName = longLink = null; pax = {};
+      name = name.replace(/\\/g, "/");
+      if(type === "5" || /\/$/.test(name)){ ents.push({name:name.replace(/\/?$/, "/"), dir:true, usize:0}); }
+      else if(type === "2" || type === "1"){   /* symlink / hard link: Xcursor themes are full of these. The link target is the "file" and gets resolved later. */
+        var d = new TextEncoder().encode(link);
+        ents.push({name:name, dir:false, link:true, data:d, usize:d.length});
+      }
+      else if(type === "0" || type === "7" || type === "\0"){
+        if(body + size > u8.length) throw new Error("The tar file is damaged (cut short).");
+        ents.push({name:name, dir:false, link:false, data:u8.subarray(body, body + size), usize:size});
+      }
+      p = next;
+    }
+    return ents;
+  }
+  /* open any supported archive: .zip, .tar, .tar.gz, .tgz (detected by content, not by name) */
+  async function openArchive(file){
+    var u8 = new Uint8Array(await file.arrayBuffer());
+    if(u8.length > 2 && u8[0] === 0x1f && u8[1] === 0x8b){ u8 = await gunzip(u8); if(!isTar(u8)) throw new Error("That .gz file doesn't contain a tar archive."); return {u8:u8, ents:readTarDir(u8)}; }
+    if(u8.length > 3 && u8[0] === 0x50 && u8[1] === 0x4b) return {u8:u8, ents:readZipDir(u8)};
+    if(isTar(u8)) return {u8:u8, ents:readTarDir(u8)};
+    throw new Error("That isn't a .zip, .tar or .tar.gz file.");
   }
   /* pick the best size out of an Xcursor file and return it as RGBA (not premultiplied) */
   function xcurPick(b, want){
@@ -14241,9 +14312,9 @@ body[data-hp="right"] #hdr-arrow{right:100%;left:auto;border-radius:10px 0 0 10p
     return null;
   }
   async function buildFromZip(file){
-    var u8 = new Uint8Array(await file.arrayBuffer());
-    var ents = readZipDir(u8).filter(function(e){ return !e.dir && !/(^|\/)(__MACOSX\/|\._)/.test(e.name); });
-    if(!ents.length) throw new Error("The zip is empty.");
+    var arc = await openArchive(file), u8 = arc.u8;
+    var ents = arc.ents.filter(function(e){ return !e.dir && !/(^|\/)(__MACOSX\/|\._)/.test(e.name); });
+    if(!ents.length) throw new Error("The archive is empty.");
     var byPath = {}, byBase = {};
     ents.forEach(function(e){
       var lp = e.name.toLowerCase(); byPath[lp] = e;
@@ -14263,7 +14334,7 @@ body[data-hp="right"] #hdr-arrow{right:100%;left:auto;border-radius:10px 0 0 10p
       }
       return b;
     }
-    var name = file.name.replace(/\.zip$/i, ""), man = {}, td = new TextDecoder();
+    var name = file.name.replace(/\.(zip|tar\.gz|tgz|tar)$/i, ""), man = {}, td = new TextDecoder();
     var idx = ents.filter(function(e){ return /(^|\/)index\.theme$/i.test(e.name); })[0];
     if(idx){ try{ var m = /^\s*Name\s*=\s*(.+)$/m.exec(td.decode(await readEntry(u8, idx))); if(m) name = m[1].trim(); }catch(e){} }
     var mf = ents.filter(function(e){ return /(^|\/)(cursor|theme|manifest|hotspots)\.json$/i.test(e.name); })[0];
@@ -14277,11 +14348,11 @@ body[data-hp="right"] #hdr-arrow{right:100%;left:auto;border-radius:10px 0 0 10p
           var b = await bytesOf(e, 0); if(!b) continue;
           var hs = Array.isArray(hots[role]) ? hots[role] : null;
           got = await decode(b, role, hs);
-        }catch(err){ if(/password|damaged|Zip64|unzip|compression/i.test(err.message)) throw err; }
+        }catch(err){ if(/password|damaged|Zip64|unzip|unpack|compression|too big/i.test(err.message)) throw err; }
       }
       if(got) roles[role] = got;
     }
-    if(!roles["default"]) throw new Error("No cursors found. Use a GNOME/X11 cursor theme zip (with a cursors/ folder), or a zip of PNG / SVG / CUR files named default, pointer, text, and so on.");
+    if(!roles["default"]) throw new Error("No cursors found. Use a GNOME/X11 cursor theme archive (.zip, .tar or .tar.gz, with a cursors/ folder), or an archive of PNG / SVG / CUR files named default, pointer, text, and so on.");
     return {id:"u" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), name:name, roles:roles};
   }
 
@@ -14386,12 +14457,12 @@ body[data-hp="right"] #hdr-arrow{right:100%;left:auto;border-radius:10px 0 0 10p
     var card = document.createElement("div"); card.className = "stg-card"; card.id = "stg-cursor";
     var chips = [["cdm-pointer","👆 Link"],["cdm-wait","⏳ Busy"],["cdm-progress","⌛ Working"],["cdm-no","🚫 Blocked"],["cdm-grab","✋ Grab"],["cdm-grabbing","✊ Grabbing"],["cdm-cross","➕ Cross"],["cdm-move","✥ Move"],["cdm-ew","↔ Resize"],["cdm-ns","↕ Resize"],["cdm-nesw","⤢ Resize"],["cdm-nwse","⤡ Resize"],["cdm-zin","🔍 Zoom in"],["cdm-zout","🔎 Zoom out"],["cdm-help","❔ Help"]];
     card.innerHTML = '<h3>🖱️ Cursor</h3>' +
-      '<div class="xnote">Replace your mouse pointer. Comes with a macOS cursor, and you can import GNOME / X11 cursor themes (or PNG / SVG / CUR sets) as .zip files. Changes apply right away.</div>' +
+      '<div class="xnote">Replace your mouse pointer. Comes with a macOS cursor, and you can import GNOME / X11 cursor themes (or PNG / SVG / CUR sets) as .zip, .tar or .tar.gz files. Changes apply right away.</div>' +
       '<label for="cur-sel">Cursor theme</label><select id="cur-sel"></select>' +
       '<label for="cur-size">Size</label><select id="cur-size"><option value="0.75">Small</option><option value="1">Normal</option><option value="1.5">Large</option><option value="2">Extra large</option></select>' +
-      '<div class="cur-row"><button type="button" class="btn alt" id="cur-imp">⬆ Import cursor theme (.zip)</button><button type="button" class="btn alt" id="cur-del" disabled>🗑 Remove this theme</button></div>' +
-      '<input type="file" id="cur-file" accept=".zip,application/zip" multiple style="display:none">' +
-      '<div class="xnote">Need more cursors? <a href="https://www.gnome-look.org/browse?cat=107&amp;ord=latest" target="_blank" rel="noopener noreferrer" style="color:var(--accent)">Browse cursor themes on GNOME-Look</a>, download a theme, then import the .zip here.</div>' +
+      '<div class="cur-row"><button type="button" class="btn alt" id="cur-imp">⬆ Import cursor theme (.zip / .tar.gz)</button><button type="button" class="btn alt" id="cur-del" disabled>🗑 Remove this theme</button></div>' +
+      '<input type="file" id="cur-file" accept=".zip,.tar,.tar.gz,.tgz,.gz,application/zip,application/x-tar,application/gzip,application/x-gzip" multiple style="display:none">' +
+      '<div class="xnote">Need more cursors? <a href="https://www.gnome-look.org/browse?cat=107&amp;ord=latest" target="_blank" rel="noopener noreferrer" style="color:var(--accent)">Browse cursor themes on GNOME-Look</a>, download a theme, then import the .zip, .tar or .tar.gz here.</div>' +
       '<div id="cur-msg"></div>' +
       '<div class="al-demo" style="display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:12px;background:var(--bg);border:1px solid var(--line)"><h4 style="margin:0;font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px">Try it</h4><div class="cur-grid">' +
       '<input type="text" class="cdm-text" placeholder="Text cursor" id="cur-demo-in">' +
@@ -14426,7 +14497,7 @@ body[data-hp="right"] #hdr-arrow{right:100%;left:auto;border-radius:10px 0 0 10p
       for(var i = 0; i < fs.length; i++){
         say("Reading " + fs[i].name + "…");
         try{
-          if(fs[i].size > 60e6) throw new Error("That zip is too big (60 MB max).");
+          if(fs[i].size > 60e6) throw new Error("That file is too big (60 MB max).");
           var th = await buildFromZip(fs[i]), saved = true;
           await tx("readwrite", function(s){ return s.put(th); }).catch(function(){ saved = false; });
           themes.push(th); state.id = th.id;
@@ -14542,6 +14613,660 @@ body.offline :is(#md-add,#mu-add,#md-edit,#md-modal){display:none !important}
   ["dragenter", "dragover", "drop"].forEach(t => window.addEventListener(t, e => { if(!window.__offline || isField(e.target)) return; e.preventDefault(); e.stopImmediatePropagation(); }, true));
   window.addEventListener("paste", e => { if(!window.__offline || isField(e.target)) return; e.preventDefault(); e.stopImmediatePropagation(); }, true);
   window.addEventListener("keydown", e => { if(!window.__offline || isField(e.target)) return; if(curCh === "draw" || curCh === "tier") e.stopImmediatePropagation(); }, true);
+})();
+</script>
+
+<!-- =====================  DESKTOP MODE (Settings > Experimental)  ===================== -->
+<style id="dt-css">
+#dt{display:none}
+body.dt-on #dt{display:block;position:fixed;inset:0;z-index:2;overflow:hidden;overflow:clip;user-select:none;-webkit-user-select:none;
+  font:13px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans",sans-serif;
+  --dt-top:0px;--dt-bot:48px;--dt-fg:#1d1d1f;--dt-win:#f5f5f7;--dt-tbar:#ececec;--dt-sep:rgba(0,0,0,.14);--dt-glass:rgba(246,246,248,.72);--dt-glassfg:#1d1d1f;--dt-hov:rgba(0,0,0,.07)}
+@media (prefers-color-scheme:dark){body.dt-on #dt{--dt-fg:#f2f2f7;--dt-win:#1e1e20;--dt-tbar:#2b2b2e;--dt-sep:rgba(255,255,255,.14);--dt-glass:rgba(40,40,44,.72);--dt-glassfg:#f2f2f7;--dt-hov:rgba(255,255,255,.1)}}
+body.dt-on.dt-mac #dt{--dt-top:28px;--dt-bot:84px}
+body.dt-on #dt button{font:inherit;color:inherit}
+#dt-wall{position:absolute;inset:0}
+.dt-mac #dt-wall{background:radial-gradient(1200px 700px at 15% 105%,#ff6a88 0,transparent 60%),radial-gradient(1000px 700px at 90% 10%,#6a5cff 0,transparent 60%),radial-gradient(900px 600px at 55% 55%,#27c4f5 0,transparent 65%),linear-gradient(135deg,#1b2a6b,#7b3fa8)}
+.dt-chromeos #dt-wall{background:radial-gradient(1000px 700px at 80% 0,#fbbc04 0,transparent 55%),radial-gradient(1000px 800px at 10% 100%,#34a853 0,transparent 60%),radial-gradient(900px 700px at 50% 60%,#4285f4 0,transparent 70%),linear-gradient(160deg,#1a73e8,#0d652d)}
+.dt-win11 #dt-wall,.dt-win #dt-wall{background:radial-gradient(900px 700px at 50% 35%,#4fa3ff 0,transparent 60%),radial-gradient(800px 600px at 80% 100%,#0a3d91 0,transparent 70%),radial-gradient(700px 500px at 0 0,#8fd3ff 0,transparent 60%),linear-gradient(160deg,#0b5bd3,#0a2a6b)}
+/* ---- windows ---- */
+.dt-win{position:absolute;display:flex;flex-direction:column;background:var(--dt-win);color:var(--dt-fg);overflow:hidden;overflow:clip;
+  box-shadow:0 18px 50px rgba(0,0,0,.38),0 0 0 1px rgba(0,0,0,.22);min-width:300px;min-height:220px}
+.dt-win:not(.dtact){box-shadow:0 8px 24px rgba(0,0,0,.28),0 0 0 1px rgba(0,0,0,.18)}
+.dt-win.min{display:none}
+.dt-win.max,.dt-win.snapL,.dt-win.snapR{transition:none}
+.dt-win.max{left:0 !important;top:var(--dt-top) !important;width:100% !important;height:calc(100% - var(--dt-top) - var(--dt-bot)) !important;border-radius:0 !important}
+.dt-win.snapL{left:0 !important;top:var(--dt-top) !important;width:50% !important;height:calc(100% - var(--dt-top) - var(--dt-bot)) !important;border-radius:0 !important}
+.dt-win.snapR{left:50% !important;top:var(--dt-top) !important;width:50% !important;height:calc(100% - var(--dt-top) - var(--dt-bot)) !important;border-radius:0 !important}
+.dt-win.opening{animation:dtOpen .18s cubic-bezier(.2,.9,.3,1)}
+@keyframes dtOpen{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:none}}
+.dt-tb{display:flex;align-items:center;height:36px;flex-shrink:0;background:var(--dt-tbar);border-bottom:1px solid var(--dt-sep);padding:0 8px;gap:8px;touch-action:none;cursor:default}
+.dt-win:not(.dtact) .dt-tb{opacity:.82}
+.dt-ttl{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;font-weight:600}
+.dt-ico{font-size:15px;line-height:1}
+.dt-ctl{display:flex;gap:8px;align-items:center}
+.dt-ctl button{border:none;padding:0;cursor:default;background:none;display:flex;align-items:center;justify-content:center}
+.dt-body{position:relative;overflow:clip;flex:1;min-height:0;background:var(--dt-win)}
+.dt-snap{position:absolute;inset:0;display:none;background:#000}
+.dt-win:not(.is-live) .dt-snap{display:block}
+.dt-snap iframe{position:absolute;inset:0;width:100%;height:100%;border:0;pointer-events:none;background:#fff}
+.dt-shield{position:absolute;inset:0;cursor:pointer}
+.dt-live{container:dtl / inline-size;display:flex;width:100%;height:100%;min-width:0;min-height:0;position:relative;transform:translateZ(0);overflow:hidden;overflow:clip;background:var(--bg)}
+body.sb-bottom .dt-live{flex-direction:column}
+.dt-live #sb-arrow{position:absolute}
+.dt-live:not(.wide) #sb,.dt-live:not(.wide) #sb-arrow{display:none !important}
+.dt-live:not(.wide) #hdr-set{display:inline-block !important}
+#dt-park{display:none}
+.dt-rz{position:absolute;z-index:3;touch-action:none}
+.dt-rz[data-d=n]{top:-3px;left:8px;right:8px;height:7px;cursor:ns-resize}.dt-rz[data-d=s]{bottom:-3px;left:8px;right:8px;height:7px;cursor:ns-resize}
+.dt-rz[data-d=e]{right:-3px;top:8px;bottom:8px;width:7px;cursor:ew-resize}.dt-rz[data-d=w]{left:-3px;top:8px;bottom:8px;width:7px;cursor:ew-resize}
+.dt-rz[data-d=ne]{top:-3px;right:-3px;width:12px;height:12px;cursor:nesw-resize}.dt-rz[data-d=sw]{bottom:-3px;left:-3px;width:12px;height:12px;cursor:nesw-resize}
+.dt-rz[data-d=nw]{top:-3px;left:-3px;width:12px;height:12px;cursor:nwse-resize}.dt-rz[data-d=se]{bottom:-3px;right:-3px;width:12px;height:12px;cursor:nwse-resize}
+.dt-win.max .dt-rz,.dt-win.snapL .dt-rz,.dt-win.snapR .dt-rz{display:none}
+body.dt-drag #dt iframe,body.dt-drag .dt-shield{pointer-events:none}
+body.dt-drag{cursor:grabbing}
+#dt-ghost{position:absolute;display:none;background:rgba(255,255,255,.22);border:2px solid rgba(255,255,255,.55);border-radius:10px;z-index:99999;pointer-events:none;backdrop-filter:blur(6px)}
+/* ---- shared glass bits ---- */
+.dt-glass{background:var(--dt-glass);color:var(--dt-glassfg);-webkit-backdrop-filter:blur(26px) saturate(180%);backdrop-filter:blur(26px) saturate(180%)}
+.dt-app{position:relative;border:none;background:none;padding:0;cursor:default;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.dt-app .ai{display:flex;align-items:center;justify-content:center;font-size:24px;line-height:1;font-weight:700;color:#fff;background:linear-gradient(135deg,#5e8bff,#8e5bff)}
+.dt-app .ai{overflow:hidden}
+.dt-app .ai img,#dt-panel .dtgi .ai img{width:100%;height:100%;object-fit:cover;display:block}
+.dt-app.dt-add .ai{background:rgba(255,255,255,.22) !important;color:inherit !important;font-weight:300;font-size:28px}
+.dt-ico img{width:16px;height:16px;object-fit:cover;border-radius:3px;display:block}
+.dt-web{position:absolute;inset:0;display:flex;flex-direction:column;background:#fff}
+.dt-wbar{display:flex;gap:6px;align-items:center;padding:5px 8px;background:var(--dt-tbar);border-bottom:1px solid var(--dt-sep);flex-shrink:0}
+.dt-wbar button{border:none;background:none;border-radius:6px;padding:4px 9px;font-size:14px;cursor:pointer;color:var(--dt-fg)}
+.dt-wbar button:hover{background:var(--dt-hov)}
+.dt-wbar input{flex:1;min-width:0;border:1px solid var(--dt-sep);border-radius:999px;padding:4px 12px;font:inherit;font-size:12px;background:var(--dt-win);color:var(--dt-fg);user-select:text}
+.dt-web iframe{flex:1;width:100%;border:0;background:#fff}
+.dt-webnote{font-size:11px;padding:3px 10px;background:var(--dt-tbar);color:var(--dt-fg);opacity:.75;border-top:1px solid var(--dt-sep);flex-shrink:0}
+#dt-dlg{position:absolute;inset:0;z-index:99995;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.4)}
+#dt-dlg .box{width:min(380px,calc(100% - 24px));max-height:calc(100% - 24px);overflow:auto;display:flex;flex-direction:column;gap:9px;padding:18px;border-radius:14px;background:var(--dt-win);color:var(--dt-fg);box-shadow:0 20px 60px rgba(0,0,0,.5);user-select:text}
+#dt-dlg h4{margin:0 0 2px;font-size:16px}
+#dt-dlg label{font-size:12px;font-weight:600;opacity:.8}
+#dt-dlg input[type=text],#dt-dlg input[type=url]{width:100%;box-sizing:border-box;padding:8px 10px;border-radius:8px;border:1px solid var(--dt-sep);background:var(--dt-hov);color:inherit;font:inherit}
+#dt-dlg .ir{display:flex;gap:8px;align-items:center}
+#dt-dlg .pv{width:44px;height:44px;border-radius:11px;background:var(--dt-hov);display:flex;align-items:center;justify-content:center;font-size:24px;overflow:hidden;flex-shrink:0}
+#dt-dlg .pv img{width:100%;height:100%;object-fit:cover}
+#dt-dlg .btns{display:flex;gap:8px;justify-content:flex-end;margin-top:4px}
+#dt-dlg button{border:none;border-radius:8px;padding:8px 14px;font:inherit;font-weight:600;cursor:pointer;background:var(--dt-hov);color:inherit}
+#dt-dlg button.pri{background:var(--accent,#0a84ff);color:#fff}
+#dt-dlg button.del{color:#ff453a;margin-right:auto}
+#dt-dlg .err{color:#ff453a;font-size:12px;min-height:14px}
+#dt-dlg small{opacity:.65;font-size:11px}
+.dt-app .run{position:absolute;display:none}
+.dt-app.on .run{display:block}
+#dt-menu{position:absolute;display:none;z-index:99990}
+#dt-menu.show{display:block}
+.dt-pop{position:absolute;z-index:99991;min-width:200px;padding:5px;border-radius:9px;box-shadow:0 10px 36px rgba(0,0,0,.35),0 0 0 1px rgba(0,0,0,.18);display:none}
+.dt-pop.show{display:block}
+.dt-pop button{display:flex;width:100%;align-items:center;gap:8px;padding:6px 10px;border:none;background:none;border-radius:6px;text-align:left;cursor:default;font-size:13px}
+.dt-pop button:hover{background:var(--accent,#0a84ff);color:#fff}
+.dt-pop hr{border:none;border-top:1px solid var(--dt-sep);margin:5px 4px}
+.dt-pop .hd{padding:4px 10px;font-size:11px;opacity:.6}
+/* ================= macOS ================= */
+.dt-mac .dt-win{border-radius:11px;font-size:13px}
+.dt-mac .dt-tb{position:relative;justify-content:center}
+.dt-mac .dt-ctl{position:absolute;left:12px;gap:8px}
+.dt-mac .dt-ctl button{width:12px;height:12px;border-radius:50%;box-shadow:inset 0 0 0 .5px rgba(0,0,0,.25);font-size:9px;line-height:1;color:rgba(0,0,0,.6);font-weight:800}
+.dt-mac .dt-ctl [data-act=close]{background:#ff5f57;order:1}.dt-mac .dt-ctl [data-act=min]{background:#febc2e;order:2}.dt-mac .dt-ctl [data-act=max]{background:#28c840;order:3}
+.dt-mac .dt-win:not(.dtact) .dt-ctl button{background:#c9c9cc}
+.dt-mac .dt-ctl:hover [data-act=close]::before{content:"✕"}.dt-mac .dt-ctl:hover [data-act=min]::before{content:"–"}.dt-mac .dt-ctl:hover [data-act=max]::before{content:"+"}
+.dt-mac .dt-ttl{flex:none;max-width:60%;text-align:center}
+.dt-mac .dt-ico{display:none}
+#dt-bar{display:none}
+.dt-mac #dt-bar{display:flex;position:absolute;top:0;left:0;right:0;height:28px;align-items:center;padding:0 10px;gap:2px;z-index:99980;font-size:13px}
+.dt-mac #dt-bar .mb{border:none;background:none;padding:2px 9px;border-radius:5px;cursor:default;white-space:nowrap}
+.dt-mac #dt-bar .mb:hover,.dt-mac #dt-bar .mb.open{background:rgba(255,255,255,.28)}
+.dt-mac #dt-bar .mb.dtapp{font-weight:700}
+.dt-mac #dt-bar .dtsp{flex:1}
+.dt-mac #dt-bar .dtst{padding:0 8px;white-space:nowrap}
+.dt-mac #dt-bar{background:rgba(30,30,34,.38);color:#fff;-webkit-backdrop-filter:blur(26px) saturate(180%);backdrop-filter:blur(26px) saturate(180%)}
+#dt-dock{display:none}
+.dt-mac #dt-dock{display:flex;position:absolute;left:50%;bottom:8px;transform:translateX(-50%);gap:6px;padding:6px 8px;border-radius:20px;align-items:flex-end;max-width:calc(100% - 20px);overflow-x:auto;z-index:99980;box-shadow:0 0 0 1px rgba(255,255,255,.25),0 12px 40px rgba(0,0,0,.35);background:rgba(255,255,255,.26);color:#fff}
+.dt-mac #dt-dock::-webkit-scrollbar{display:none}
+.dt-mac .dt-app{width:52px;height:52px;transition:transform .14s cubic-bezier(.3,1.5,.5,1)}
+.dt-mac .dt-app:hover{transform:translateY(-10px) scale(1.28)}
+.dt-mac .dt-app .ai{width:50px;height:50px;border-radius:12px;box-shadow:0 2px 6px rgba(0,0,0,.3);background:linear-gradient(160deg,#fdfdfd,#d5d6dc);font-size:28px;color:#222}
+.dt-mac .dt-app .run{bottom:-5px;width:4px;height:4px;border-radius:50%;background:#fff}
+/* ================= ChromeOS ================= */
+.dt-chromeos .dt-win{border-radius:12px}
+.dt-chromeos .dt-tb{background:var(--dt-tbar);height:40px;padding:0 6px 0 12px}
+.dt-chromeos .dt-ctl{order:3;gap:2px}
+.dt-chromeos .dt-ctl button{width:30px;height:30px;border-radius:50%;font-size:14px}
+.dt-chromeos .dt-ctl button:hover{background:var(--dt-hov)}
+.dt-chromeos .dt-ctl [data-act=close]:hover{background:#d93025;color:#fff}
+.dt-chromeos .dt-ctl [data-act=close]::before{content:"✕"}.dt-chromeos .dt-ctl [data-act=min]::before{content:"–"}.dt-chromeos .dt-ctl [data-act=max]::before{content:"▢"}
+.dt-chromeos .dt-win.max .dt-ctl [data-act=max]::before{content:"❐"}
+#dt-shelf{display:none}
+.dt-chromeos #dt-shelf{display:flex;position:absolute;left:0;right:0;bottom:0;height:48px;align-items:center;justify-content:center;padding:0 8px;z-index:99980;background:rgba(32,33,36,.82);color:#fff;-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px)}
+.dt-chromeos #dt-shelf .apps{display:flex;gap:4px;align-items:center;overflow-x:auto;max-width:calc(100% - 250px)}
+.dt-chromeos #dt-shelf .apps::-webkit-scrollbar{display:none}
+.dt-chromeos #dt-shelf .lnch{width:36px;height:36px;border-radius:50%;border:none;background:rgba(255,255,255,.18);margin-right:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:default}
+.dt-chromeos #dt-shelf .lnch::before{content:"";width:12px;height:12px;border-radius:50%;background:#fff}
+.dt-chromeos .dt-app{width:40px;height:40px;border-radius:50%}
+.dt-chromeos .dt-app:hover{background:rgba(255,255,255,.14)}
+.dt-chromeos .dt-app .ai{width:30px;height:30px;border-radius:50%;font-size:17px;background:#e8eaed;color:#222}
+.dt-chromeos .dt-app .run{bottom:1px;width:6px;height:3px;border-radius:2px;background:#8ab4f8}
+.dt-chromeos #dt-shelf .tray{position:absolute;right:8px;display:flex;align-items:center;gap:8px;height:36px;padding:0 12px;border-radius:18px;background:rgba(255,255,255,.14);border:none;cursor:default;font-size:13px}
+/* ================= Windows 11 ================= */
+.dt-win11 .dt-win{border-radius:8px}
+.dt-win11 .dt-tb{height:32px;padding:0 0 0 10px}
+.dt-win11 .dt-ctl{order:3;gap:0;align-self:stretch}
+.dt-win11 .dt-ctl button{width:46px;height:100%;font-size:12px}
+.dt-win11 .dt-ctl button:hover{background:var(--dt-hov)}
+.dt-win11 .dt-ctl [data-act=close]:hover{background:#c42b1c;color:#fff}
+.dt-win11 .dt-ctl [data-act=close]::before{content:"✕"}.dt-win11 .dt-ctl [data-act=min]::before{content:"—"}.dt-win11 .dt-ctl [data-act=max]::before{content:"☐"}
+.dt-win11 .dt-win.max .dt-ctl [data-act=max]::before{content:"❐"}
+.dt-win11 .dt-ttl{font-weight:400}
+#dt-task{display:none}
+.dt-win11 #dt-task{display:flex;position:absolute;left:0;right:0;bottom:0;height:48px;align-items:center;justify-content:center;z-index:99980;background:rgba(243,243,243,.82);color:#1b1b1b;border-top:1px solid rgba(0,0,0,.1);-webkit-backdrop-filter:blur(30px) saturate(150%);backdrop-filter:blur(30px) saturate(150%)}
+@media (prefers-color-scheme:dark){.dt-win11 #dt-task{background:rgba(32,32,32,.85);color:#fff;border-top-color:rgba(255,255,255,.08)}}
+.dt-win11 #dt-task .apps{display:flex;gap:2px;align-items:center;overflow-x:auto;max-width:calc(100% - 260px)}
+.dt-win11 #dt-task .apps::-webkit-scrollbar{display:none}
+.dt-win11 #dt-task .start{width:40px;height:40px;border:none;background:none;border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:default;flex-shrink:0}
+.dt-win11 #dt-task .start::before{content:"";width:18px;height:18px;background:linear-gradient(#0a84ff,#0a84ff) 0 0/8px 8px no-repeat,linear-gradient(#0a84ff,#0a84ff) 10px 0/8px 8px no-repeat,linear-gradient(#0a84ff,#0a84ff) 0 10px/8px 8px no-repeat,linear-gradient(#0a84ff,#0a84ff) 10px 10px/8px 8px no-repeat}
+.dt-win11 #dt-task .start:hover,.dt-win11 .dt-app:hover{background:rgba(127,127,127,.2)}
+.dt-win11 .dt-app{width:42px;height:40px;border-radius:6px}
+.dt-win11 .dt-app .ai{width:28px;height:28px;border-radius:7px;font-size:17px;background:linear-gradient(160deg,#fff,#dfe4ee);color:#222;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.dt-win11 .dt-app .run{bottom:1px;width:6px;height:3px;border-radius:2px;background:#9aa0a6}
+.dt-win11 .dt-app.dtact .run{width:16px;background:#0a84ff}
+.dt-win11 #dt-task .tray{position:absolute;right:6px;display:flex;align-items:center;gap:10px;padding:4px 10px;border:none;background:none;border-radius:6px;text-align:right;line-height:1.25;font-size:12px;cursor:default}
+.dt-win11 #dt-task .tray:hover{background:rgba(127,127,127,.2)}
+/* launcher / start panel */
+#dt-panel{display:none;position:absolute;z-index:99985;flex-direction:column;gap:12px;padding:16px;border-radius:14px;box-shadow:0 14px 50px rgba(0,0,0,.4),0 0 0 1px rgba(0,0,0,.15);width:min(520px,calc(100% - 20px));max-height:calc(100% - 80px)}
+#dt-panel.show{display:flex}
+.dt-chromeos #dt-panel{left:10px;bottom:56px}
+.dt-win11 #dt-panel{left:50%;bottom:56px;transform:translateX(-50%)}
+#dt-panel input{width:100%;box-sizing:border-box;padding:9px 14px;border-radius:999px;border:1px solid var(--dt-sep);background:var(--dt-hov);color:inherit;font:inherit;outline:none;user-select:text}
+#dt-panel .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:8px;overflow:auto}
+#dt-panel .dtgi{display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 4px;border:none;background:none;border-radius:10px;cursor:default;font-size:12px;text-align:center}
+#dt-panel .dtgi:hover{background:var(--dt-hov)}
+#dt-panel .dtgi .ai{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;background:linear-gradient(160deg,#fff,#dfe4ee);color:#222;box-shadow:0 1px 4px rgba(0,0,0,.25);font-weight:700}
+#dt-panel .foot{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--dt-sep);padding-top:10px;font-size:12px}
+#dt-panel .foot button{border:none;background:none;padding:6px 10px;border-radius:6px;cursor:default}
+#dt-panel .foot button:hover{background:var(--dt-hov)}
+.dt-mac #dt-panel{display:none !important}
+</style>
+<script id="dt-js">
+(function(){
+  "use strict";
+  var KEY = "pb_desktop", D = document, B = D.body, $ = function(i){ return D.getElementById(i); };
+  var OSES = [["", "Off"], ["mac", "macOS"], ["chromeos", "ChromeOS"], ["win11", "Windows"]];
+  function saved(){ try{ var v = localStorage.getItem(KEY) || ""; return v === "win" ? "win11" : v; }catch(e){ return ""; } }
+  function keep(v){ try{ if(v) localStorage.setItem(KEY, v); else localStorage.removeItem(KEY); }catch(e){} }
+
+  /* =============== Settings > Experimental control =============== */
+  var card = $("stg-exp"), stg = $("stg"), saveBtn = $("save");
+  if(card && stg && saveBtn){
+    var host = card.querySelector(".sx-group") || card, inSx = host !== card;
+    var lab = D.createElement("label"); lab.setAttribute("for", "x-desk"); lab.textContent = "Desktop mode";
+    var sel = D.createElement("select"); sel.id = "x-desk";
+    OSES.forEach(function(o){ var op = D.createElement("option"); op.value = o[0]; op.textContent = o[1]; sel.appendChild(op); });
+    var note = D.createElement("div"); note.className = "xnote";
+    note.textContent = "Turns the site into a pretend desktop (macOS, ChromeOS or Windows) with a dock or taskbar. Every tab can be opened in its own mini window: drag, resize, minimize, maximize, or drag to a screen edge to snap. The window you click on is the live one; the others show how they looked when you left them. Press Save changes to apply. To leave, use the power / Apple / status menu on the desktop, or set this back to Off.";
+    if(inSx){ var row = D.createElement("div"); row.className = "sx-fr"; row.appendChild(lab); row.appendChild(sel); host.appendChild(row); }
+    else { host.appendChild(lab); host.appendChild(sel); }
+    host.appendChild(note);
+    var wasOpen = false;
+    new MutationObserver(function(){
+      var open = stg.classList.contains("open");
+      if(open && !wasOpen) sel.value = saved();
+      wasOpen = open;
+    }).observe(stg, {attributes:true, attributeFilter:["class"]});
+    sel.value = saved();
+    var prev = saveBtn.onclick;
+    saveBtn.onclick = function(){
+      var r = prev ? prev.apply(this, arguments) : undefined;
+      if(stg.classList.contains("open") || true){ var v = sel.value; if(v !== saved()){ keep(v); setTimeout(function(){ apply(v); }, 60); } }
+      return r;
+    };
+  }
+
+  /* =============== the desktop =============== */
+  var SCK = "pb_dt_sc";
+  function scLoad(){ try{ var a = JSON.parse(localStorage.getItem(SCK) || "[]"); return Array.isArray(a) ? a.filter(function(x){ return x && x.id && x.url; }) : []; }catch(e){ return []; } }
+  function scSave(){ try{ localStorage.setItem(SCK, JSON.stringify(st.sc)); }catch(e){} }
+  var st = {sc:[], os:"", wins:[], live:null, z:10, uid:0, cascade:0, shell:null, liveHost:null, park:null, ph:[], clock:0, ro:null, tabObs:null};
+  var APPEL = ["sb", "sb-arrow", "main"];
+
+  function tabs(){
+    var out = [], seen = {};
+    D.querySelectorAll("#chtabs button").forEach(function(b){
+      var ch = b.dataset.ch; if(!ch || seen[ch] || b.hidden || b.style.display === "none") return; seen[ch] = 1;
+      var t = (b.textContent || "").trim(), m = /^(\S+)\s+(.+)$/.exec(t), ic = null, lb = t;
+      if(m && !/^[A-Za-z0-9]/.test(m[1])){ ic = m[1]; lb = m[2]; }
+      out.push({ch:ch, icon:ic, label:lb || ch});
+    });
+    return out;
+  }
+  function tabOf(ch){ return tabs().filter(function(t){ return t.ch === ch; })[0] || null; }
+  function esc(s){ return String(s).replace(/[&<>"]/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); }
+  function hostOf(u){ try{ return new URL(u).hostname; }catch(e){ return ""; } }
+  function isImg(v){ return /^(data:image\/|https?:\/\/)/i.test(v || ""); }
+  function scIcon(sc){
+    var v = (sc.icon || "").trim(), nm = (sc.name || hostOf(sc.url) || "?").charAt(0).toUpperCase();
+    if(isImg(v)) return '<img alt="" draggable="false" src="' + esc(v) + '" onerror="this.replaceWith(document.createTextNode(\'' + esc(nm) + '\'))">';
+    if(v) return esc(v);
+    var h = hostOf(sc.url);
+    return h ? '<img alt="" draggable="false" src="https://www.google.com/s2/favicons?domain=' + encodeURIComponent(h) + '&sz=64" onerror="this.replaceWith(document.createTextNode(\'' + esc(nm) + '\'))">' : esc(nm);
+  }
+  function iconHtml(t){ return t.sc ? scIcon(t.sc) : esc(icoOf(t)); }
+  function allApps(){
+    return tabs().concat(st.sc.map(function(sc){ return {ch:"sc:" + sc.id, label:sc.name, icon:null, sc:sc}; }));
+  }
+  function icoOf(t){ return t.icon || (t.label || "?").charAt(0).toUpperCase(); }
+  function el(tag, cls, html){ var e = D.createElement(tag); if(cls) e.className = cls; if(html != null) e.innerHTML = html; return e; }
+  function area(){ var r = st.shell.getBoundingClientRect(), cs = getComputedStyle(st.shell), top = parseFloat(cs.getPropertyValue("--dt-top")) || 0, bot = parseFloat(cs.getPropertyValue("--dt-bot")) || 0; return {w:r.width, h:r.height - top - bot, top:top}; }
+  function small(){ return window.innerWidth < 720; }
+
+  /* The app's phone layout is chosen with @media (max-width) = the whole browser. A window is narrower than the browser,
+     so copy those rules as @container rules: each window then lays out by its own width. */
+  var WRE = /^\s*(screen\s+and\s+)?\(\s*(max|min)-width:\s*[\d.]+px\s*\)(\s+and\s+\(\s*(max|min)-width:\s*[\d.]+px\s*\))*\s*$/;
+  function buildCQ(){
+    var out = [];
+    try{
+      Array.prototype.forEach.call(D.styleSheets, function(sh){
+        if(!sh.ownerNode || sh.ownerNode.id === "dt-cq") return;
+        var rules; try{ rules = sh.cssRules; }catch(e){ return; }
+        Array.prototype.forEach.call(rules, function(r){
+          if(r.type !== 4 || !WRE.test(r.media.mediaText)) return;
+          var cond = r.media.mediaText.replace(/^\s*screen\s+and\s+/i, "");
+          var inner = Array.prototype.map.call(r.cssRules, function(x){ return x.cssText; }).join("\n");
+          out.push("@container dtl " + cond + "{" + inner + "}");
+        });
+      });
+    }catch(e){}
+    var st2 = $("dt-cq"); if(!st2){ st2 = D.createElement("style"); st2.id = "dt-cq"; }
+    st2.textContent = out.join("\n"); B.appendChild(st2);
+  }
+
+  /* ---- build / tear down ---- */
+  function apply(os){
+    if(os === "win") os = "win11";
+    if(st.os) teardown();
+    if(!os) return;
+    st.os = os; st.sc = scLoad(); B.classList.add("dt-on", "dt-" + os);
+    var sh = el("div"); sh.id = "dt"; st.shell = sh;
+    sh.innerHTML = '<div id="dt-wall"></div><div id="dt-wins"></div><div id="dt-ghost"></div>' +
+      '<div id="dt-bar" class="dt-glass-x"></div><div id="dt-dock" class="dt-glass"></div>' +
+      '<div id="dt-shelf"><button class="lnch" type="button" title="Launcher"></button><div class="apps"></div><button class="tray" type="button"></button></div>' +
+      '<div id="dt-task"><div class="apps"><button class="start" type="button" title="Start"></button></div><button class="tray" type="button"></button></div>' +
+      '<div id="dt-panel" class="dt-glass"></div><div class="dt-pop dt-glass" id="dt-pop"></div>';
+    B.appendChild(sh);
+    st.park = el("div"); st.park.id = "dt-park"; B.appendChild(st.park);
+    /* hand the live app to the desktop: remember where each piece was */
+    st.liveHost = el("div", "dt-live");
+    st.ph = [];
+    APPEL.forEach(function(id){ var e = $(id); if(!e) return; var c = D.createComment("dt:" + id); e.before(c); st.ph.push({c:c, e:e}); st.liveHost.appendChild(e); });
+    st.park.appendChild(st.liveHost);
+    st.ro = window.ResizeObserver ? new ResizeObserver(function(){ st.liveHost.classList.toggle("wide", st.liveHost.clientWidth >= 640); }) : null;
+    if(st.ro) st.ro.observe(st.liveHost);
+    buildShell();
+    var wa = $("dt-wins");
+    sh.addEventListener("mousedown", function(e){ if(!e.target.closest("#dt-panel,#dt-pop,#dt-bar,.start,.lnch,.tray")) closePops(); }, true);
+    window.addEventListener("resize", onResize);
+    st.tabObs = new MutationObserver(function(){ refreshDock(); });
+    var ct = $("chtabs"); if(ct) st.tabObs.observe(ct, {childList:true, subtree:true, characterData:true});
+    st.clock = setInterval(tick, 15000); tick();
+    buildCQ(); setTimeout(buildCQ, 2500);
+    var cur = (typeof curCh !== "undefined" && curCh) || "main", t = tabOf(cur) || tabOf("home") || tabOf("main") || {ch:"main", label:"Chat", icon:"💬"};
+    var w = openWin(t, {big:true}); focus(w);
+  }
+  function teardown(){
+    try{ clearInterval(st.clock); window.removeEventListener("resize", onResize); if(st.tabObs) st.tabObs.disconnect(); if(st.ro) st.ro.disconnect(); }catch(e){}
+    st.ph.forEach(function(p){ try{ p.c.replaceWith(p.e); }catch(e){} });
+    if(st.liveHost) st.liveHost.remove(); if(st.park) st.park.remove(); if(st.shell) st.shell.remove();
+    B.classList.remove("dt-on", "dt-mac", "dt-chromeos", "dt-win11"); var cq = $("dt-cq"); if(cq) cq.remove();
+    st.os = ""; st.wins = []; st.live = null; st.ph = []; st.shell = null;
+  }
+  function exit(){ keep(""); var s = $("x-desk"); if(s) s.value = ""; teardown(); }
+  function onResize(){ st.wins.forEach(function(w){ clampWin(w); }); }
+  function tick(){
+    var n = new Date(), tm = n.toLocaleTimeString([], {hour:"numeric", minute:"2-digit"});
+    var bar = $("dt-bar"), tr = st.shell && st.shell.querySelectorAll(".tray");
+    if(st.os === "mac" && bar){ var cl = bar.querySelector(".dtclk"); if(cl) cl.textContent = n.toLocaleDateString([], {weekday:"short", month:"short", day:"numeric"}) + "  " + tm; }
+    if(st.os === "chromeos"){ var t1 = st.shell.querySelector("#dt-shelf .tray"); if(t1) t1.innerHTML = '<span>📶</span><span>🔋</span><span>' + esc(tm) + '</span>'; }
+    if(st.os === "win11"){ var t2 = st.shell.querySelector("#dt-task .tray"); if(t2) t2.innerHTML = '<span>📶 🔊</span><span>' + esc(tm) + '<br>' + esc(n.toLocaleDateString()) + '</span>'; }
+  }
+
+  /* ---- shell chrome (dock / shelf / taskbar / menubar / launcher) ---- */
+  function appBtn(t){
+    var b = el("button", "dt-app"); b.type = "button"; b.dataset.ch = t.ch; b.title = t.label;
+    b.innerHTML = '<span class="ai">' + iconHtml(t) + '</span><span class="run"></span>';
+    b.onclick = function(e){ if(t.sc) launchSc(t.sc.id, e.shiftKey); else launch(t.ch, e.shiftKey); closePops(); };
+    if(t.sc) b.oncontextmenu = function(e){ e.preventDefault(); pop(b, [["Open", function(){ launchSc(t.sc.id); }], ["Edit shortcut…", function(){ shortcutDialog(t.sc); }], ["Remove shortcut", function(){ removeSc(t.sc.id); }]], "up"); };
+    return b;
+  }
+  function buildShell(){
+    var os = st.os;
+    if(os === "mac"){
+      var bar = $("dt-bar");
+      bar.innerHTML = '<button class="mb apl" type="button" style="font-size:14px">💬</button><button class="mb dtapp" type="button">Los Purebreds</button><button class="mb" data-m="file" type="button">File</button><button class="mb" data-m="win" type="button">Window</button><span class="dtsp"></span><span class="dtst">📶</span><span class="dtst">🔋</span><span class="dtst dtclk"></span>';
+      bar.querySelector(".apl").onclick = function(e){ pop(e.currentTarget, [["About this desktop", function(){ alert("Los Purebreds desktop mode (macOS look).\nEvery tab can be opened in its own window."); }], "-", ["Exit desktop mode", exit]]); };
+      bar.querySelector(".dtapp").onclick = function(e){ pop(e.currentTarget, [["Exit desktop mode", exit]]); };
+      bar.querySelector("[data-m=file]").onclick = function(e){ pop(e.currentTarget, [["New window", function(){ var c = st.live ? st.live.ch : "main"; var w = openWin(tabOf(c) || tabs()[0], {}); focus(w); }], ["New shortcut…", function(){ shortcutDialog(null); }], ["Close window", function(){ var a = activeWin(); if(a) closeWin(a); }]]); };
+      bar.querySelector("[data-m=win]").onclick = function(e){
+        var items = [["Minimize", function(){ var a = activeWin(); if(a) minWin(a); }], ["Zoom", function(){ var a = activeWin(); if(a) maxWin(a); }], "-", ["Tile left", function(){ var a = activeWin(); if(a) snapWin(a, "L"); }], ["Tile right", function(){ var a = activeWin(); if(a) snapWin(a, "R"); }]];
+        if(st.wins.length) items.push("-");
+        st.wins.forEach(function(w){ items.push([w.label + (w.min ? " (minimized)" : ""), function(){ focus(w); }]); });
+        pop(e.currentTarget, items);
+      };
+    }
+    if(os === "chromeos"){
+      var sh = st.shell.querySelector("#dt-shelf");
+      sh.querySelector(".lnch").onclick = function(){ togglePanel(); };
+      sh.querySelector(".tray").onclick = function(e){ pop(e.currentTarget, [["Exit desktop mode", exit]], "up"); };
+    }
+    if(os === "win11"){
+      var tk = st.shell.querySelector("#dt-task");
+      tk.querySelector(".start").onclick = function(){ togglePanel(); };
+      tk.querySelector(".tray").onclick = function(e){ pop(e.currentTarget, [["Exit desktop mode", exit]], "up"); };
+    }
+    refreshDock(); tick();
+  }
+  function appsHost(){
+    return st.os === "mac" ? $("dt-dock") : st.os === "chromeos" ? st.shell.querySelector("#dt-shelf .apps") : st.shell.querySelector("#dt-task .apps");
+  }
+  function refreshDock(){
+    if(!st.shell) return;
+    var h = appsHost(); if(!h) return;
+    h.querySelectorAll(".dt-app").forEach(function(b){ b.remove(); });
+    allApps().forEach(function(t){
+      var b = appBtn(t), open = st.wins.filter(function(w){ return w.ch === t.ch; });
+      if(open.length) b.classList.add("on");
+      if(open.some(function(w){ return w === activeWin(); })) b.classList.add("dtact");
+      h.appendChild(b);
+    });
+    /* windows whose tab isn't in the bar (e.g. a direct message) still get an icon */
+    var add = el("button", "dt-app dt-add"); add.type = "button"; add.title = "Add a website shortcut";
+    add.innerHTML = '<span class="ai">+</span>'; add.onclick = function(){ closePops(); shortcutDialog(null); }; h.appendChild(add);
+    st.wins.forEach(function(w){ if(!w.sc && !tabOf(w.ch)){ var b = appBtn({ch:w.ch, icon:w.icon, label:w.label}); b.classList.add("on"); h.appendChild(b); } });
+  }
+  function closePops(){ var p = $("dt-pop"); if(p) p.classList.remove("show"); var pn = $("dt-panel"); if(pn) pn.classList.remove("show"); if(st.shell) st.shell.querySelectorAll("#dt-bar .mb.open").forEach(function(b){ b.classList.remove("open"); }); }
+  function pop(anchor, items, dir){
+    var p = $("dt-pop"), was = p.classList.contains("show") && p._a === anchor; closePops(); if(was) return;
+    p.innerHTML = ""; p._a = anchor;
+    items.forEach(function(it){
+      if(it === "-"){ p.appendChild(el("hr")); return; }
+      var b = el("button"); b.type = "button"; b.textContent = it[0]; b.onclick = function(){ closePops(); it[1](); }; p.appendChild(b);
+    });
+    var r = anchor.getBoundingClientRect(), sr = st.shell.getBoundingClientRect();
+    p.classList.add("show"); anchor.classList.add("open");
+    var pw = p.offsetWidth, ph = p.offsetHeight;
+    var left = Math.max(6, Math.min(r.left - sr.left, sr.width - pw - 6));
+    p.style.left = left + "px";
+    if(dir === "up") { p.style.top = Math.max(6, r.top - sr.top - ph - 8) + "px"; } else p.style.top = (r.bottom - sr.top + 2) + "px";
+  }
+  function togglePanel(){
+    var pn = $("dt-panel"), was = pn.classList.contains("show"); closePops(); if(was) return;
+    var os = st.os;
+    pn.innerHTML = '<input type="search" placeholder="' + (os === "win11" ? "Type here to search" : "Search your tabs") + '" aria-label="Search tabs"><div class="grid"></div>' +
+      '<div class="foot"><span>' + (os === "win11" ? '👤 ' + esc((typeof usr !== "undefined" && usr) || "You") : '') + '</span><span><button type="button" class="nsc">＋ New shortcut</button>' + (os === "win11" ? '<button type="button" class="pw">⏻ Exit desktop mode</button>' : '') + '</span></div>';
+    var g = pn.querySelector(".grid"), inp = pn.querySelector("input");
+    function fill(q){
+      g.innerHTML = "";
+      allApps().filter(function(t){ return !q || t.label.toLowerCase().indexOf(q) > -1; }).forEach(function(t){
+        var b = el("button", "dtgi"); b.type = "button"; b.innerHTML = '<span class="ai">' + iconHtml(t) + '</span><span>' + esc(t.label) + '</span>';
+        b.onclick = function(e){ closePops(); if(t.sc) launchSc(t.sc.id, e.shiftKey); else launch(t.ch, e.shiftKey); }; g.appendChild(b);
+      });
+    }
+    fill(""); inp.oninput = function(){ fill(inp.value.trim().toLowerCase()); };
+    var pw = pn.querySelector(".pw"); if(pw) pw.onclick = exit;
+    pn.querySelector(".nsc").onclick = function(){ closePops(); shortcutDialog(null); };
+    pn.classList.add("show"); setTimeout(function(){ try{ inp.focus(); }catch(e){} }, 30);
+  }
+
+  /* ---- windows ---- */
+  function activeWin(){ var top = null; st.wins.forEach(function(w){ if(!w.min && (!top || +w.el.style.zIndex > +top.el.style.zIndex)) top = w; }); return top; }
+  function launch(ch, forceNew){
+    var t = tabOf(ch) || {ch:ch, label:ch, icon:null}, ex = st.wins.filter(function(w){ return w.ch === ch; })[0];
+    if(ex && !forceNew){ if(ex.min && st.live !== ex){ } focus(ex); return; }
+    focus(openWin(t, {}));
+  }
+  function openWin(t, o){
+    var w = {id:++st.uid, sc:t.sc || null, ch:t.ch, label:t.label, icon:t.icon, min:false, max:false, snap:"", prev:null, x:0, y:0, w:0, h:0};
+    var e = el("div", "dt-win opening"); w.el = e;
+    e.innerHTML = '<div class="dt-tb"><span class="dt-ico"></span><span class="dt-ttl"></span><div class="dt-ctl"><button type="button" data-act="close" title="Close"></button><button type="button" data-act="min" title="Minimize"></button><button type="button" data-act="max" title="Maximize"></button></div></div>' +
+      '<div class="dt-body"><div class="dt-snap"><iframe sandbox="allow-same-origin" title=""></iframe><div class="dt-shield"></div></div></div>' +
+      ["n","s","e","w","ne","nw","se","sw"].map(function(d){ return '<div class="dt-rz" data-d="' + d + '"></div>'; }).join("");
+    w.body = e.querySelector(".dt-body"); w.frame = e.querySelector("iframe"); w.tb = e.querySelector(".dt-tb");
+    if(w.sc) buildWeb(w);
+    var a = area(), big = o && o.big;
+    w.w = big ? Math.min(a.w - 60, 1000) : Math.min(a.w - 20, 440);
+    w.h = big ? Math.min(a.h - 40, 700) : Math.min(a.h - 20, 560);
+    var off = big ? 0 : (st.cascade++ % 8) * 30;
+    w.x = big ? Math.round((a.w - w.w) / 2) : Math.max(0, Math.min(a.w - w.w, 70 + off + Math.round(Math.random() * 40)));
+    w.y = (big ? Math.round((a.h - w.h) / 2) : Math.max(0, Math.min(a.h - w.h, 30 + off))) + a.top;
+    place(w); setTitle(w);
+    e.addEventListener("animationend", function(){ e.classList.remove("opening"); });
+    e.addEventListener("mousedown", function(){ if(st.live !== w || activeWin() !== w) focus(w); }, true);
+    var shd = e.querySelector(".dt-shield"); if(shd) shd.addEventListener("mousedown", function(ev){ ev.preventDefault(); focus(w); });
+    e.querySelector(".dt-ctl").addEventListener("click", function(ev){
+      var b = ev.target.closest("button"); if(!b) return; ev.stopPropagation();
+      var act = b.dataset.act; if(act === "close") closeWin(w); else if(act === "min") minWin(w); else maxWin(w);
+    });
+    e.querySelector(".dt-ctl").addEventListener("mousedown", function(ev){ ev.stopPropagation(); });
+    w.tb.addEventListener("dblclick", function(ev){ if(!ev.target.closest(".dt-ctl")) maxWin(w); });
+    w.tb.addEventListener("pointerdown", function(ev){ if(ev.button || ev.target.closest(".dt-ctl")) return; startDrag(ev, w); });
+    e.querySelectorAll(".dt-rz").forEach(function(r){ r.addEventListener("pointerdown", function(ev){ if(ev.button) return; startResize(ev, w, r.dataset.d); }); });
+    $("dt-wins").appendChild(e);
+    st.wins.push(w);
+    if(small()) maxWin(w, true);
+    return w;
+  }
+  function setTitle(w){
+    w.el.querySelector(".dt-ttl").textContent = w.label;
+    w.el.querySelector(".dt-ico").innerHTML = w.sc ? scIcon(w.sc) : esc(w.icon || (w.label || "?").charAt(0));
+    if(w.frame) w.frame.title = w.label;
+  }
+  function place(w){ var s = w.el.style; s.left = w.x + "px"; s.top = w.y + "px"; s.width = w.w + "px"; s.height = w.h + "px"; }
+  function clampWin(w){
+    if(!st.shell || w.max || w.snap) return; var a = area();
+    w.w = Math.min(w.w, a.w); w.h = Math.min(w.h, a.h);
+    w.x = Math.max(-w.w + 80, Math.min(w.x, a.w - 80)); w.y = Math.max(a.top, Math.min(w.y, a.top + a.h - 36)); place(w);
+  }
+  function focus(w){
+    if(!w || !st.shell) return;
+    if(w.min){ w.min = false; w.el.classList.remove("min"); }
+    st.z++; w.el.style.zIndex = st.z;
+    st.wins.forEach(function(x){ x.el.classList.toggle("dtact", x === w); });
+    if(!w.sc && st.live !== w) activate(w);
+    refreshDock();
+  }
+  function activate(w){
+    var old = st.live;
+    if(old && old !== w){ snapshot(old); old.el.classList.remove("is-live"); }
+    var c = w.ch === "dm" ? "main" : w.ch;
+    w.body.appendChild(st.liveHost); w.el.classList.add("is-live"); st.live = w;
+    st.liveHost.classList.toggle("wide", st.liveHost.clientWidth >= 640);
+    try{ if(typeof curCh !== "undefined" && curCh !== c) setChannel(c); }catch(e){}
+    try{ var bx = $("box"); if(bx) bx.scrollTop = bx.scrollHeight; }catch(e){}
+  }
+  function snapshot(w){
+    try{
+      var main = $("main"); if(!main) return;
+      var box = $("box"), keepTop = box ? box.scrollTop : 0, clone = main.cloneNode(true);
+      var src = main.querySelectorAll("canvas"), dst = clone.querySelectorAll("canvas");
+      for(var i = 0; i < src.length && i < dst.length; i++){
+        try{ var im = D.createElement("img"); im.src = src[i].toDataURL(); im.className = src[i].className; im.id = src[i].id; im.style.cssText = src[i].style.cssText; dst[i].replaceWith(im); }catch(e){}
+      }
+      clone.querySelectorAll("script").forEach(function(s){ s.remove(); });
+      var css = Array.prototype.map.call(D.querySelectorAll("style"), function(s){ return s.outerHTML; }).join("");
+      function attrs(n){ return Array.prototype.map.call(n.attributes, function(a){ var v = a.value; if(a.name === "class") v = v.replace(/\bdt-[\w-]+/g, "").trim(); return " " + a.name + '="' + String(v).replace(/"/g, "&quot;") + '"'; }).join(""); }
+      w.frame.onload = function(){ try{ var b = w.frame.contentDocument.getElementById("box"); if(b) b.scrollTop = keepTop; }catch(e){} };
+      w.frame.srcdoc = '<!doctype html><html' + attrs(D.documentElement) + '><head><meta charset="utf-8">' + css +
+        '<style>html,body{height:100%}body{margin:0 !important;display:flex !important;overflow:hidden !important;cursor:default}#main{width:100% !important}</style></head><body' + attrs(B) + '>' + clone.outerHTML + '</body></html>';
+    }catch(e){}
+  }
+  /* ---- website shortcuts ---- */
+  function buildWeb(w){
+    var u = w.sc.url;
+    w.body.innerHTML = '<div class="dt-web"><div class="dt-wbar"><button type="button" data-w="rl" title="Reload">⟳</button><input type="text" readonly aria-label="Address"><button type="button" data-w="ext" title="Open in a new browser tab">↗</button></div>' +
+      '<iframe referrerpolicy="no-referrer" allow="fullscreen; clipboard-write" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads allow-modals"></iframe>' +
+      '<div class="dt-webnote">Blank? Some websites don\u2019t allow being shown inside another page. Use \u2197 to open it in a browser tab.</div></div>';
+    w.frame = w.body.querySelector("iframe"); w.frame.src = u; w.body.querySelector("input").value = u;
+    w.body.querySelector("[data-w=rl]").onclick = function(){ w.frame.src = u; };
+    w.body.querySelector("[data-w=ext]").onclick = function(){ window.open(u, "_blank", "noopener"); };
+  }
+  function launchSc(id, forceNew){
+    var sc = st.sc.filter(function(x){ return x.id === id; })[0]; if(!sc) return;
+    var ex = st.wins.filter(function(w){ return w.ch === "sc:" + id; })[0];
+    if(ex && !forceNew){ focus(ex); return; }
+    focus(openWin({ch:"sc:" + id, label:sc.name, icon:null, sc:sc}, {}));
+  }
+  function removeSc(id){
+    st.sc = st.sc.filter(function(x){ return x.id !== id; }); scSave();
+    st.wins.filter(function(w){ return w.ch === "sc:" + id; }).forEach(closeWin);
+    refreshDock();
+  }
+  function shortcutDialog(sc){
+    var old = $("dt-dlg"); if(old) old.remove();
+    var d = el("div"); d.id = "dt-dlg"; var pending = sc ? (sc.icon || "") : "";
+    d.innerHTML = '<div class="box"><h4>' + (sc ? "Edit shortcut" : "New website shortcut") + '</h4>' +
+      '<label>Name</label><input type="text" id="dts-n" maxlength="30" placeholder="My site" autocomplete="off">' +
+      '<label>Website address</label><input type="text" id="dts-u" placeholder="https://example.com" autocomplete="off" autocapitalize="off" spellcheck="false">' +
+      '<label>Icon</label><div class="ir"><span class="pv" id="dts-pv"></span><input type="text" id="dts-i" placeholder="Emoji, or an image link" autocomplete="off" autocapitalize="off" spellcheck="false"></div>' +
+      '<div class="ir"><button type="button" id="dts-up">⬆ Upload an image</button><button type="button" id="dts-clr">Use the site\u2019s icon</button><input type="file" id="dts-f" accept="image/*" style="display:none"></div>' +
+      '<small>Leave the icon empty to use the website\u2019s own icon. Shortcuts are saved on this device.</small><div class="err" id="dts-e"></div>' +
+      '<div class="btns">' + (sc ? '<button type="button" class="del" id="dts-d">Remove</button>' : '') + '<button type="button" id="dts-c">Cancel</button><button type="button" class="pri" id="dts-s">Save</button></div></div>';
+    st.shell.appendChild(d);
+    var g = function(i){ return $(i); }, nm = g("dts-n"), ur = g("dts-u"), ic = g("dts-i"), pv = g("dts-pv"), er = g("dts-e");
+    nm.value = sc ? sc.name : ""; ur.value = sc ? sc.url : "";
+    ic.value = sc && !/^data:/.test(pending) ? pending : "";
+    function prev(){
+      var v = ic.value.trim() || pending, tmp = {name:nm.value || "?", url:ur.value.trim().indexOf("http") === 0 ? ur.value.trim() : "https://" + (ur.value.trim() || "x.invalid"), icon:v};
+      pv.innerHTML = v || ur.value.trim() ? scIcon(tmp) : "🌐";
+    }
+    ic.oninput = function(){ pending = ""; prev(); }; nm.oninput = ur.oninput = prev; prev();
+    g("dts-up").onclick = function(){ g("dts-f").click(); };
+    g("dts-clr").onclick = function(){ pending = ""; ic.value = ""; prev(); };
+    g("dts-f").onchange = function(){
+      var f = this.files && this.files[0]; this.value = ""; if(!f) return;
+      var fr = new FileReader();
+      fr.onload = function(){
+        var im = new Image();
+        im.onload = function(){
+          try{
+            var c = D.createElement("canvas"), n = 96; c.width = c.height = n; var x = c.getContext("2d"), r = Math.min(im.width, im.height);
+            x.drawImage(im, (im.width - r) / 2, (im.height - r) / 2, r, r, 0, 0, n, n);
+            pending = c.toDataURL("image/png"); ic.value = ""; prev(); er.textContent = "";
+          }catch(e){ er.textContent = "Couldn\u2019t read that image."; }
+        };
+        im.onerror = function(){ er.textContent = "That isn\u2019t an image I can read."; };
+        im.src = fr.result;
+      };
+      fr.readAsDataURL(f);
+    };
+    function close(){ d.remove(); }
+    g("dts-c").onclick = close; d.addEventListener("mousedown", function(e){ if(e.target === d) close(); });
+    if(g("dts-d")) g("dts-d").onclick = function(){ close(); removeSc(sc.id); };
+    g("dts-s").onclick = function(){
+      var u = ur.value.trim(); if(!u){ er.textContent = "Enter the website address."; return; }
+      if(!/^[a-z][a-z0-9+.-]*:/i.test(u)) u = "https://" + u;
+      var url; try{ url = new URL(u); }catch(e){ er.textContent = "That address doesn\u2019t look right."; return; }
+      if(url.protocol !== "http:" && url.protocol !== "https:"){ er.textContent = "Only http and https websites can be added."; return; }
+      var icon = ic.value.trim() || pending;
+      var rec = {id:sc ? sc.id : "s" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), name:(nm.value.trim() || url.hostname.replace(/^www\./, "")).slice(0, 30), url:url.href, icon:icon};
+      if(sc){ st.sc = st.sc.map(function(x){ return x.id === sc.id ? rec : x; }); } else st.sc.push(rec);
+      scSave(); close();
+      st.wins.forEach(function(w){ if(w.sc && w.sc.id === rec.id){ w.sc = rec; w.label = rec.name; setTitle(w); if(w.frame && w.frame.src !== rec.url) buildWeb(w); } });
+      refreshDock(); if(!sc) launchSc(rec.id);
+    };
+    setTimeout(function(){ try{ (sc ? nm : ur).focus(); }catch(e){} }, 30);
+  }
+  /* clicking inside a website window puts focus in its frame, so bring that window to the front */
+  window.addEventListener("blur", function(){
+    setTimeout(function(){
+      if(!st.os) return; var a = D.activeElement; if(!a || a.tagName !== "IFRAME") return;
+      var w = st.wins.filter(function(x){ return x.el.contains(a); })[0]; if(w && activeWin() !== w) focus(w);
+    }, 0);
+  });
+  function closeWin(w){
+    var wasLive = st.live === w;
+    if(wasLive){ st.park.appendChild(st.liveHost); st.live = null; }
+    w.el.remove(); st.wins = st.wins.filter(function(x){ return x !== w; });
+    if(wasLive){ var nx = activeWin(); if(nx) focus(nx); }
+    refreshDock();
+  }
+  function minWin(w){
+    w.min = true; w.el.classList.add("min");
+    if(st.live === w){ var nx = activeWin(); if(nx) focus(nx); }
+    refreshDock();
+  }
+  function maxWin(w, quiet){
+    if(w.max){ w.max = false; w.el.classList.remove("max"); }
+    else { clearSnap(w); w.max = true; w.el.classList.add("max"); }
+    if(!quiet) setTimeout(function(){ if(st.live === w) st.liveHost.classList.toggle("wide", st.liveHost.clientWidth >= 640); }, 30);
+  }
+  function clearSnap(w){ w.snap = ""; w.el.classList.remove("snapL", "snapR"); }
+  function snapWin(w, side){
+    if(w.max){ w.max = false; w.el.classList.remove("max"); }
+    clearSnap(w); w.snap = side; w.el.classList.add("snap" + side); focus(w);
+  }
+  function unSnap(w, px, py){
+    var pw = w.el.offsetWidth, rel = pw ? (px - w.el.getBoundingClientRect().left) / pw : .5, a = area();
+    w.max = false; w.el.classList.remove("max"); clearSnap(w);
+    w.w = Math.min(w.prevW || 440, a.w); w.h = Math.min(w.prevH || 520, a.h);
+    w.x = Math.round(px - w.w * rel); w.y = Math.max(a.top, py - 18); place(w);
+  }
+  function startDrag(ev, w){
+    focus(w);
+    var sx = ev.clientX, sy = ev.clientY, moved = false, a = area(), sr = st.shell.getBoundingClientRect();
+    if(!(w.max || w.snap)){ w.prevW = w.w; w.prevH = w.h; }
+    var ghost = $("dt-ghost"), edge = "";
+    function mv(e){
+      if(!moved && Math.abs(e.clientX - sx) + Math.abs(e.clientY - sy) < 4) return;
+      if(!moved){ moved = true; B.classList.add("dt-drag"); if(w.max || w.snap){ unSnap(w, e.clientX - sr.left, e.clientY - sr.top); sx = e.clientX; sy = e.clientY; w.ox = w.x; w.oy = w.y; } else { w.ox = w.x; w.oy = w.y; } }
+      w.x = w.ox + (e.clientX - sx); w.y = w.oy + (e.clientY - sy);
+      w.y = Math.max(a.top, Math.min(w.y, a.top + a.h - 36)); w.x = Math.max(-w.w + 80, Math.min(w.x, a.w - 80)); place(w);
+      var px = e.clientX - sr.left, py = e.clientY - sr.top;
+      edge = py <= a.top + 4 ? "max" : px <= 4 ? "L" : px >= a.w - 5 ? "R" : "";
+      if(edge){ ghost.style.display = "block"; ghost.style.top = a.top + "px"; ghost.style.height = a.h + "px"; ghost.style.left = edge === "R" ? a.w / 2 + "px" : "0"; ghost.style.width = (edge === "max" ? a.w : a.w / 2) + "px"; } else ghost.style.display = "none";
+    }
+    function up(){
+      D.removeEventListener("pointermove", mv); D.removeEventListener("pointerup", up); D.removeEventListener("pointercancel", up);
+      B.classList.remove("dt-drag"); ghost.style.display = "none";
+      if(moved){ if(edge === "max") maxWin(w); else if(edge) snapWin(w, edge); else clampWin(w); }
+    }
+    D.addEventListener("pointermove", mv); D.addEventListener("pointerup", up); D.addEventListener("pointercancel", up);
+  }
+  function startResize(ev, w, dir){
+    ev.preventDefault(); focus(w);
+    var sx = ev.clientX, sy = ev.clientY, o = {x:w.x, y:w.y, w:w.w, h:w.h}, a = area(), MINW = 300, MINH = 220;
+    B.classList.add("dt-drag");
+    function mv(e){
+      var dx = e.clientX - sx, dy = e.clientY - sy, x = o.x, y = o.y, ww = o.w, hh = o.h;
+      if(dir.indexOf("e") > -1) ww = Math.max(MINW, o.w + dx);
+      if(dir.indexOf("s") > -1) hh = Math.max(MINH, o.h + dy);
+      if(dir.indexOf("w") > -1){ ww = Math.max(MINW, o.w - dx); x = o.x + (o.w - ww); }
+      if(dir.indexOf("n") > -1){ hh = Math.max(MINH, o.h - dy); y = o.y + (o.h - hh); if(y < a.top){ hh -= a.top - y; y = a.top; } }
+      w.x = x; w.y = y; w.w = ww; w.h = hh; place(w);
+    }
+    function up(){ D.removeEventListener("pointermove", mv); D.removeEventListener("pointerup", up); D.removeEventListener("pointercancel", up); B.classList.remove("dt-drag"); if(st.live === w) st.liveHost.classList.toggle("wide", st.liveHost.clientWidth >= 640); }
+    D.addEventListener("pointermove", mv); D.addEventListener("pointerup", up); D.addEventListener("pointercancel", up);
+  }
+
+  /* keep the window title in step when you switch tabs inside the live window */
+  if(typeof setChannel === "function"){
+    var _sc = setChannel;
+    setChannel = function(c){
+      var r = _sc.apply(this, arguments);
+      try{
+        if(st.os && st.live){
+          var w = st.live, t = tabOf(c); w.ch = c;
+          if(t){ w.label = t.label; w.icon = t.icon; }
+          else if(c === "dm"){ w.label = (typeof dmNm !== "undefined" && dmNm) || "Messages"; w.icon = "💬"; }
+          setTitle(w); refreshDock();
+        }
+      }catch(e){}
+      return r;
+    };
+  }
+  window.__dtExit = exit;
+  var start = saved();
+  if(start) setTimeout(function(){ try{ apply(start); }catch(e){ console.error(e); } }, 0);
 })();
 </script>
 
