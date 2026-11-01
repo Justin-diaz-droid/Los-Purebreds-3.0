@@ -696,7 +696,7 @@ html.watch #watch-note.on{display:block}
     <a class="goback" href="https://docs.google.com/document/d/1oa90mU-jYczqySulirTvHqqNWTSaNwPGnnArgBdVGrs/edit?tab=t.pqncc0vmsgzp" rel="noopener">← Go back</a>
   </div>
     <div id="gver">Version 3.0</div>
-  <label class="fld" id="g-themefld"><span>Themes</span><select id="g-theme"><option value="imessage">iMessage</option><option value="ios6">iOS 6</option><option value="discord">Discord</option><option value="whatsapp">WhatsApp</option><option value="tiktok">TikTok</option><option value="roblox">Roblox</option><option value="instagram">Instagram</option><option value="twitter">Twitter</option><option value="material">Android 17 (Material 3 Expressive)</option><option value="kde">KDE Plasma (Breeze)</option><option value="kitkat">Android 4.4 KitKat</option><option value="terminal">Terminal</option><option value="simple">Simple</option><option value="glass">Liquid Glass</option><option value="win95">Windows 95</option><option value="winxp">Windows XP</option><option value="minecraft">Minecraft</option></select></label>
+  <label class="fld" id="g-themefld"><span>Themes</span><select id="g-theme"><option value="imessage">iMessage</option><option value="ios6">iOS 6</option><option value="discord">Discord</option><option value="whatsapp">WhatsApp</option><option value="tiktok">TikTok</option><option value="roblox">Roblox</option><option value="instagram">Instagram</option><option value="twitter">Twitter</option><option value="material">Android 17 (Material 3 Expressive)</option><option value="kde">KDE Plasma (Breeze)</option><option value="kitkat">Android 4.4 KitKat</option><option value="terminal">Terminal</option><option value="simple">Simple</option><option value="glass">Liquid Glass</option><option value="macos">macOS</option><option value="win95">Windows 95</option><option value="winxp">Windows XP</option><option value="minecraft">Minecraft</option></select></label>
 </div>
 
 <div id="sb">
@@ -738,7 +738,7 @@ html.watch #watch-note.on{display:block}
       </div>
       <div class="stg-card"><h3>🎨 Appearance</h3>
         <label>Theme</label>
-        <select id="theme"><option value="imessage">iMessage</option><option value="ios6">iOS 6</option><option value="discord">Discord</option><option value="whatsapp">WhatsApp</option><option value="tiktok">TikTok</option><option value="roblox">Roblox</option><option value="instagram">Instagram</option><option value="twitter">Twitter</option><option value="material">Android 17 (Material 3 Expressive)</option><option value="kde">KDE Plasma (Breeze)</option><option value="kitkat">Android 4.4 KitKat</option><option value="terminal">Terminal</option><option value="simple">Simple</option><option value="glass">Liquid Glass</option><option value="win95">Windows 95</option><option value="winxp">Windows XP</option><option value="minecraft">Minecraft</option></select>
+        <select id="theme"><option value="imessage">iMessage</option><option value="ios6">iOS 6</option><option value="discord">Discord</option><option value="whatsapp">WhatsApp</option><option value="tiktok">TikTok</option><option value="roblox">Roblox</option><option value="instagram">Instagram</option><option value="twitter">Twitter</option><option value="material">Android 17 (Material 3 Expressive)</option><option value="kde">KDE Plasma (Breeze)</option><option value="kitkat">Android 4.4 KitKat</option><option value="terminal">Terminal</option><option value="simple">Simple</option><option value="glass">Liquid Glass</option><option value="macos">macOS</option><option value="win95">Windows 95</option><option value="winxp">Windows XP</option><option value="minecraft">Minecraft</option></select>
         <label>Wallpaper &amp; accent color (also tints top bar, message bar &amp; left bar)</label><input type="color" id="wcol" value="#000000">
         <label>Wallpaper image (syncs to your other devices)</label>
         <div class="stg-row"><button id="wimg" type="button" class="btn">Choose image</button><button id="wreset" type="button" class="btn alt">Reset wallpaper</button><input type="file" id="wfile" accept="image/*" style="display:none"></div>
@@ -830,9 +830,9 @@ let usr = "User", peer = null, conns = [], isHost = false, logs = [];
 /* private DM state */
 let dmWith = "", dmNm = "", chipT = null;
 let seen = {}; try { seen = JSON.parse(load("dm_seen", "{}")) || {}; } catch(e){ seen = {}; }
-const PH = {discord:"Message #purebred-chat",whatsapp:"Type a message",tiktok:"Send a message...",roblox:"To chat click here or press / key",instagram:"Message...",twitter:"Start a new message",imessage:"iMessage",ios6:"iMessage",material:"Text message",kitkat:"Type a message",terminal:"enter message…",simple:"Message",glass:"Message",win95:"Type a message",winxp:"Type a message",minecraft:"Type a message or /command",kde:"Type a message…"};
-const THEMES = ["imessage","ios6","discord","whatsapp","tiktok","roblox","instagram","twitter","material","kde","kitkat","terminal","simple","glass","win95","winxp","minecraft"];
-const CHNAME = {discord:"# purebred-chat",whatsapp:"WhatsApp Group",tiktok:"TikTok Inbox",roblox:"Roblox Chat",instagram:"Instagram Direct",twitter:"Twitter Messages",imessage:"iMessage Channel",ios6:"Messages",material:"Messages",kitkat:"Hangouts",terminal:"/dev/purebred",simple:"Messages",glass:"Messages",win95:"Messages",winxp:"Messenger",minecraft:"Minecraft Chat",kde:"Konversation"};
+const PH = {discord:"Message #purebred-chat",whatsapp:"Type a message",tiktok:"Send a message...",roblox:"To chat click here or press / key",instagram:"Message...",twitter:"Start a new message",imessage:"iMessage",ios6:"iMessage",material:"Text message",kitkat:"Type a message",terminal:"enter message…",simple:"Message",glass:"Message",win95:"Type a message",winxp:"Type a message",minecraft:"Type a message or /command",kde:"Type a message…",macos:"iMessage"};
+const THEMES = ["imessage","ios6","discord","whatsapp","tiktok","roblox","instagram","twitter","material","kde","kitkat","terminal","simple","glass","win95","winxp","minecraft","macos"];
+const CHNAME = {discord:"# purebred-chat",whatsapp:"WhatsApp Group",tiktok:"TikTok Inbox",roblox:"Roblox Chat",instagram:"Instagram Direct",twitter:"Twitter Messages",imessage:"iMessage Channel",ios6:"Messages",material:"Messages",kitkat:"Hangouts",terminal:"/dev/purebred",simple:"Messages",glass:"Messages",win95:"Messages",winxp:"Messenger",minecraft:"Minecraft Chat",kde:"Konversation",macos:"Messages"};
 let draft = null, stgOpen = false, pvLoaded = false, pvq = 0;
 const shownKeys = new Set();
 let groups = {};
@@ -895,11 +895,11 @@ const myDevice = detectDevice();
 
 /* ---------- theme ---------- */
 function setTheme(t){
-  if(!["imessage","ios6","discord","whatsapp","tiktok","roblox","instagram","twitter","material","kde","kitkat","terminal","simple","glass","win95","winxp","minecraft"].includes(t)) t = "imessage";
+  if(!["imessage","ios6","discord","whatsapp","tiktok","roblox","instagram","twitter","material","kde","kitkat","terminal","simple","glass","win95","winxp","minecraft","macos"].includes(t)) t = "imessage";
   document.body.dataset.theme = t;
   $("theme").value = t; $("g-theme").value = t;
-  $("chname").textContent = {discord:"# purebred-chat",whatsapp:"WhatsApp Group",tiktok:"TikTok Inbox",roblox:"Roblox Chat",instagram:"Instagram Direct",twitter:"Twitter Messages",imessage:"iMessage Channel",ios6:"Messages",material:"Messages",kitkat:"Hangouts",terminal:"/dev/purebred",simple:"Messages",glass:"Messages",win95:"Messages",winxp:"Messenger",minecraft:"Minecraft Chat",kde:"Konversation"}[t];
-  $("inp").placeholder = {discord:"Message #purebred-chat",whatsapp:"Type a message",tiktok:"Send a message...",roblox:"To chat click here or press / key",instagram:"Message...",twitter:"Start a new message",imessage:"iMessage",ios6:"iMessage",material:"Text message",kitkat:"Type a message",terminal:"enter message…",simple:"Message",glass:"Message",win95:"Type a message",winxp:"Type a message",minecraft:"Type a message or /command",kde:"Type a message…"}[t];
+  $("chname").textContent = {discord:"# purebred-chat",whatsapp:"WhatsApp Group",tiktok:"TikTok Inbox",roblox:"Roblox Chat",instagram:"Instagram Direct",twitter:"Twitter Messages",imessage:"iMessage Channel",ios6:"Messages",material:"Messages",kitkat:"Hangouts",terminal:"/dev/purebred",simple:"Messages",glass:"Messages",win95:"Messages",winxp:"Messenger",minecraft:"Minecraft Chat",kde:"Konversation",macos:"Messages"}[t];
+  $("inp").placeholder = {discord:"Message #purebred-chat",whatsapp:"Type a message",tiktok:"Send a message...",roblox:"To chat click here or press / key",instagram:"Message...",twitter:"Start a new message",imessage:"iMessage",ios6:"iMessage",material:"Text message",kitkat:"Type a message",terminal:"enter message…",simple:"Message",glass:"Message",win95:"Type a message",winxp:"Type a message",minecraft:"Type a message or /command",kde:"Type a message…",macos:"iMessage"}[t];
   save("chat_theme", t); if(curCh === "dm") updateDmBar();
   applyWall();
   restyleAll();
@@ -10015,11 +10015,9 @@ html body #stg.sx{background:var(--sx-bg);color:var(--sx-text);padding:env(safe-
       var PAGES = [
         {id:"profile",    t:"Profile",           ic:"\uD83D\uDC64",         bg:"#8e8e93", prev:true},
         {id:"messages",   t:"Messages",          ic:"\uD83D\uDCAC",         bg:"#34c759", prev:true},
-        {id:"appearance", t:"Appearance",        ic:"\uD83C\uDFA8",         bg:"#007aff", prev:true},
+        {id:"appearance", t:"Appearance & Layout", ic:"\uD83C\uDFA8",         bg:"#007aff", prev:true},
         {id:"access",     t:"Accessibility",     ic:"\u267F",              bg:"#0a84ff", prev:false},
-        {id:"layout",     t:"Layout",            ic:"\uD83E\uDDE9",         bg:"#5e5ce6", prev:true},
         {id:"account",    t:"Account & Privacy", ic:"\uD83D\uDD12",         bg:"#636366", prev:false},
-        {id:"custom",     t:"Customization",     ic:"\uD83D\uDDB1\uFE0F",   bg:"#ff375f", prev:false},
         {id:"anim",       t:"Animation Lab",     ic:"\uD83C\uDF9E\uFE0F",   bg:"#ff9f0a", prev:false},
         {id:"exp",        t:"Experimental",      ic:"\uD83E\uDDEA",         bg:"#af52de", prev:false}
       ], PMAP = {};
@@ -10028,7 +10026,7 @@ html body #stg.sx{background:var(--sx-bg);color:var(--sx-text);padding:env(safe-
       /* ---------- cards -> iOS grouped sections ---------- */
       function catOf(c){
         var h = c.querySelector("h3"), t = h ? h.textContent : "";
-        if(c.id === "stg-cursor") return "custom";
+        if(c.id === "stg-cursor") return "appearance";   // appearance, layout and customization share one page
         if(c.id === "stg-anim") return "anim";
         if(c.id === "stg-exp") return "exp";
         if(c.dataset.a11y) return "access";
@@ -10036,7 +10034,7 @@ html body #stg.sx{background:var(--sx-bg);color:var(--sx-text);padding:env(safe-
         if(/profile/i.test(t)) return "profile";
         if(/messages/i.test(t)) return "messages";
         if(/appearance/i.test(t)) return "appearance";
-        if(/layout/i.test(t)) return "layout";
+        if(/layout/i.test(t)) return "appearance";
         return "account";
       }
       function groupify(card){
@@ -10085,7 +10083,7 @@ html body #stg.sx{background:var(--sx-bg);color:var(--sx-text);padding:env(safe-
       var av = me.querySelector(".sx-av"), nameEl = me.querySelector(".sx-name");
       function grp(items){ var g = document.createElement("div"); g.className = "sx-grp"; items.forEach(function(i){ g.appendChild(i); }); list.appendChild(g); groups.push({el:g, rows:items}); }
       grp([me]);
-      grp([mkRow(PMAP.messages), mkRow(PMAP.appearance), mkRow(PMAP.custom), mkRow(PMAP.access), mkRow(PMAP.layout)]);
+      grp([mkRow(PMAP.messages), mkRow(PMAP.appearance), mkRow(PMAP.access)]);
       grp([mkRow(PMAP.account)]);
       grp([mkRow(PMAP.anim), mkRow(PMAP.exp)]);
       var empty = document.createElement("div"); empty.className = "sx-empty"; empty.hidden = true; empty.textContent = "No results"; list.appendChild(empty);
@@ -11195,6 +11193,94 @@ body[data-theme="kde"] ::-webkit-scrollbar-track{background:transparent}
 body[data-theme="kde"] ::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--text) 30%,transparent);border-radius:5px;border:2px solid transparent;background-clip:padding-box}
 body[data-theme="kde"] ::-webkit-scrollbar-thumb:hover{background:var(--accent);background-clip:padding-box}
 </style>
+<style id="macos-css">
+/* ===== macOS (Sonoma / Messages): SF font, translucent sidebar, rounded 18px bubbles, segmented tabs, system blue; follows light / dark ===== */
+body[data-theme="macos"]{
+  color-scheme:dark; --r:10px; --r-sm:8px;
+  --bg:#1e1e1e; --side:rgba(44,44,46,.82); --row:#3a3a3c; --input:#2a2a2c; --line:rgba(255,255,255,.12);
+  --text:#f5f5f7; --muted:#98989d; --accent:#0a84ff; --on-accent:#fff; --me:#0a84ff; --peer:#3a3a3c;
+  --k-hover:rgba(255,255,255,.08); --k-title:rgba(40,40,42,.78);
+  --k-shadow:0 8px 30px rgba(0,0,0,.45),0 0 0 .5px rgba(255,255,255,.14);
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Helvetica Neue",Helvetica,Arial,sans-serif,"Apple Color Emoji";
+  font-size:13px; -webkit-font-smoothing:antialiased;
+}
+@media (prefers-color-scheme:light){
+  body[data-theme="macos"]{
+    color-scheme:light;
+    --bg:#ffffff; --side:rgba(236,236,238,.82); --row:#e9e9eb; --input:#ffffff; --line:rgba(0,0,0,.12);
+    --text:#1d1d1f; --muted:#6e6e73; --peer:#e9e9eb; --k-hover:rgba(0,0,0,.06); --k-title:rgba(246,246,247,.82);
+    --k-shadow:0 8px 30px rgba(0,0,0,.18),0 0 0 .5px rgba(0,0,0,.12);
+  }
+}
+body[data-theme="macos"] ::selection{background:var(--accent);color:var(--on-accent)}
+body[data-theme="macos"] :focus-visible{outline:1px solid var(--accent);outline-offset:1px}
+body[data-theme="macos"] :is(input[type=checkbox],input[type=radio],input[type=range]){accent-color:var(--accent)}
+
+/* title bar + tabs (macOS tab bar: flat, accent line under the current tab) */
+body[data-theme="macos"] #hdr{min-height:48px;background:var(--k-title);-webkit-backdrop-filter:blur(24px) saturate(180%);backdrop-filter:blur(24px) saturate(180%);border-bottom:.5px solid var(--line);color:var(--text);box-shadow:none}
+body[data-theme="macos"] #hdr #chname{font-size:13px;font-weight:600}
+body[data-theme="macos"] #chtabs{background:color-mix(in srgb,var(--text) 9%,transparent);padding:2px;gap:2px;border-radius:9px;box-shadow:none}
+body[data-theme="macos"] #chtabs button{border-radius:7px;padding:5px 12px;font-size:13px;font-weight:500;color:var(--text);background:transparent;border:none;transition:background .15s,box-shadow .15s}
+body[data-theme="macos"] #chtabs button:hover{background:var(--k-hover)}
+body[data-theme="macos"] #chtabs button.on{background:color-mix(in srgb,var(--text) 18%,var(--bg));color:var(--text);box-shadow:0 .5px 2px rgba(0,0,0,.3);font-weight:600}
+body[data-theme="macos"] #onpop{background:var(--side);border:1px solid var(--line);border-radius:8px;box-shadow:var(--k-shadow)}
+
+/* sidebar: like Dolphin's Places panel */
+body[data-theme="macos"] #sb{background:var(--side);-webkit-backdrop-filter:blur(30px) saturate(180%);backdrop-filter:blur(30px) saturate(180%);border-right:.5px solid var(--line)}
+body[data-theme="macos"] .hdr-sb{font-size:12px;font-weight:700;color:var(--muted);padding:14px 14px 6px;border-bottom:none}
+body[data-theme="macos"] .row-ch{margin:1px 8px;padding:6px 10px;gap:10px;border-radius:8px;border-left:none !important;transition:background .1s}
+body[data-theme="macos"] .row-ch b{font-size:14px !important;font-weight:400}
+body[data-theme="macos"] .row-ch .csub{font-size:12px;color:var(--muted)}
+body[data-theme="macos"] .row-ch:hover{background:var(--k-hover)}
+body[data-theme="macos"] .row-ch.active{background:var(--accent);color:var(--on-accent)}
+body[data-theme="macos"] .row-ch.active b,body[data-theme="macos"] .row-ch.active .csub{color:var(--on-accent)}
+body[data-theme="macos"] .av-sb,body[data-theme="macos"] .av-sb.lp{border-radius:50%}
+body[data-theme="macos"] .av-sb:not(.lp){background:color-mix(in srgb,var(--accent) 25%,var(--row));color:var(--text)}
+body[data-theme="macos"] .row-ch.active .av-sb:not(.lp){background:rgba(255,255,255,.28);color:inherit}
+body[data-theme="macos"] .stg-sb{border-top:1px solid var(--line)}
+body[data-theme="macos"] .stg-btn{color:var(--accent)}
+body[data-theme="macos"] .goback{border-radius:8px;background:var(--row);color:var(--text);border:1px solid var(--line)}
+
+/* messages */
+body[data-theme="macos"] #box{background:var(--bg);gap:4px;padding:12px 14px}
+body[data-theme="macos"] .msg{max-width:76%}
+body[data-theme="macos"] .msg.first{margin-top:8px}
+body[data-theme="macos"] .bubble{border-radius:18px;padding:7px 13px;font-size:14px;line-height:1.4;background:var(--peer);color:var(--text);box-shadow:none}
+body[data-theme="macos"] .me .bubble{background:var(--me);color:var(--on-accent)}
+body[data-theme="macos"] .peer:not(.first) .bubble{border-top-left-radius:6px}
+body[data-theme="macos"] .peer:not(.last) .bubble{border-bottom-left-radius:6px}
+body[data-theme="macos"] .me:not(.first) .bubble{border-top-right-radius:6px}
+body[data-theme="macos"] .me:not(.last) .bubble{border-bottom-right-radius:6px}
+body[data-theme="macos"] .lbl{font-size:12px;font-weight:600;margin:0 4px 2px}
+body[data-theme="macos"] .av{border-radius:50%}
+body[data-theme="macos"] .img,body[data-theme="macos"] .quote{border-radius:8px}
+body[data-theme="macos"] .quote{background:color-mix(in srgb,var(--text) 10%,transparent)}
+body[data-theme="macos"] .tsep{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:10px;margin:10px 0 4px}
+body[data-theme="macos"] .tsep::before,body[data-theme="macos"] .tsep::after{content:"";flex:1;height:1px;background:var(--line)}
+body[data-theme="macos"] .rx .chip{border-radius:8px;background:var(--row);border:1px solid var(--line)}
+body[data-theme="macos"] .rx .chip.mine{background:color-mix(in srgb,var(--accent) 25%,var(--row));border-color:var(--accent)}
+body[data-theme="macos"] .act{background:var(--side);border:1px solid var(--line);border-radius:8px;box-shadow:var(--k-shadow)}
+
+/* message bar: a macOS text field + push buttons */
+body[data-theme="macos"] :is(#tray,#replybar){background:var(--side);border-top:1px solid var(--line)}
+body[data-theme="macos"] .pill{background:var(--input);border:1px solid var(--line);border-radius:16px;min-height:36px;padding:2px 8px 2px 10px;transition:border-color .12s,box-shadow .12s}
+body[data-theme="macos"] .pill:focus-within{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+body[data-theme="macos"] #inp{color:var(--text);font-size:14px}
+body[data-theme="macos"] :is(.plus,#emo-btn,#vbtn){color:var(--text);border-radius:50%}
+body[data-theme="macos"] .plus{background:linear-gradient(var(--row),color-mix(in srgb,var(--row) 82%,#000));border:1px solid var(--line);width:34px;height:34px;box-shadow:none}
+body[data-theme="macos"] .plus:hover,body[data-theme="macos"] #sendbtn:hover{border-color:var(--accent);filter:none}
+body[data-theme="macos"] #sendbtn{background:var(--accent);color:var(--on-accent);border:none;border-radius:50%;width:34px;height:34px;box-shadow:none}
+body[data-theme="macos"] #sendbtn svg{stroke:var(--on-accent)}
+body[data-theme="macos"] :is(#dmbar button,#sbdm .sbh button){background:var(--row);color:var(--text);border:1px solid var(--line);border-radius:8px}
+body[data-theme="macos"] :is(.stg-card,#gate .card,#gmod .gcard,#amod .acard){border-radius:12px;border:1px solid var(--line)}
+body[data-theme="macos"] #emo-panel{border-radius:12px;box-shadow:var(--k-shadow)}
+
+/* thin overlay scrollbars */
+body[data-theme="macos"] ::-webkit-scrollbar{width:10px;height:10px}
+body[data-theme="macos"] ::-webkit-scrollbar-track{background:transparent}
+body[data-theme="macos"] ::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--text) 30%,transparent);border-radius:5px;border:2px solid transparent;background-clip:padding-box}
+body[data-theme="macos"] ::-webkit-scrollbar-thumb:hover{background:color-mix(in srgb,var(--text) 50%,transparent);background-clip:padding-box}
+</style>
 <style id="cam-css">
 #cam-ov{position:fixed;inset:0;z-index:2147483200;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;font:14px system-ui,sans-serif}
 #cam-ov video{flex:1;min-height:0;width:100%;object-fit:contain;background:#000}
@@ -11606,6 +11692,36 @@ button.gm-sub:active{transform:scale(.97)}
 .gm-add .gm-ic{font-size:84px;font-weight:300;color:#000}
 .gm-add .gm-nm{white-space:normal;line-height:1.3}
 .gm-none{grid-column:1/-1;text-align:center;opacity:.65;padding:30px 10px;font-size:14px}
+
+/* ---- Games hub: search + add, category chips, Netflix-style rows ---- */
+.gm-bar{align-items:center}
+.gm-sw{position:relative;flex:1 1 320px;max-width:760px;min-width:150px}
+.gm-sw svg{position:absolute;left:14px;top:50%;width:16px;height:16px;transform:translateY(-50%);fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;opacity:.6;pointer-events:none}
+.gm-sw .gm-search{width:100%;box-sizing:border-box;padding-left:38px;border-radius:999px;background:color-mix(in srgb,var(--row) 70%,transparent);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.gm-plus{flex:none;width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:color-mix(in srgb,var(--row) 70%,transparent);color:var(--text);font-size:22px;line-height:1;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center}
+.gm-plus:hover{background:var(--accent);border-color:var(--accent);color:var(--on-accent,#fff)}
+.gm-cats{display:flex;flex:1 0 100%;flex-wrap:wrap;justify-content:center;gap:8px;padding:6px 0 2px}
+.gm-cats .gm-chip{border-radius:999px;padding:6px 14px;font-weight:600}
+.gm-rh{display:flex;align-items:baseline;justify-content:space-between;margin:14px 2px 8px}
+.gm-rh h3{margin:0;font-size:15px;font-weight:700}
+.gm-rh span{font-size:12px;opacity:.7}
+.gm-rw{position:relative}
+.gm-strip{display:flex;gap:10px;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x proximity;scrollbar-width:none;padding:4px 2px 6px;-webkit-overflow-scrolling:touch}
+.gm-strip::-webkit-scrollbar{display:none}
+.gm-strip>.gm-card{flex:0 0 156px;scroll-snap-align:start}
+.gm-tile{border-radius:14px;background:transparent}
+.gm-tile .gm-ic{border-radius:14px}
+.gm-tile .gm-nm{position:absolute;left:0;right:0;bottom:0;padding:26px 10px 8px;font-size:12px;font-weight:700;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.8));opacity:0;transition:opacity .15s;pointer-events:none}
+.gm-tile:hover .gm-nm,.gm-tile:focus-visible .gm-nm,.gm-tile:has(.gm-lt) .gm-nm{opacity:1}
+.gm-tile .gm-edit{left:auto;right:44px}
+.gm-badge{position:absolute;left:6px;top:6px;padding:2px 8px;border-radius:999px;background:rgba(16,14,26,.82);color:#ffd60a;font-size:11px;font-weight:800;pointer-events:none}
+.gm-arr{position:absolute;top:50%;transform:translateY(-50%);width:34px;height:34px;border-radius:50%;border:1px solid rgba(255,255,255,.25);background:rgba(16,14,26,.78);color:#fff;font-size:22px;line-height:1;cursor:pointer;padding:0 0 3px;z-index:3;display:flex;align-items:center;justify-content:center}
+.gm-arr.l{left:-6px}.gm-arr.r{right:-6px}
+.gm-arr:hover{background:var(--accent)}
+@media(hover:none){.gm-arr{display:none !important}}
+.gm-empty{display:flex;flex-direction:column;align-items:center;gap:12px;padding:60px 10px}
+.gm-box select{padding:11px 13px;border-radius:11px;border:1px solid var(--line);background:var(--input,var(--row));color:var(--text);font-size:15px;outline:none;font-weight:400}
+@media(max-width:600px){.gm-sw{flex:1 1 60%}.gm-strip>.gm-card{flex-basis:128px}}
 @media(max-width:600px){.gm-bar{padding:10px 12px 4px}.gm-scroll{padding:10px 12px 24px}.gm-grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px}.gm-search{flex:1 1 100%;order:5}.gm-spacer{display:none}}
 #gm-modal{position:fixed;inset:0;z-index:3000;display:none;align-items:center;justify-content:center;padding:16px;background:rgba(0,0,0,.6)}
 #gm-modal.on{display:flex}
@@ -11682,6 +11798,8 @@ button.gm-sub:active{transform:scale(.97)}
   }
 
   /* ---------------- 2. Games tab ---------------- */
+  const CATS = ["Action","Racing","Strategy","Sports","Skill","Shooting","2 Player","Io","Puzzle","Arcade"];
+  let catSel = "";        // "" = All (rows); otherwise one category as a grid
   let games = [];
   try{ const a = JSON.parse(localStorage.getItem(LS) || "[]"); if(Array.isArray(a)) games = a.filter(g => g && typeof g.id === "string" && typeof g.name === "string" && typeof g.url === "string").slice(0, MAX); }catch(e){}
   let mode = "default"; try{ const m = localStorage.getItem(LSM); if(["default","az","fav","recent"].includes(m)) mode = m; }catch(e){}
@@ -11717,22 +11835,19 @@ button.gm-sub:active{transform:scale(.97)}
   const view = document.createElement("div"); view.id = "games";
   view.innerHTML =
     '<div class="gm-bar">' +
-      '<button type="button" class="gm-title gm-sub on" data-sub="games" title="Games">🎮 Games <small id="gm-count"></small></button><button type="button" class="gm-title gm-sub" data-sub="proxy" title="Proxy links">🌐 Proxy</button><span class="gm-spacer"></span>' +
-      '<input class="gm-search" id="gm-q" type="search" placeholder="Search games" autocomplete="off" aria-label="Search games">' +
-      '<div class="gm-chips" id="gm-chips">' +
-        '<button type="button" class="gm-chip" data-m="default">Default</button>' +
-        '<button type="button" class="gm-chip" data-m="az">A–Z</button>' +
-        '<button type="button" class="gm-chip" data-m="fav">★ Favorites</button>' +
-        '<button type="button" class="gm-chip" data-m="recent">Recent</button>' +
-      '</div>' +
+      '<button type="button" class="gm-title gm-sub on" data-sub="games" title="Games">🎮 Games <small id="gm-count"></small></button><button type="button" class="gm-title gm-sub" data-sub="proxy" title="Proxy links">🌐 Proxy</button>' +
+      '<div class="gm-sw"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input class="gm-search" id="gm-q" type="search" placeholder="Search…" autocomplete="off" aria-label="Search games"></div>' +
+      '<button type="button" class="gm-plus" id="gm-add" title="Add a game" aria-label="Add a game">+</button>' +
+      '<div class="gm-cats" id="gm-cats"></div>' +
     '</div>' +
-    '<div class="gm-scroll"><div class="gm-grid" id="gm-grid"></div></div>';
+    '<div class="gm-scroll"><div id="gm-rows"></div><div class="gm-grid" id="gm-grid"></div></div>';
   $$("box").after(view);
 
   const grid = $$("gm-grid");
   function visible(){
     let l = games.slice(); const s = q.trim().toLowerCase();
     if(s) l = l.filter(g => g.name.toLowerCase().includes(s));
+    if(catSel) l = l.filter(g => g.cat === catSel);
     if(mode === "fav") l = l.filter(g => g.fav);
     if(mode === "az") l.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }));
     else if(mode === "recent") l = l.filter(g => g.last).sort((a, b) => b.last - a.last);
@@ -11741,7 +11856,7 @@ button.gm-sub:active{transform:scale(.97)}
   function iconNode(g, big){
     const box = document.createElement("div"); box.className = big ? "gm-prev" : "gm-ic";
     const name = g.name || "?", url = g.url || "";
-    const letter = () => { box.replaceChildren(); box.style.background = tileColor(name); box.textContent = (name.trim()[0] || "?").toUpperCase(); };
+    const letter = () => { box.querySelectorAll("img").forEach(i => i.remove()); box.classList.add("gm-lt"); box.style.background = tileColor(name); box.insertBefore(document.createTextNode((name.trim()[0] || "?").toUpperCase()), box.firstChild); };   // keeps the ★ / ✎ buttons and badges that were added to the tile
     if(okIcon(g.icon)){ const im = new Image(); im.alt = ""; im.src = g.icon; box.appendChild(im); }
     else if(url){
       const im = new Image(); im.alt = ""; im.className = "site"; im.referrerPolicy = "no-referrer"; im.src = siteIcon(url);
@@ -11794,50 +11909,96 @@ button.gm-sub:active{transform:scale(.97)}
     if(g.k === "h"){ g.plays = (g.plays || 0) + 1; g.last = Date.now(); persist(); playHtml(g); return; }
     window.open(g.url, "_blank", "noopener,noreferrer");
     g.plays = (g.plays || 0) + 1; g.last = Date.now(); persist();
-    if(mode === "recent") render();
+    render();
   }
   function cardFor(g){
-    const c = document.createElement("div"); c.className = "gm-card"; c.tabIndex = 0; c.setAttribute("role", "link"); c.setAttribute("aria-label", "Open " + g.name);
+    const c = document.createElement("div"); c.className = "gm-card gm-tile"; c.tabIndex = 0; c.setAttribute("role", "link"); c.setAttribute("aria-label", "Open " + g.name); c.title = g.name;
     const ic = iconNode(g, false);
     const star = document.createElement("button"); star.type = "button"; star.className = "gm-star";
     const paint = () => { star.textContent = g.fav ? "★" : "☆"; star.setAttribute("aria-pressed", g.fav ? "true" : "false"); star.title = g.fav ? "Remove from favorites" : "Add to favorites"; };
     paint();
-    star.onclick = e => { e.stopPropagation(); g.fav = g.fav ? 0 : 1; persist(); if(mode === "fav") render(); else paint(); };
+    star.onclick = e => { e.stopPropagation(); g.fav = g.fav ? 0 : 1; persist(); render(); };
     const ed = document.createElement("button"); ed.type = "button"; ed.className = "gm-edit"; ed.textContent = "✎"; ed.title = "Edit or delete this game"; ed.setAttribute("aria-label", "Edit " + g.name);
     ed.onclick = e => { e.stopPropagation(); openModal(g); };
     if(canManage(g)) ic.append(ed, star); else ic.append(star);
     if(g.k === "h"){ const hb = document.createElement("span"); hb.className = "gm-hb"; hb.textContent = "📄 HTML"; ic.appendChild(hb); }
+    if(g.fav){ const bd = document.createElement("span"); bd.className = "gm-badge"; bd.textContent = "★ Top"; ic.appendChild(bd); }
     const nm = document.createElement("div"); nm.className = "gm-nm"; nm.textContent = g.name;
     c.append(ic, nm);
     c.onclick = () => openGame(g);
     c.onkeydown = e => { if(e.target === c && (e.key === "Enter" || e.key === " ")){ e.preventDefault(); openGame(g); } };
     return c;
   }
-  function addTile(){
-    const c = document.createElement("div"); c.className = "gm-card gm-add"; c.tabIndex = 0; c.setAttribute("role", "button"); c.setAttribute("aria-label", "Add a game link");
-    const ic = document.createElement("div"); ic.className = "gm-ic"; ic.textContent = "+";
-    const nm = document.createElement("div"); nm.className = "gm-nm"; nm.textContent = "Click the + to add game links";
-    c.append(ic, nm);
-    c.onclick = () => openModal(null);
-    c.onkeydown = e => { if(e.key === "Enter" || e.key === " "){ e.preventDefault(); openModal(null); } };
-    return c;
+  /* ---- rows (Netflix-style) ---- */
+  function rowEl(title, list){
+    const sec = document.createElement("section"); sec.className = "gm-row";
+    const h = document.createElement("div"); h.className = "gm-rh";
+    const t = document.createElement("h3"); t.textContent = title;
+    const n = document.createElement("span"); n.textContent = list.length;
+    h.append(t, n);
+    const wrap = document.createElement("div"); wrap.className = "gm-rw";
+    const strip = document.createElement("div"); strip.className = "gm-strip";
+    list.forEach(g => strip.appendChild(cardFor(g)));
+    const mk = d => {
+      const b = document.createElement("button"); b.type = "button"; b.className = "gm-arr " + (d < 0 ? "l" : "r");
+      b.setAttribute("aria-label", d < 0 ? "Scroll left" : "Scroll right"); b.textContent = d < 0 ? "‹" : "›";
+      b.onclick = () => strip.scrollBy({ left: d * Math.max(200, strip.clientWidth * .85), behavior: "smooth" });
+      return b;
+    };
+    const L = mk(-1), R = mk(1);
+    const upd = () => {
+      L.style.display = strip.scrollLeft > 4 ? "" : "none";
+      R.style.display = strip.scrollLeft + strip.clientWidth < strip.scrollWidth - 4 ? "" : "none";
+    };
+    strip.addEventListener("scroll", () => requestAnimationFrame(upd), { passive: true });
+    if(window.ResizeObserver) new ResizeObserver(upd).observe(strip); else setTimeout(upd, 60);
+    wrap.append(strip, L, R); sec.append(h, wrap);
+    setTimeout(upd, 30);
+    return sec;
+  }
+  function renderCats(){
+    const box = $$("gm-cats"), have = {};
+    games.forEach(g => { if(g.cat) have[g.cat] = 1; });
+    const names = ["All"].concat(CATS.filter(c => have[c]));
+    if(catSel && !have[catSel]) catSel = "";
+    box.replaceChildren.apply(box, names.map(n => {
+      const b = document.createElement("button"); b.type = "button"; b.className = "gm-chip" + ((n === "All" ? "" : n) === catSel ? " on" : ""); b.dataset.c = n === "All" ? "" : n; b.textContent = n; return b;
+    }));
+    box.style.display = names.length > 1 ? "" : "none";
   }
   function render(){
-    const l = visible();
     $$("gm-count").textContent = games.length ? "· " + games.length : "";
-    document.querySelectorAll("#gm-chips .gm-chip").forEach(b => b.classList.toggle("on", b.dataset.m === mode));
-    const kids = [addTile()].concat(l.map(cardFor));
-    if(!l.length && (games.length || mode === "recent")){
-      const n = document.createElement("div"); n.className = "gm-none";
-      n.textContent = q.trim() ? "No games match your search." : mode === "fav" ? "No favorites yet. Tap the ☆ on a game." : mode === "recent" ? "Nothing launched yet." : "";
-      if(n.textContent) kids.push(n);
+    renderCats();
+    const rows = $$("gm-rows"), s = q.trim();
+    if(!games.length){
+      rows.replaceChildren(); grid.style.display = "";
+      const n = document.createElement("div"); n.className = "gm-none gm-empty";
+      n.innerHTML = '<div style="font-size:54px">🎮</div><div>No games yet</div><button type="button" class="gm-b pri">+ Add a game link</button>';
+      n.querySelector("button").onclick = () => openModal(null);
+      grid.replaceChildren(n); return;
     }
-    grid.replaceChildren.apply(grid, kids);
+    if(s || catSel){                                   // searching / one category: a plain grid
+      rows.replaceChildren(); grid.style.display = "";
+      const l = visible(), kids = l.map(cardFor);
+      if(!l.length){ const n = document.createElement("div"); n.className = "gm-none"; n.textContent = s ? "No games match your search." : "Nothing in this category yet."; kids.push(n); }
+      grid.replaceChildren.apply(grid, kids); return;
+    }
+    grid.replaceChildren(); grid.style.display = "none";
+    const out = [], favs = games.filter(g => g.fav);
+    if(favs.length) out.push(rowEl("★ Top Games", favs));
+    const rec = games.filter(g => g.last).sort((a, b) => b.last - a.last).slice(0, 16);
+    if(rec.length) out.push(rowEl("Recently played", rec));
+    const used = {};
+    CATS.forEach(c => { const l = games.filter(g => g.cat === c); if(l.length){ used[c] = 1; out.push(rowEl(c, l)); } });
+    const rest = games.filter(g => !g.cat || !used[g.cat]);
+    if(rest.length) out.push(rowEl(Object.keys(used).length ? "More games" : "All games", rest));
+    rows.replaceChildren.apply(rows, out);
   }
   $$("gm-q").addEventListener("input", e => { q = e.target.value; render(); });
-  $$("gm-chips").addEventListener("click", e => {
+  $$("gm-add").onclick = () => openModal(null);
+  $$("gm-cats").addEventListener("click", e => {
     const b = e.target.closest(".gm-chip"); if(!b) return;
-    mode = b.dataset.m; try{ localStorage.setItem(LSM, mode); }catch(err){} render();
+    catSel = b.dataset.c || ""; render();
   });
 
   /* add / edit window */
@@ -11845,6 +12006,7 @@ button.gm-sub:active{transform:scale(.97)}
   modal.innerHTML =
     '<div class="gm-box" role="dialog" aria-modal="true" aria-labelledby="gm-mt"><h3 id="gm-mt">Add a game</h3>' +
       '<label>Game name<input id="gm-name" type="text" maxlength="40" autocomplete="off" placeholder="e.g. Slope"></label>' +
+      '<label>Category<select id="gm-cat"><option value="">None</option>' + CATS.map(c => '<option value="' + c + '">' + c + '</option>').join("") + '</select></label>' +
       '<div class="gm-kind" id="gm-kind"><button type="button" data-k="l" class="on">🔗 Link</button><button type="button" data-k="h">📄 HTML game</button></div>' +
       '<label id="gm-linkrow">Game link<input id="gm-url" type="text" inputmode="url" maxlength="600" autocomplete="off" spellcheck="false" placeholder="https://…"></label>' +
       '<div id="gm-htmlrow" style="display:none"><label>Game code<textarea id="gm-html" spellcheck="false" autocomplete="off" placeholder="Paste your game\'s HTML here…"></textarea></label><div class="gm-icbtns" style="margin-top:8px"><button type="button" id="gm-hpick" class="gm-b alt">📂 Choose .html file</button></div><div id="gm-hinfo" class="gm-note"></div><input id="gm-hfile" type="file" accept=".html,.htm,text/html" hidden></div>' +
@@ -11882,7 +12044,7 @@ button.gm-sub:active{transform:scale(.97)}
     editId = g ? g.id : null; draftIcon = g && okIcon(g.icon) ? g.icon : ""; delArmed = 0;
     $$("gm-html").value = ""; setKind(g && g.k === "h" ? "h" : "l", !!g); htmlInfo();
     $$("gm-mt").textContent = g ? "Edit game" : "Add a game";
-    $$("gm-name").value = g ? g.name : ""; $$("gm-url").value = g && g.k !== "h" ? g.url : "";
+    $$("gm-name").value = g ? g.name : ""; $$("gm-cat").value = g && CATS.includes(g.cat) ? g.cat : ""; $$("gm-url").value = g && g.k !== "h" ? g.url : "";
     $$("gm-del").style.display = g ? "" : "none"; $$("gm-del").textContent = "Delete";
     err(""); paintPrev(); modal.classList.add("on");
     setTimeout(() => $$("gm-name").focus(), 30);
@@ -11939,8 +12101,8 @@ button.gm-sub:active{transform:scale(.97)}
       cv = v;
     }
     const sz = html.trim() ? html.length : (old ? old.sz : 0);
-    if(old){ old.name = name; old.icon = draftIcon; old.cv = cv; old.sz = sz; old.v = v; delete tombs[old.id]; }
-    else games.push({ id, k: "h", name, url: "", icon: draftIcon, cv, sz, by: typeof uid !== "undefined" ? uid : "", fav: 0, plays: 0, last: 0, added: v, v });
+    if(old){ old.name = name; old.icon = draftIcon; old.cat = $$("gm-cat").value; old.cv = cv; old.sz = sz; old.v = v; delete tombs[old.id]; }
+    else games.push({ id, k: "h", name, url: "", icon: draftIcon, cat: $$("gm-cat").value, cv, sz, by: typeof uid !== "undefined" ? uid : "", fav: 0, plays: 0, last: 0, added: v, v });
     if(!persist()){ err("This device is out of storage space. Remove a game or use a smaller icon."); return; }
     closeModal(); render();
   }
@@ -11950,10 +12112,10 @@ button.gm-sub:active{transform:scale(.97)}
     if(!name){ err("Give the game a name."); $$("gm-name").focus(); return; }
     if(!url){ err("Paste a working link (it has to start with https://)."); $$("gm-url").focus(); return; }
     const old = editId && games.find(g => g.id === editId);
-    if(old){ old.name = name; old.url = url; old.icon = draftIcon; old.v = Date.now(); delete tombs[old.id]; }
+    if(old){ old.name = name; old.url = url; old.icon = draftIcon; old.cat = $$("gm-cat").value; old.v = Date.now(); delete tombs[old.id]; }
     else {
       if(games.length >= MAX){ err("You can keep up to " + MAX + " games."); return; }
-      games.push({ id: newId(), name, url, icon: draftIcon, fav: 0, plays: 0, last: 0, added: Date.now(), v: Date.now() });
+      games.push({ id: newId(), name, url, icon: draftIcon, cat: $$("gm-cat").value, fav: 0, plays: 0, last: 0, added: Date.now(), v: Date.now() });
     }
     if(!persist()){ err("This device is out of storage space. Remove a game or use a smaller icon."); if(!old) games.pop(); return; }
     closeModal(); render();
@@ -11976,7 +12138,7 @@ button.gm-sub:active{transform:scale(.97)}
   window.__gm = {
     out(){
       const o = [], have = new Set();
-      games.forEach(g => { have.add(g.id); const r = { id: g.id, name: g.name, url: g.url, icon: g.icon || "", added: g.added || 0, v: g.v || g.added || 1 }; if(g.k === "h"){ r.k = "h"; r.cv = g.cv || 0; r.sz = g.sz || 0; r.by = g.by || ""; r.url = ""; } o.push(r); });
+      games.forEach(g => { have.add(g.id); const r = { id: g.id, name: g.name, url: g.url, icon: g.icon || "", added: g.added || 0, v: g.v || g.added || 1 }; if(g.cat) r.cat = g.cat; if(g.k === "h"){ r.k = "h"; r.cv = g.cv || 0; r.sz = g.sz || 0; r.by = g.by || ""; r.url = ""; } o.push(r); });
       Object.keys(tombs).forEach(id => { if(!have.has(id)) o.push({ id, del: 1, v: tombs[id] }); });
       return o;
     },
@@ -11996,6 +12158,7 @@ button.gm-sub:active{transform:scale(.97)}
         const isH = r.k === "h", name = cleanName(r.name), url = isH ? "" : cleanUrl(r.url); if(!name || (!isH && !url)) return;
         const icon = okIcon(r.icon) ? r.icon : "";
         const ex = isH ? { k: "h", cv: +r.cv || 0, sz: Math.max(0, Math.min(MAX_HTML, +r.sz || 0)), by: String(r.by || "").slice(0, 40) } : {};
+        ex.cat = CATS.includes(r.cat) ? r.cat : "";
         if(!loc){
           if(games.length >= MAX) return;
           games.push(Object.assign({ id: r.id, name, url, icon, fav: 0, plays: 0, last: 0, added: +r.added || Date.now(), v }, ex)); delete tombs[r.id]; ch = true;
@@ -14680,6 +14843,8 @@ body.dt-on #dt button{font:inherit;color:inherit}
 .dt-win:not(.is-live) .dt-snap{display:block}
 .dt-snap iframe{position:absolute;inset:0;width:100%;height:100%;border:0;pointer-events:none;background:#fff}
 .dt-shield{position:absolute;inset:0;cursor:pointer}
+.dt-win.is-inst .dt-snap iframe{pointer-events:auto}
+.dt-win.is-inst.dtact .dt-shield{display:none}
 .dt-live{container:dtl / inline-size;display:flex;width:100%;height:100%;min-width:0;min-height:0;position:relative;transform:translateZ(0);overflow:hidden;overflow:clip;background:var(--bg)}
 body.sb-bottom .dt-live{flex-direction:column}
 .dt-live #sb-arrow{position:absolute}
@@ -15008,43 +15173,56 @@ body.dt-th.dtth-nat-win11 #dt-panel .ws-user .dt-si,body.dt-th.dtth-nat-win11 #d
   "use strict";
   var KEY = "pb_desktop", D = document, B = D.body, $ = function(i){ return D.getElementById(i); };
   var OSES = [["", "Off"], ["mac", "macOS"], ["chromeos", "ChromeOS"], ["win11", "Windows"]];
-  function saved(){ try{ var v = localStorage.getItem(KEY) || ""; return v === "win" ? "win11" : v; }catch(e){ return ""; } }
+  /* A window beyond the first runs its own full copy of the app inside an iframe (this page loaded with #dtch=<tab>).
+     That copy must never start a desktop of its own. */
+  var EMB = (window.top !== window.self) && /[#&]dtch=/.test(location.hash);
+  function saved(){ if(EMB) return ""; try{ var v = localStorage.getItem(KEY) || ""; return v === "win" ? "win11" : v; }catch(e){ return ""; } }
   function keep(v){ try{ if(v) localStorage.setItem(KEY, v); else localStorage.removeItem(KEY); }catch(e){} }
 
-  /* =============== Settings > Experimental control =============== */
-  var card = $("stg-exp"), stg = $("stg"), saveBtn = $("save");
+  /* =============== Settings > Appearance & Layout: Desktop mode switch =============== */
+  var hh = $("hh"), card = hh && hh.closest(".stg-card"), stg = $("stg"), saveBtn = $("save"), LASTK = "pb_dt_last";
   if(card && stg && saveBtn){
     var host = card.querySelector(".sx-group") || card, inSx = host !== card;
-    var lab = D.createElement("label"); lab.setAttribute("for", "x-desk"); lab.textContent = "Desktop mode";
+    var swl = D.createElement("label"); swl.className = "chk";
+    var sw = D.createElement("input"); sw.type = "checkbox"; sw.id = "x-deskon"; swl.appendChild(sw); swl.appendChild(D.createTextNode("Desktop mode"));
+    var lab = D.createElement("label"); lab.setAttribute("for", "x-desk"); lab.textContent = "Desktop style";
     var sel = D.createElement("select"); sel.id = "x-desk";
-    OSES.forEach(function(o){ var op = D.createElement("option"); op.value = o[0]; op.textContent = o[1]; sel.appendChild(op); });
-    var note = D.createElement("div"); note.className = "xnote";
-    note.textContent = "Turns the site into a pretend desktop (macOS, ChromeOS or Windows) with a dock or taskbar. Every tab can be opened in its own mini window: drag, resize, minimize, maximize, or drag to a screen edge to snap. The window you click on is the live one; the others show how they looked when you left them. Press Save changes to apply. To leave, use the power / Apple / status menu on the desktop, or set this back to Off.";
-    if(inSx){ var row = D.createElement("div"); row.className = "sx-fr"; row.appendChild(lab); row.appendChild(sel); host.appendChild(row); }
-    else { host.appendChild(lab); host.appendChild(sel); }
+    OSES.forEach(function(o){ if(!o[0]) return; var op = D.createElement("option"); op.value = o[0]; op.textContent = o[1]; sel.appendChild(op); });
+    var note = D.createElement("div"); note.className = "stg-note";
+    note.textContent = "Turns the site into a pretend desktop (macOS, ChromeOS or Windows) with a dock or taskbar. Every tab opens in its own mini window: drag, resize, minimize, maximize, or drag to a screen edge to snap. Once it is on, right-click the desktop (or open the Apple menu, the launcher, or the Control Center) and choose Customize desktop to set your own wallpaper and change any icon.";
+    var srow = null;
+    if(inSx){ srow = D.createElement("div"); srow.className = "sx-fr"; srow.appendChild(lab); srow.appendChild(sel); }
+    host.appendChild(swl); if(srow) host.appendChild(srow); else { host.appendChild(lab); host.appendChild(sel); }
     host.appendChild(note);
-    note.textContent += " Once it is on, right-click the desktop (or open the Apple menu, the launcher, or the tray menu) and choose Customize desktop to set your own wallpaper and change any icon.";
+    function lastOs(){ try{ var v = localStorage.getItem(LASTK); return v === "chromeos" || v === "win11" ? v : "mac"; }catch(e){ return "mac"; } }
+    function showStyle(){ var d = sw.checked ? "" : "none"; if(srow) srow.style.display = d; else { lab.style.display = d; sel.style.display = d; } }
+    function load(){ var v = saved(); sw.checked = !!v; sel.value = v || lastOs(); showStyle(); }
+    sw.addEventListener("change", showStyle);
     var wasOpen = false;
     new MutationObserver(function(){
       var open = stg.classList.contains("open");
-      if(open && !wasOpen) sel.value = saved();
+      if(open && !wasOpen) load();
       wasOpen = open;
     }).observe(stg, {attributes:true, attributeFilter:["class"]});
-    sel.value = saved();
+    load();
     var prev = saveBtn.onclick;
     saveBtn.onclick = function(){
       var r = prev ? prev.apply(this, arguments) : undefined;
       setTimeout(function(){ try{ applyTheme(); }catch(e){} }, 250);
-      if(stg.classList.contains("open") || true){ var v = sel.value; if(v !== saved()){ keep(v); setTimeout(function(){ apply(v); }, 60); } }
+      var v = sw.checked ? sel.value : "";
+      if(v){ try{ localStorage.setItem(LASTK, v); }catch(e){} }
+      if(v !== saved()){ keep(v); setTimeout(function(){ apply(v); }, 60); }
       return r;
     };
   }
 
   /* =============== the desktop =============== */
-  var SCK = "pb_dt_sc";
+  var SCK = "pb_dt_sc", UNK = "pb_dt_unpinned";
+  function unLoad(){ try{ var a = JSON.parse(localStorage.getItem(UNK) || "[]"); return Array.isArray(a) ? a.filter(function(x){ return typeof x === "string"; }) : []; }catch(e){ return []; } }
+  function unSave(){ try{ localStorage.setItem(UNK, JSON.stringify(st.un)); }catch(e){} }
   function scLoad(){ try{ var a = JSON.parse(localStorage.getItem(SCK) || "[]"); return Array.isArray(a) ? a.filter(function(x){ return x && x.id && x.url; }) : []; }catch(e){ return []; } }
   function scSave(){ try{ localStorage.setItem(SCK, JSON.stringify(st.sc)); }catch(e){} }
-  var st = {sc:[], os:"", wins:[], live:null, z:10, uid:0, cascade:0, shell:null, liveHost:null, park:null, ph:[], clock:0, ro:null, tabObs:null, ic:{}, wall:{t:"", v:"", fit:"cover", dim:0}, wallSrc:"", wallObj:null, thObs:null};
+  var st = {sc:[], un:[], os:"", wins:[], live:null, z:10, uid:0, cascade:0, shell:null, liveHost:null, park:null, ph:[], clock:0, ro:null, tabObs:null, ic:{}, wall:{t:"", v:"", fit:"cover", dim:0}, wallSrc:"", wallObj:null, thObs:null};
   var APPEL = ["sb", "sb-arrow", "main"];
 
   /* =============== custom wallpaper + custom icons =============== */
@@ -15258,7 +15436,7 @@ body.dt-th.dtth-nat-win11 #dt-panel .ws-user .dt-si,body.dt-th.dtth-nat-win11 #d
       return !!m && (0.299 * m[0] + 0.587 * m[1] + 0.114 * m[2]) > 150;
     }catch(e){ return false; }
   }
-  function thRaw(){ var c = thGet(); if(c === "native") return natId(); if(c === "match") c = B.dataset.theme || "imessage"; return TH[c] ? c : "imessage"; }
+  function thRaw(){ var c = thGet(); if(c === "native") return natId(); if(c === "match") c = B.dataset.theme || "imessage"; if(c === "macos" && TH["nat-mac"]) c = "nat-mac"; return TH[c] ? c : "imessage"; }
   function thLayout(os){ if(!os) return os; if(layGet()){ var l = TH[thRaw()].lay; if(l) return l; } return os; }
   function thClear(){ Array.prototype.slice.call(B.classList).forEach(function(c){ if(/^dtth-/.test(c) || c === "dtl" || c === "dtc-r" || c === "dt-th") B.classList.remove(c); }); }
   function applyTheme(){
@@ -15298,7 +15476,7 @@ body.dt-th.dtth-nat-win11 #dt-panel .ws-user .dt-si,body.dt-th.dtth-nat-win11 #d
       if(st.shell !== oldShell) openCustomize("theme");
     };
   }
-  function thRawFor(c){ if(c === "native") return natId(); if(c === "match") c = B.dataset.theme || "imessage"; return TH[c] ? c : "imessage"; }
+  function thRawFor(c){ if(c === "native") return natId(); if(c === "match") c = B.dataset.theme || "imessage"; if(c === "macos" && TH["nat-mac"]) c = "nat-mac"; return TH[c] ? c : "imessage"; }
 
   /* ---- small context menu at the pointer ---- */
   function ctx(x, y, items, keep){
@@ -15306,8 +15484,18 @@ body.dt-th.dtth-nat-win11 #dt-panel .ws-user .dt-si,body.dt-th.dtth-nat-win11 #d
   }
   function appKey(t){ return t.sc ? "sc:" + t.sc.id : "app:" + t.ch; }
   function appDef(t){ return t.sc ? scIcon({name:t.sc.name, url:t.sc.url, icon:""}) : esc(icoOf(t)); }
+  /* ---- pin / unpin apps on the dock (macOS) / shelf (ChromeOS) / taskbar (Windows) ----
+     Every app starts pinned. An unpinned app leaves the dock but stays in Launchpad / the launcher / Start, and
+     shows in the dock again (like a real OS) while one of its windows is open. */
+  function dockName(){ return st.os === "mac" ? "Dock" : st.os === "chromeos" ? "shelf" : "taskbar"; }
+  function isPinned(t){ return st.un.indexOf(appKey(t)) < 0; }
+  function setPinned(t, on){
+    var k = appKey(t), i = st.un.indexOf(k);
+    if(on && i > -1) st.un.splice(i, 1); else if(!on && i < 0) st.un.push(k);
+    unSave(); refreshDock();
+  }
   function appMenu(t, back){
-    var k = appKey(t), items = [["Open", function(){ if(t.sc) launchSc(t.sc.id); else launch(t.ch); }], ["Change icon…", function(){ iconEditor(k, t.label, appDef(t), back); }]];
+    var k = appKey(t), items = [["Open", function(){ if(t.sc) launchSc(t.sc.id); else launch(t.ch); }], [isPinned(t) ? "Unpin from " + dockName() : "Pin to " + dockName(), function(){ setPinned(t, !isPinned(t)); }], ["Change icon…", function(){ iconEditor(k, t.label, appDef(t), back); }]];
     if(getIc(k)) items.push([t.sc ? "Use the site\u2019s icon" : "Reset icon", function(){ setIc(k, ""); }]);
     if(t.sc){ items.push("-", ["Edit shortcut…", function(){ shortcutDialog(t.sc); }], ["Remove shortcut", function(){ removeSc(t.sc.id); }]); }
     items.push("-", ["Customize desktop…", function(){ openCustomize(); }]);
@@ -15469,11 +15657,15 @@ body.dt-th.dtth-nat-win11 #dt-panel .ws-user .dt-si,body.dt-th.dtth-nat-win11 #d
 
   /* ---- build / tear down ---- */
   function apply(os){
+    if(EMB) return;
     if(os === "win") os = "win11";
     if(st.os) teardown();
     if(!os) return;
     os = thLayout(os);
-    st.os = os; st.sc = scLoad(); st.ic = icLoad(); st.wall = wallLoad(); B.classList.add("dt-on", "dt-" + os);
+    st.os = os; st.sc = scLoad(); st.un = unLoad(); st.ic = icLoad(); st.wall = wallLoad(); B.classList.add("dt-on", "dt-" + os);
+    /* the "move the side bar to the bottom" feature makes no sense on a desktop (the dock is the bar): switch it off while desktop mode is on */
+    if(!$("dt-nobar")){ var nb = D.createElement("style"); nb.id = "dt-nobar"; nb.textContent = "body.dt-on.dt-on .stg-sb.stg-sb button#sb-dock.stg-btn,body.dt-on.dt-on #sb-dock{display:none !important}"; D.head.appendChild(nb); }
+    st.sbb = B.classList.contains("sb-bottom"); B.classList.remove("sb-bottom");
     var sh = el("div"); sh.id = "dt"; st.shell = sh;
     sh.innerHTML = '<div id="dt-wall"></div><div id="dt-wins"></div><div id="dt-ghost"></div>' +
       '<div id="dt-bar" class="dt-glass-x"></div><div id="dt-dock" class="dt-glass"></div>' +
@@ -15496,7 +15688,7 @@ body.dt-th.dtth-nat-win11 #dt-panel .ws-user .dt-si,body.dt-th.dtth-nat-win11 #d
       if(e.target !== sh && e.target.id !== "dt-wall") return; e.preventDefault();
       ctx(e.clientX, e.clientY, [["Change wallpaper…", function(){ openCustomize("wall"); }], ["Customize icons…", function(){ openCustomize("ico"); }], ["New shortcut…", function(){ shortcutDialog(null); }], "-", ["Exit desktop mode", exit]]);
     });
-    sh.addEventListener("mousedown", function(e){ if(!e.target.closest("#dt-panel,#dt-pop,#dt-bar,.start,.lnch,.tray")) closePops(); }, true);
+    sh.addEventListener("mousedown", function(e){ if(!e.target.closest("#dt-panel,#dt-pop,#dt-cc,#dt-bar,.start,.lnch,.tray")) closePops(); }, true);
     window.addEventListener("resize", onResize);
     st.tabObs = new MutationObserver(function(){ refreshDock(); });
     var ct = $("chtabs"); if(ct) st.tabObs.observe(ct, {childList:true, subtree:true, characterData:true});
@@ -15509,10 +15701,10 @@ body.dt-th.dtth-nat-win11 #dt-panel .ws-user .dt-si,body.dt-th.dtth-nat-win11 #d
     try{ clearInterval(st.clock); window.removeEventListener("resize", onResize); if(st.tabObs) st.tabObs.disconnect(); if(st.ro) st.ro.disconnect(); }catch(e){}
     st.ph.forEach(function(p){ try{ p.c.replaceWith(p.e); }catch(e){} });
     if(st.liveHost) st.liveHost.remove(); if(st.park) st.park.remove(); if(st.shell) st.shell.remove();
-    B.classList.remove("dt-on", "dt-mac", "dt-chromeos", "dt-win11"); var cq = $("dt-cq"); if(cq) cq.remove();
+    B.classList.remove("dt-on", "dt-mac", "dt-chromeos", "dt-win11"); if(st.sbb){ B.classList.add("sb-bottom"); st.sbb = false; } var cq = $("dt-cq"); if(cq) cq.remove();
     try{ if(st.thObs) st.thObs.disconnect(); }catch(e){} thClear(); wallRevoke(); st.os = ""; st.wins = []; st.live = null; st.ph = []; st.shell = null;
   }
-  function exit(){ keep(""); var s = $("x-desk"); if(s) s.value = ""; teardown(); }
+  function exit(){ keep(""); var c = $("x-deskon"); if(c){ c.checked = false; c.dispatchEvent(new Event("change")); } teardown(); }
   function onResize(){ st.wins.forEach(function(w){ clampWin(w); }); }
   function tickOld(){
     var n = new Date(), tm = n.toLocaleTimeString([], {hour:"numeric", minute:"2-digit"});
@@ -15551,7 +15743,7 @@ body.dt-th.dtth-nat-win11 #dt-panel .ws-user .dt-si,body.dt-th.dtth-nat-win11 #d
   function natBar(){
     return '<button class="mb apl" type="button">' + sysHtml("apple", I.apple) + '</button><button class="mb dtapp" type="button">Finder</button>' +
       '<button class="mb" data-m="file" type="button">File</button><button class="mb" data-m="edit" type="button">Edit</button><button class="mb" data-m="view" type="button">View</button><button class="mb" data-m="go" type="button">Go</button><button class="mb" data-m="win" type="button">Window</button><button class="mb" data-m="help" type="button">Help</button>' +
-      '<span class="dtsp"></span><span class="dtst">' + sysHtml("battery", I.bat) + '</span><span class="dtst">' + sysHtml("wifi", I.wifi) + '</span><span class="dtst">' + I.search + '</span><span class="dtst">' + I.usr + '</span><span class="dtst">' + I.ctl + '</span><span class="dtst dtclk"></span>';
+      '<span class="dtsp"></span><span class="dtst">' + sysHtml("battery", I.bat) + '</span><span class="dtst">' + sysHtml("wifi", I.wifi) + '</span><span class="dtst">' + I.search + '</span><span class="dtst">' + I.usr + '</span><span class="dtst" data-cc="1" title="Control Center">' + I.ctl + '</span><span class="dtst dtclk"></span>';
   }
   function natBarExtra(bar){
     function m(k, f){ var b = bar.querySelector("[data-m=" + k + "]"); if(b) b.onclick = function(e){ pop(e.currentTarget, f()); }; }
@@ -15683,6 +15875,85 @@ body.dt-th.dtth-nat-win11 #dt-panel .ws-user .dt-si,body.dt-th.dtth-nat-win11 #d
     pn.classList.add("show"); setTimeout(function(){ try{ inp.focus(); }catch(e){} }, 30);
   }
 
+
+  /* =============== Control Center ===============
+     macOS: the sliders icon in the menu bar. ChromeOS / Windows: click the tray (clock + status icons).
+     Everything in it really does something: display brightness, a warm "Night Shift" tint, volume for the app's sounds
+     and videos, mute, full screen, plus shortcuts to the launcher, wallpaper and exit. Settings are remembered. */
+  var CCK = "pb_dt_cc", CC = {b:100, v:100, n:false, m:false};
+  try{ var _c = JSON.parse(localStorage.getItem(CCK) || "{}"); if(_c.b >= 40 && _c.b <= 100) CC.b = +_c.b; if(_c.v >= 0 && _c.v <= 100) CC.v = +_c.v; CC.n = !!_c.n; CC.m = !!_c.m; }catch(e){}
+  function ccSave(){ try{ localStorage.setItem(CCK, JSON.stringify(CC)); }catch(e){} }
+  function ccDocs(){ var out = [D]; try{ Array.prototype.forEach.call(D.querySelectorAll("iframe"), function(f){ try{ if(f.contentDocument) out.push(f.contentDocument); }catch(e){} }); }catch(e){} return out; }
+  function ccMedia(){
+    ccDocs().forEach(function(d){ try{ Array.prototype.forEach.call(d.querySelectorAll("audio,video"), function(m){ m.volume = CC.v / 100; m.muted = CC.m || CC.v === 0; }); }catch(e){} });
+  }
+  function ccApply(){
+    if(!st.shell) return;
+    var f = CC.b < 100 ? "brightness(" + (CC.b / 100) + ")" : "";
+    ["dt-wall", "dt-wins"].forEach(function(id){ var e = $(id); if(e) e.style.filter = f; });
+    var nt = $("dt-night");
+    if(!nt){ nt = el("div"); nt.id = "dt-night"; st.shell.appendChild(nt); }
+    nt.classList.toggle("on", CC.n);
+    ccMedia();
+  }
+  setInterval(function(){ if(st.shell && (CC.v < 100 || CC.m)) ccMedia(); }, 2500);   // sounds that start later pick the volume up too
+  function ccUI(){
+    var pn = $("dt-cc"), nm = st.os === "mac" ? "Launchpad" : st.os === "chromeos" ? "Launcher" : "Start";
+    if(!pn){ pn = el("div", "dt-glass"); pn.id = "dt-cc"; st.shell.appendChild(pn); pn.addEventListener("mousedown", function(e){ e.stopPropagation(); }); }
+    var wasOn = pn.classList.contains("show"); pn.className = "dt-glass " + (st.os === "mac" ? "cc-top" : "cc-bot") + (wasOn ? " show" : "");
+    var online = navigator.onLine !== false;
+    pn.innerHTML =
+      '<div class="cc-tiles">' +
+        '<div class="cc-t' + (online ? " on" : "") + '" data-k="net"><b>' + sysHtml("wifi", I.wifi) + '</b><span>Network<small>' + (online ? "Online" : "Offline") + '</small></span></div>' +
+        '<button type="button" class="cc-t' + (CC.n ? " on" : "") + '" data-k="night"><b>🌙</b><span>Night Shift<small>' + (CC.n ? "On" : "Off") + '</small></span></button>' +
+        '<button type="button" class="cc-t' + (CC.m ? " on" : "") + '" data-k="mute"><b>' + (CC.m ? "🔇" : "🔊") + '</b><span>Mute<small>' + (CC.m ? "On" : "Off") + '</small></span></button>' +
+        '<button type="button" class="cc-t' + (D.fullscreenElement ? " on" : "") + '" data-k="full"><b>⛶</b><span>Full screen<small>' + (D.fullscreenElement ? "On" : "Off") + '</small></span></button>' +
+      '</div>' +
+      '<label class="cc-s"><span>Display</span><div><i>☀️</i><input type="range" min="40" max="100" value="' + CC.b + '" data-k="b" aria-label="Display brightness"></div></label>' +
+      '<label class="cc-s"><span>Sound</span><div><i>🔈</i><input type="range" min="0" max="100" value="' + CC.v + '" data-k="v" aria-label="Volume"></div></label>' +
+      '<div class="cc-b"><button type="button" data-k="lp">' + nm + '</button><button type="button" data-k="wall">Wallpaper…</button><button type="button" data-k="cz">Customize…</button><button type="button" data-k="exit">Exit desktop mode</button></div>';
+    pn.querySelectorAll("input[type=range]").forEach(function(r){ r.oninput = function(){ CC[r.dataset.k] = +r.value; if(r.dataset.k === "v" && CC.v > 0) CC.m = false; ccSave(); ccApply(); }; r.onchange = function(){ if(r.dataset.k === "v") ccUI(); }; });
+    pn.querySelectorAll("button[data-k]").forEach(function(b){
+      b.onclick = function(){
+        var k = b.dataset.k;
+        if(k === "night"){ CC.n = !CC.n; ccSave(); ccApply(); ccUI(); }
+        else if(k === "mute"){ CC.m = !CC.m; ccSave(); ccApply(); ccUI(); }
+        else if(k === "full"){ try{ if(D.fullscreenElement) D.exitFullscreen(); else D.documentElement.requestFullscreen(); }catch(e){} setTimeout(ccUI, 250); }
+        else if(k === "lp"){ closePops(); if(st.os === "mac") lpOpen(); else togglePanel(); }
+        else if(k === "wall"){ closePops(); openCustomize("wall"); }
+        else if(k === "cz"){ closePops(); openCustomize(); }
+        else if(k === "exit"){ closePops(); exit(); }
+      };
+    });
+  }
+  function toggleCC(){
+    if(!st.shell) return;
+    var pn = $("dt-cc"), was = pn && pn.classList.contains("show");
+    closePops(); if(was) return;
+    ccUI(); pn = $("dt-cc"); pn.classList.add("show");
+  }
+  if(!$("dt-cc-css")){
+    var ccs = D.createElement("style"); ccs.id = "dt-cc-css";
+    ccs.textContent = "#dt-cc{position:absolute;z-index:99993;width:320px;max-width:calc(100% - 16px);box-sizing:border-box;padding:12px;border-radius:18px;display:none;flex-direction:column;gap:10px;box-shadow:0 12px 40px rgba(0,0,0,.4),0 0 0 1px rgba(255,255,255,.12);font-size:13px}" +
+      "#dt-cc.show{display:flex}#dt-cc.cc-top{top:34px;right:8px}#dt-cc.cc-bot{bottom:calc(var(--dt-bot,48px) + 8px);right:8px}" +
+      "#dt-cc .cc-tiles{display:grid;grid-template-columns:1fr 1fr;gap:8px}" +
+      "#dt-cc .cc-t{display:flex;align-items:center;gap:10px;padding:10px;border:none;border-radius:14px;background:rgba(127,127,127,.18);color:inherit;text-align:left;cursor:default;font:inherit}" +
+      "#dt-cc button.cc-t:hover{background:rgba(127,127,127,.3)}" +
+      "#dt-cc .cc-t b{display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:rgba(127,127,127,.3);font-size:15px;flex:0 0 auto}" +
+      "#dt-cc .cc-t b svg{width:16px;height:16px}" +
+      "#dt-cc .cc-t.on b{background:var(--dt-acc,#0a84ff);color:#fff}" +
+      "#dt-cc .cc-t span{display:flex;flex-direction:column;font-weight:600;line-height:1.25;min-width:0}#dt-cc .cc-t small{font-weight:400;opacity:.7;font-size:11px}" +
+      "#dt-cc .cc-s{display:flex;flex-direction:column;gap:6px;padding:10px 12px;border-radius:14px;background:rgba(127,127,127,.18);font-weight:600}" +
+      "#dt-cc .cc-s div{display:flex;align-items:center;gap:8px}#dt-cc .cc-s i{font-style:normal;width:18px;text-align:center}" +
+      "#dt-cc .cc-s input{flex:1;min-width:0;accent-color:var(--dt-acc,#0a84ff)}" +
+      "#dt-cc .cc-b{display:grid;grid-template-columns:1fr 1fr;gap:6px}" +
+      "#dt-cc .cc-b button{padding:8px 10px;border:none;border-radius:10px;background:rgba(127,127,127,.18);color:inherit;font:inherit;font-size:12px;cursor:default}#dt-cc .cc-b button:hover{background:rgba(127,127,127,.3)}" +
+      "#dt-cc .cc-b button[data-k=exit]{grid-column:1/-1;color:#ff453a}" +
+      "#dt-night{position:absolute;inset:0;pointer-events:none;background:rgba(255,150,40,.22);mix-blend-mode:multiply;opacity:0;transition:opacity .3s;z-index:99990}#dt-night.on{opacity:1}" +
+      "[data-cc]{cursor:pointer}";
+    D.head.appendChild(ccs);
+  }
+
   /* ---- shell chrome (dock / shelf / taskbar / menubar / launcher) ---- */
   function appBtn(t){
     var b = el("button", "dt-app"); b.type = "button"; b.dataset.ch = t.ch; b.title = t.label;
@@ -15695,8 +15966,9 @@ body.dt-th.dtth-nat-win11 #dt-panel .ws-user .dt-si,body.dt-th.dtth-nat-win11 #d
     var os = st.os; st._nat = isNat();
     if(os === "mac"){
       var bar = $("dt-bar");
-      bar.innerHTML = '<button class="mb apl" type="button" style="font-size:14px">' + sysHtml("apple", "💬") + '</button><button class="mb dtapp" type="button">Los Purebreds</button><button class="mb" data-m="file" type="button">File</button><button class="mb" data-m="win" type="button">Window</button><span class="dtsp"></span><span class="dtst">' + sysHtml("wifi", "📶") + '</span><span class="dtst">' + sysHtml("battery", "🔋") + '</span><span class="dtst dtclk"></span>';
+      bar.innerHTML = '<button class="mb apl" type="button" style="font-size:14px">' + sysHtml("apple", "💬") + '</button><button class="mb dtapp" type="button">Los Purebreds</button><button class="mb" data-m="file" type="button">File</button><button class="mb" data-m="win" type="button">Window</button><span class="dtsp"></span><span class="dtst">' + sysHtml("wifi", "📶") + '</span><span class="dtst">' + sysHtml("battery", "🔋") + '</span><span class="dtst" data-cc="1" title="Control Center">' + I.ctl + '</span><span class="dtst dtclk"></span>';
       if(isNat()){ bar.innerHTML = natBar(); natBarExtra(bar); }
+      bar.addEventListener("click", function(e){ if(e.target.closest("[data-cc]")){ e.stopPropagation(); toggleCC(); } });
       bar.querySelector(".apl").onclick = function(e){ pop(e.currentTarget, [["Launchpad", function(){ lpOpen(); }], "-", ["About this desktop", function(){ alert("Los Purebreds desktop mode (macOS look).\nEvery tab can be opened in its own window."); }], ["Customize desktop…", function(){ openCustomize(); }], "-", ["Exit desktop mode", exit]]); };
       bar.querySelector(".dtapp").onclick = function(e){ pop(e.currentTarget, [["Customize desktop…", function(){ openCustomize(); }], "-", ["Exit desktop mode", exit]]); };
       bar.querySelector("[data-m=file]").onclick = function(e){ pop(e.currentTarget, [["New window", function(){ var c = st.live ? st.live.ch : "main"; var w = openWin(tabOf(c) || tabs()[0], {}); focus(w); }], ["New shortcut…", function(){ shortcutDialog(null); }], ["Close window", function(){ var a = activeWin(); if(a) closeWin(a); }]]); };
@@ -15710,14 +15982,14 @@ body.dt-th.dtth-nat-win11 #dt-panel .ws-user .dt-si,body.dt-th.dtth-nat-win11 #d
     if(os === "chromeos"){
       var sh = st.shell.querySelector("#dt-shelf");
       sh.querySelector(".lnch").onclick = function(){ togglePanel(); };
-      sh.querySelector(".tray").onclick = function(e){ pop(e.currentTarget, [["Customize desktop…", function(){ openCustomize(); }], "-", ["Exit desktop mode", exit]], "up"); };
+      sh.querySelector(".tray").onclick = function(e){ e.stopPropagation(); toggleCC(); };
     }
     if(os === "win11"){
       var tk = st.shell.querySelector("#dt-task");
       tk.querySelector(".start").onclick = function(){ togglePanel(); };
-      tk.querySelector(".tray").onclick = function(e){ pop(e.currentTarget, [["Customize desktop…", function(){ openCustomize(); }], "-", ["Exit desktop mode", exit]], "up"); };
+      tk.querySelector(".tray").onclick = function(e){ e.stopPropagation(); toggleCC(); };
     }
-    applySys(); refreshDock(); tick();
+    applySys(); refreshDock(); tick(); ccApply();
   }
   function appsHost(){
     return st.os === "mac" ? $("dt-dock") : st.os === "chromeos" ? st.shell.querySelector("#dt-shelf .apps") : st.shell.querySelector("#dt-task .apps");
@@ -15727,7 +15999,9 @@ body.dt-th.dtth-nat-win11 #dt-panel .ws-user .dt-si,body.dt-th.dtth-nat-win11 #d
     var h = appsHost(); if(!h) return;
     h.querySelectorAll(".dt-app").forEach(function(b){ b.remove(); });
     allApps().forEach(function(t){
-      var b = appBtn(t), open = st.wins.filter(function(w){ return w.ch === t.ch; });
+      var open = st.wins.filter(function(w){ return w.ch === t.ch; });
+      if(!isPinned(t) && !open.length) return;          // unpinned and not running: not on the dock
+      var b = appBtn(t);
       if(open.length) b.classList.add("on");
       if(open.some(function(w){ return w === activeWin(); })) b.classList.add("dtact");
       h.appendChild(b);
@@ -15739,7 +16013,7 @@ body.dt-th.dtth-nat-win11 #dt-panel .ws-user .dt-si,body.dt-th.dtth-nat-win11 #d
     st.wins.forEach(function(w){ if(!w.sc && !tabOf(w.ch)){ var b = appBtn({ch:w.ch, icon:w.icon, label:w.label}); b.classList.add("on"); h.appendChild(b); } });
     if(st.os === "mac") dockExtras(h); if(st.os === "win11") winExtras(h);
   }
-  function closePops(keep){ var p = $("dt-pop"); if(p) p.classList.remove("show"); var pn = $("dt-panel"); if(pn && !keep) pn.classList.remove("show"); if(st.shell) st.shell.querySelectorAll("#dt-bar .mb.open").forEach(function(b){ b.classList.remove("open"); }); }
+  function closePops(keep){ var cc = $("dt-cc"); if(cc && !keep) cc.classList.remove("show"); var p = $("dt-pop"); if(p) p.classList.remove("show"); var pn = $("dt-panel"); if(pn && !keep) pn.classList.remove("show"); if(st.shell) st.shell.querySelectorAll("#dt-bar .mb.open").forEach(function(b){ b.classList.remove("open"); }); }
   function pop(anchor, items, dir, keep){
     var p = $("dt-pop"), was = p.classList.contains("show") && p._a === anchor; closePops(keep); if(was) return;
     p.innerHTML = ""; p._a = anchor;
@@ -15830,12 +16104,22 @@ body.dt-th.dtth-nat-win11 #dt-panel .ws-user .dt-si,body.dt-th.dtth-nat-win11 #d
     if(w.min){ w.min = false; w.el.classList.remove("min"); }
     st.z++; w.el.style.zIndex = st.z;
     st.wins.forEach(function(x){ x.el.classList.toggle("dtact", x === w); });
-    if(!w.sc && st.live !== w) activate(w);
+    if(!w.sc) activate(w);
     refreshDock();
   }
+  /* Multitasking: the first window uses the app that is on this page. Every other window loads its own running copy of
+     the app in an iframe (same page, same sign-in), so all of them keep working at the same time. */
+  function startInst(w){
+    if(w.inst || w.sc) return;
+    var c = w.ch === "dm" ? "main" : w.ch, f = w.frame;
+    w.inst = true; w.el.classList.add("is-inst");
+    f.onload = null; f.removeAttribute("sandbox"); f.removeAttribute("srcdoc");
+    f.setAttribute("allow", "fullscreen; clipboard-write; autoplay; microphone; camera");
+    f.src = location.href.split("#")[0] + "#dtch=" + encodeURIComponent(c);
+  }
   function activate(w){
-    var old = st.live;
-    if(old && old !== w){ snapshot(old); old.el.classList.remove("is-live"); }
+    if(w.inst || st.live === w) return;
+    if(st.live){ startInst(w); return; }      // the page's own copy is already in another window
     var c = w.ch === "dm" ? "main" : w.ch;
     w.body.appendChild(st.liveHost); w.el.classList.add("is-live"); st.live = w;
     st.liveHost.classList.toggle("wide", st.liveHost.clientWidth >= 640);
@@ -15944,13 +16228,14 @@ body.dt-th.dtth-nat-win11 #dt-panel .ws-user .dt-si,body.dt-th.dtth-nat-win11 #d
   function closeWin(w){
     var wasLive = st.live === w;
     if(wasLive){ st.park.appendChild(st.liveHost); st.live = null; }
+    if(w.inst){ try{ w.frame.src = "about:blank"; }catch(e){} }      // closes that copy's connection
     w.el.remove(); st.wins = st.wins.filter(function(x){ return x !== w; });
-    if(wasLive){ var nx = activeWin(); if(nx) focus(nx); }
+    var nx = activeWin(); if(nx) focus(nx);
     refreshDock();
   }
   function minWin(w){
     w.min = true; w.el.classList.add("min");
-    if(st.live === w){ var nx = activeWin(); if(nx) focus(nx); }
+    var nx = activeWin(); if(nx) focus(nx);
     refreshDock();
   }
   function maxWin(w, quiet){
@@ -16021,6 +16306,19 @@ body.dt-th.dtth-nat-win11 #dt-panel .ws-user .dt-si,body.dt-th.dtth-nat-win11 #d
       }catch(e){}
       return r;
     };
+  }
+  if(EMB){
+    var want = "main", tries = 0, held = 0;
+    try{ want = decodeURIComponent((/dtch=([^&]*)/.exec(location.hash) || [])[1] || "main"); }catch(e){}
+    var hs = D.createElement("style"); hs.textContent = "#px-host{display:none !important}"; D.head.appendChild(hs);
+    var iv = setInterval(function(){
+      if(++tries > 200){ clearInterval(iv); return; }
+      try{
+        if(typeof setChannel === "function" && typeof curCh !== "undefined" && $("chtabs")){
+          if(curCh !== want){ held = 0; setChannel(want); } else if(++held >= 8) clearInterval(iv);
+        }
+      }catch(e){}
+    }, 300);
   }
   window.__dtExit = exit;
   var start = saved();
