@@ -2366,7 +2366,7 @@ function renderRow(m, animate){
 
   const wrap = document.createElement("div"); wrap.className = "bwrap";
   if(m.img){
-    const im = document.createElement("img"); im.className = "img" + (m.stk ? " stk" : ""); im.decoding = "async"; im.alt = "Photo";
+    const im = document.createElement("img"); im.className = "img" + (m.stk ? " stk" : "") + (m.gif ? " gif" : ""); im.decoding = "async"; im.alt = "Photo";
     if(!animate || mine || wasNear) im.onload = () => { if(box.scrollHeight - box.scrollTop - box.clientHeight < im.offsetHeight + 160) box.scrollTop = box.scrollHeight; };   // keep the chat pinned to the bottom while photos load (not if they scrolled away)
     if(m.gif || !/^data:/.test(m.b)) im.referrerPolicy = "no-referrer";
     im.src = m.b; wrap.appendChild(im);
@@ -2438,7 +2438,7 @@ function applyToDom(l){
   if(!!l.pn !== e.classList.contains("pinned") || (l.pn && +e.dataset.pn !== l.pn)){   // pinned / unpinned: move it
     const bx = $("box"), keep = bx.scrollTop; e.remove(); renderRow(l); bx.scrollTop = keep; return;
   }
-  renderRx(l, e);
+  renderRx(l, e); queueRegroup();       // a reaction on one photo of a stack lifts it out of the stack
   const bub = e.querySelector("[data-bubble]"); if(!bub || l.img) return;
   bub._raw = l.b; if(window.fillBubble) window.fillBubble(bub, l.b); else bub.textContent = l.b;
   if(l.edited) setEditedTag(bub.parentNode, true);
@@ -2461,17 +2461,54 @@ function fmtStamp(ts){
   if(d.toDateString() === y.toDateString()) return "Yesterday " + time;
   return d.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" }) + " " + time;
 }
+/* Several photos sent in a row by the same person (like picking a handful at once) stack into one tidy grid, like iMessage / Discord.
+   The messages stay separate underneath: the first one shows the grid, the others are just hidden, and a lone photo is untouched. */
+function albumImg(e){
+  if(e._aimg) return e._aimg;
+  const w = e.querySelector(".col > .bwrap"), im = w && w.querySelector(":scope > img.img");
+  return im && !im.classList.contains("stk") && !im.classList.contains("gif") ? im : null;
+}
+function buildAlbums(vis){
+  const box = $("box"), runs = []; let cur = [];
+  const flush = () => { if(cur.length > 1) runs.push(cur); cur = []; };
+  vis.forEach(e => {
+    const ok = !e.classList.contains("sys") && !e.classList.contains("pinned") && !e.classList.contains("gone") && albumImg(e) && !e.querySelector(".quote") && !e.querySelector(".rx .chip");
+    if(!ok){ flush(); return; }
+    const p = cur[cur.length - 1];
+    if(p && (p.dataset.uid !== e.dataset.uid || p.dataset.user !== e.dataset.user || Math.abs(+e.dataset.ts - +p.dataset.ts) > 30000 || cur.length >= 10)) flush();
+    cur.push(e);
+  });
+  flush();
+  const sig = runs.map(r => r.map(e => e.id).join(",")).join("|");
+  const fine = runs.every(r => { const g = r[0].querySelector(".alb-grid"); return g && g.children.length === r.length; });
+  if(sig === box._albSig && fine) return;
+  box._albSig = sig;
+  box.querySelectorAll(".msg").forEach(e => {             // put every photo back in its own message first
+    if(e._aimg){ const h = e.querySelector(".col > .bwrap"); if(h && e._aimg.parentNode !== h) h.insertBefore(e._aimg, h.firstChild); e._aimg = null; }
+    e.querySelectorAll(".alb-grid").forEach(g => g.remove());
+    e.classList.remove("alb0", "alb-hid");
+  });
+  runs.forEach(r => {
+    const g = document.createElement("div"); g.className = "alb-grid a" + r.length;
+    r.forEach((e, i) => {
+      const im = albumImg(e); e._aimg = im; g.appendChild(im);
+      e.classList.add(i ? "alb-hid" : "alb0");
+    });
+    const h = r[0].querySelector(".col > .bwrap"); h.insertBefore(g, h.firstChild);
+  });
+}
 function regroup(){
   const box = $("box"), gal = curCh === "gal";
   const near = box.scrollHeight - box.scrollTop - box.clientHeight < 120;
   const setC = (e, c, on) => { if(e.classList.contains(c) !== !!on) e.classList.toggle(c, !!on); };   // only touch the DOM when something changed
-  const vis = [...box.children].filter(e => {
+  let vis = [...box.children].filter(e => {
     if(!e.classList.contains("msg")) return false;
     if(e.classList.contains("sys")) return true;
     const show = curCh === "dm" ? ((e.dataset.ch === "dm" || e.dataset.ch === "grp") && e.dataset.dm === dmWith) : curCh === "gal" ? e.dataset.ch === "gal" : curCh === "polls" ? e.dataset.ch === "polls" : curCh === "shame" ? e.dataset.ch === "shame" : !e.dataset.ch;
     setC(e, "off", !show);
     return show;
   });
+  if(!gal){ buildAlbums(vis); vis = vis.filter(e => !e.classList.contains("alb-hid")); }
   const same = (a, b) => a && b && !a.classList.contains("sys") && !b.classList.contains("sys") && !a.classList.contains("pinned") && !b.classList.contains("pinned") &&
     a.dataset.uid === b.dataset.uid && a.dataset.user === b.dataset.user && Math.abs(+b.dataset.ts - +a.dataset.ts) < 120000;
   let lastTs = 0, mineEl = null; const want = [];
@@ -2484,7 +2521,7 @@ function regroup(){
     const ts = +e.dataset.ts;
     if(ts && ts - lastTs > 15 * 60000) want.push([e, fmtStamp(ts)]);
     if(ts) lastTs = ts;
-    if(e.classList.contains("me") && !e.querySelector(".img")) mineEl = e;
+    if(e.classList.contains("me") && !e.querySelector(".img") && !e.classList.contains("alb0")) mineEl = e;
   });
   if(mineEl && !gal) mineEl._m = 1;
   vis.forEach(e => { setC(e, "first", e._f); setC(e, "last", e._l); setC(e, "lastmine", e._m); });
@@ -10331,19 +10368,221 @@ html body :is(.plus,#emo-btn,#sendbtn,.act button,#chtabs button,.stg-box button
 @media (prefers-reduced-motion:reduce){html body *{scale:none !important}}
 html.anim-off body *{scale:none !important}
 </style>
+<style id="links-css">
+.bubble a.lnk{color:inherit;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:2px;word-break:break-all;cursor:pointer}
+.bubble a.lnk:hover{opacity:.85}
+.lpv{display:flex;flex-direction:column;width:min(320px,70vw);margin-top:4px;border-radius:16px;overflow:hidden;background:var(--row,#2c2c2e);color:var(--text,#fff);text-decoration:none;border:1px solid var(--line,rgba(255,255,255,.12));box-shadow:0 1px 3px rgba(0,0,0,.2);transition:transform .15s,box-shadow .15s}
+.lpv:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(0,0,0,.3)}
+.lpv .pi{display:block;width:100%;aspect-ratio:1.91/1;object-fit:cover;background:rgba(127,127,127,.18)}
+.lpv .pb{display:flex;align-items:center;gap:10px;padding:9px 12px 10px;min-width:0}
+.lpv .pf{width:28px;height:28px;border-radius:7px;flex:none;object-fit:contain;background:#fff}
+.lpv .pt{display:flex;flex-direction:column;min-width:0;gap:1px}
+.lpv .pt b{font-size:13px;font-weight:650;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word}
+.lpv .pt span{font-size:11.5px;opacity:.65;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body.no-lpv .lpv{display:none}
+</style>
+<script id="links-js">
+/* Links in messages: every web address becomes clickable (opens in a new tab), and the first one in a message gets an
+   iMessage-style preview card (picture, title, site). Titles and pictures come from the free microlink.io service; private
+   chats and group chats never send their links anywhere, they just get a plain site card. Turn previews off in Settings > Messages. */
+(function(){
+  "use strict";
+  var KEY = "pb_lpv", OFFK = "pb_lpv_off", MEM = {}, QUEUE = [], BUSY = 0;
+  var off = false; try{ off = localStorage.getItem(OFFK) === "1"; }catch(e){}
+  if(off) document.body.classList.add("no-lpv");
+  var cache = {}; try{ cache = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; }catch(e){}
+  function saveCache(){
+    try{
+      var ks = Object.keys(cache); if(ks.length > 120){ ks.sort(function(a, b){ return (cache[a].t || 0) - (cache[b].t || 0); }).slice(0, ks.length - 100).forEach(function(k){ delete cache[k]; }); }
+      localStorage.setItem(KEY, JSON.stringify(cache));
+    }catch(e){}
+  }
+  var URLRE = /\b(?:https?:\/\/|www\.)[^\s<>"'`]+|\b(?:[a-z0-9-]+\.)+(?:com|net|org|io|gg|co|app|dev|tv|me|xyz|edu|gov|ly|us|uk|ai|fm)(?:\/[^\s<>"'`]*)?(?![\w@-])/gi;
+  function norm(raw){
+    var t = raw.replace(/[.,!?;:)\]}'"]+$/, "");
+    var lead = /^https?:\/\//i.test(t) ? t : "https://" + t;
+    try{ var u = new URL(lead); if(u.protocol !== "http:" && u.protocol !== "https:") return null; if(!/\./.test(u.hostname)) return null; return {text:t, href:u.href, host:u.hostname.replace(/^www\./, "")}; }catch(e){ return null; }
+  }
+  function linkify(bub){
+    if(!/https?:\/\/|www\.|\.(?:com|net|org|io|gg|co|app|dev|tv|me|xyz|edu|gov|ly|us|uk|ai|fm)\b/i.test(bub.textContent)) return null;
+    var first = null, nodes = [], w = document.createTreeWalker(bub, NodeFilter.SHOW_TEXT, null), n;
+    while((n = w.nextNode())){ if(!n.parentNode.closest("a")) nodes.push(n); }
+    nodes.forEach(function(tn){
+      var txt = tn.nodeValue, last = 0, m, frag = null; URLRE.lastIndex = 0;
+      while((m = URLRE.exec(txt))){
+        var info = norm(m[0]); if(!info) continue;
+        if(!frag) frag = document.createDocumentFragment();
+        if(m.index > last) frag.appendChild(document.createTextNode(txt.slice(last, m.index)));
+        var a = document.createElement("a"); a.className = "lnk"; a.href = info.href; a.target = "_blank"; a.rel = "noopener noreferrer nofollow"; a.textContent = info.text;
+        frag.appendChild(a);
+        var used = info.text.length; last = m.index + used; URLRE.lastIndex = last;
+        if(!first) first = info;
+      }
+      if(frag){ if(last < txt.length) frag.appendChild(document.createTextNode(txt.slice(last))); tn.parentNode.replaceChild(frag, tn); }
+    });
+    return first;
+  }
+  var IMG = /\.(png|jpe?g|gif|webp|avif|bmp|svg)(\?|#|$)/i;
+  function favicon(host){ return "https://www.google.com/s2/favicons?sz=64&domain=" + encodeURIComponent(host); }
+  function paintCard(card, info, meta){
+    card.replaceChildren();
+    if(meta && meta.image){ var im = new Image(); im.className = "pi"; im.alt = ""; im.loading = "lazy"; im.referrerPolicy = "no-referrer"; im.onerror = function(){ im.remove(); }; im.src = meta.image; card.appendChild(im); }
+    var pb = document.createElement("div"); pb.className = "pb";
+    var f = new Image(); f.className = "pf"; f.alt = ""; f.referrerPolicy = "no-referrer"; f.src = (meta && meta.logo) || favicon(info.host); f.onerror = function(){ f.style.visibility = "hidden"; };
+    var pt = document.createElement("div"); pt.className = "pt";
+    var b = document.createElement("b"); b.textContent = (meta && meta.title) || info.host;
+    var sp = document.createElement("span"); sp.textContent = (meta && meta.publisher && meta.publisher !== b.textContent ? meta.publisher + " · " : "") + info.host;
+    pt.append(b, sp); pb.append(f, pt); card.appendChild(pb);
+  }
+  function pump(){
+    while(BUSY < 2 && QUEUE.length){
+      var job = QUEUE.shift(); BUSY++;
+      (function(job){
+        var ctl = window.AbortController ? new AbortController() : null, to = setTimeout(function(){ if(ctl) ctl.abort(); }, 7000);
+        fetch("https://api.microlink.io/?url=" + encodeURIComponent(job.info.href), ctl ? {signal:ctl.signal} : {})
+          .then(function(r){ return r.json(); })
+          .then(function(j){
+            var d = j && j.status === "success" && j.data || {};
+            var meta = {title: String(d.title || "").slice(0, 160), image: d.image && d.image.url || "", logo: d.logo && d.logo.url || "", publisher: String(d.publisher || "").slice(0, 60)};
+            if(!/^https?:\/\//i.test(meta.image)) meta.image = ""; if(!/^https?:\/\//i.test(meta.logo)) meta.logo = "";
+            cache[job.info.href] = {m: meta, t: Date.now()}; saveCache(); MEM[job.info.href] = meta; job.done(meta);
+          })
+          .catch(function(){ MEM[job.info.href] = {}; job.done(null); })
+          .then(function(){ clearTimeout(to); BUSY--; pump(); });
+      })(job);
+    }
+  }
+  function addCard(bub, info){
+    var bw = bub.closest(".bwrap"), wrap = bw && bw.parentNode; if(!wrap) return;       // the card sits under the bubble, in the message column
+    var old = wrap.querySelector(":scope > .lpv");
+    if(old && old.href === info.href) return;
+    if(old) old.remove();
+    if(IMG.test(info.href)) return;
+    var card = document.createElement("a"); card.className = "lpv"; card.href = info.href; card.target = "_blank"; card.rel = "noopener noreferrer nofollow";
+    var row = bub.closest(".msg"), priv = !!row && (row.dataset.ch === "dm" || row.dataset.ch === "grp");
+    var hit = MEM[info.href] || (cache[info.href] && cache[info.href].m);
+    paintCard(card, info, hit);
+    bw.after(card);
+    if(hit || priv || off) return;
+    QUEUE.push({info:info, done:function(meta){ if(meta && card.isConnected) paintCard(card, info, meta); }}); pump();
+  }
+  function install(){
+    var base = window.fillBubble;
+    window.fillBubble = function(bub, text){
+      if(base) base(bub, text); else bub.textContent = text;
+      var info = null; try{ info = linkify(bub); }catch(e){}
+      bub._lpv = info;
+      if(info) setTimeout(function(){ try{ addCard(bub, info); }catch(e){} }, 0);
+      else setTimeout(function(){ var c = bub.closest(".col"); if(c){ var o = c.querySelector(":scope > .lpv"); if(o) o.remove(); } }, 0);   // an edit removed the link
+    };
+  }
+  install();
+
+  /* Settings > Messages: a switch for the preview cards (links stay clickable either way) */
+  var cardEl = null; document.querySelectorAll(".stg-card").forEach(function(c){ var h = c.querySelector("h3"); if(!cardEl && h && /messages/i.test(h.textContent) && !/live|preview/i.test(h.textContent)) cardEl = c; });
+  if(cardEl){
+    var host = cardEl.querySelector(".sx-group") || cardEl;
+    var l = document.createElement("label"); l.className = "chk" + (host !== cardEl ? " sx-chk" : "");
+    var cb = document.createElement("input"); cb.type = "checkbox"; cb.id = "lpv-on"; cb.checked = !off;
+    l.appendChild(cb); l.appendChild(document.createTextNode("Show website previews for links"));
+    host.appendChild(l);
+    cb.addEventListener("change", function(){
+      off = !cb.checked; try{ if(off) localStorage.setItem(OFFK, "1"); else localStorage.removeItem(OFFK); }catch(e){}
+      document.body.classList.toggle("no-lpv", off);
+    });
+  }
+})();
+</script>
+<style id="polish-css">
+/* ---- polish: settings controls, empty states, small touches ---- */
+#stg select:not([multiple]){-webkit-appearance:none;appearance:none;padding-right:38px !important;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none' stroke='%238e8e93' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m1.5 1.5 4.5 4.5 4.5-4.5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;background-size:12px 8px}
+#stg input[type=color]{-webkit-appearance:none;appearance:none;display:block;box-sizing:border-box;width:100%;min-height:36px;padding:0;border:none !important;background:none !important;border-radius:10px;overflow:hidden;cursor:pointer}
+#stg input[type=color]::-webkit-color-swatch-wrapper{padding:0}
+#stg input[type=color]::-webkit-color-swatch{border:1px solid rgba(127,127,127,.35);border-radius:10px}
+#stg input[type=color]::-moz-color-swatch{border:1px solid rgba(127,127,127,.35);border-radius:10px}
+.gm-empty .gm-b{padding:11px 20px;border:none;border-radius:12px;background:var(--accent);color:var(--on-accent,#fff);font:inherit;font-weight:700;cursor:pointer;transition:filter .15s,transform .15s}
+.gm-empty .gm-b:hover{filter:brightness(1.12)}.gm-empty .gm-b:active{transform:scale(.97)}
+.gm-empty div:nth-child(2){font-size:15px;font-weight:600;opacity:.8}
+.lpv:active{transform:scale(.985)}
+.lpv:focus-visible,.gm-card:focus-visible,.gm-arr:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.alb-grid .img{transition:filter .15s}.alb-grid .img:hover{filter:brightness(1.08)}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.gm-strip{scroll-behavior:auto}.lpv,.gm-card{transition:none}}
+</style>
+<style id="anim-styles-css">
+/* =====================================================================
+   Animation styles (Settings > Animation Lab > Animation style)
+   <html data-anim="macos | pixel | oneui">. "Mixed" (no attribute) is the original One UI + Dock look defined above.
+   macOS: smooth ease-out, no overshoot, Dock magnification.   Google Pixel: Material 3 "emphasized" motion.
+   One UI: springy overshoot, no Dock fisheye.   (The hover / press springs are in oneui-dock-js.)
+   ===================================================================== */
+@keyframes macPop{from{opacity:0;transform:scale(.96) translateY(-4px)}to{opacity:1;transform:none}}
+@keyframes macPopOut{from{opacity:1;transform:none}to{opacity:0;transform:scale(.98)}}
+@keyframes macCard{from{opacity:0;transform:scale(.97) translateY(8px)}to{opacity:1;transform:none}}
+@keyframes macSheet{from{opacity:0;transform:translateY(-16px) scale(.99)}to{opacity:1;transform:none}}
+@keyframes macSheetOut{from{opacity:1;transform:none}to{opacity:0;transform:translateY(-10px) scale(.99)}}
+@keyframes macMsg{from{opacity:0;transform:translateY(8px) scale(.94)}to{opacity:1;transform:none}}
+@keyframes macRow{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:none}}
+@keyframes macAct{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:none}}
+@keyframes macActBeside{from{opacity:0;transform:translateY(-50%) scale(.9)}to{opacity:1;transform:translateY(-50%)}}
+@keyframes macBox{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+
+html[data-anim="macos"] body .anim-pop{animation:macPop .26s cubic-bezier(.22,1,.36,1)}
+html[data-anim="macos"] body .anim-pop.closing,html[data-anim="macos"] body #emo-panel.anim-pop.closing{animation:macPopOut .16s ease-in forwards}
+html[data-anim="macos"] body #onpop.open{animation:macPop .26s cubic-bezier(.22,1,.36,1)}
+html[data-anim="macos"] body #onpop.open.closing{animation:macPopOut .16s ease-in forwards}
+html[data-anim="macos"] body #emo-sug[style*="block"]{animation:macPop .2s cubic-bezier(.22,1,.36,1)}
+html[data-anim="macos"] body #gate .card{animation:macCard .35s cubic-bezier(.22,1,.36,1)}
+html[data-anim="macos"] body #stg.open{animation:macSheet .32s cubic-bezier(.22,1,.36,1)}
+html[data-anim="macos"] body #stg.open.closing{animation:macSheetOut .2s ease-in forwards}
+html[data-anim="macos"] body .msg.pop{animation:macMsg .28s cubic-bezier(.22,1,.36,1)}
+html[data-anim="macos"] body .prow.enter{animation:macRow .3s cubic-bezier(.22,1,.36,1)}
+html[data-anim="macos"] body #box.swap{animation:macBox .24s cubic-bezier(.22,1,.36,1)}
+html[data-anim="macos"] body .msg:hover .act,html[data-anim="macos"] body .msg.tap .act,html[data-anim="macos"] body .act:focus-within{animation:macActBeside .16s ease-out}
+html[data-anim="macos"] body.in-gal .msg:hover .act,html[data-anim="macos"] body.in-gal .msg.tap .act{animation:macAct .16s ease-out}
+
+@keyframes pxPop{from{opacity:0;transform:scale(.9) translateY(-12px)}to{opacity:1;transform:none}}
+@keyframes pxPopOut{from{opacity:1;transform:none}to{opacity:0;transform:scale(.92)}}
+@keyframes pxCard{from{opacity:0;transform:scale(.9) translateY(28px)}to{opacity:1;transform:none}}
+@keyframes pxSheet{from{opacity:0;transform:translateY(48px)}to{opacity:1;transform:none}}
+@keyframes pxSheetOut{from{opacity:1;transform:none}to{opacity:0;transform:translateY(32px)}}
+@keyframes pxMsg{from{opacity:0;transform:translateY(16px) scale(.88)}to{opacity:1;transform:none}}
+@keyframes pxRow{from{opacity:0;transform:translateX(-18px)}to{opacity:1;transform:none}}
+@keyframes pxAct{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:none}}
+@keyframes pxActBeside{from{opacity:0;transform:translateY(-50%) scale(.6)}to{opacity:1;transform:translateY(-50%)}}
+@keyframes pxBox{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+
+html[data-anim="pixel"] body .anim-pop{animation:pxPop .4s cubic-bezier(.05,.7,.1,1)}
+html[data-anim="pixel"] body .anim-pop.closing,html[data-anim="pixel"] body #emo-panel.anim-pop.closing{animation:pxPopOut .15s cubic-bezier(.3,0,.8,.15) forwards}
+html[data-anim="pixel"] body #onpop.open{animation:pxPop .4s cubic-bezier(.05,.7,.1,1)}
+html[data-anim="pixel"] body #onpop.open.closing{animation:pxPopOut .15s cubic-bezier(.3,0,.8,.15) forwards}
+html[data-anim="pixel"] body #emo-sug[style*="block"]{animation:pxPop .3s cubic-bezier(.05,.7,.1,1)}
+html[data-anim="pixel"] body #gate .card{animation:pxCard .5s cubic-bezier(.05,.7,.1,1)}
+html[data-anim="pixel"] body #stg.open{animation:pxSheet .5s cubic-bezier(.05,.7,.1,1)}
+html[data-anim="pixel"] body #stg.open.closing{animation:pxSheetOut .25s cubic-bezier(.3,0,.8,.15) forwards}
+html[data-anim="pixel"] body .msg.pop{animation:pxMsg .4s cubic-bezier(.34,1.25,.64,1)}
+html[data-anim="pixel"] body .prow.enter{animation:pxRow .4s cubic-bezier(.05,.7,.1,1)}
+html[data-anim="pixel"] body #box.swap{animation:pxBox .38s cubic-bezier(.05,.7,.1,1)}
+html[data-anim="pixel"] body .msg:hover .act,html[data-anim="pixel"] body .msg.tap .act,html[data-anim="pixel"] body .act:focus-within{animation:pxActBeside .24s cubic-bezier(.34,1.25,.64,1)}
+html[data-anim="pixel"] body.in-gal .msg:hover .act,html[data-anim="pixel"] body.in-gal .msg.tap .act{animation:pxAct .24s cubic-bezier(.34,1.25,.64,1)}
+/* a soft pill-shaped press highlight, the Pixel / Material "state layer" */
+html[data-anim="pixel"] body :is(.plus,#emo-btn,#sendbtn,.btn,.stg-btn,#chtabs button,.row-ch,.prow,.gm-chip):active{filter:brightness(1.12)}
+</style>
 <script id="alab-js">
 (function(){
   var $ = function(i){ return document.getElementById(i); };
   var stg = $("stg"), scroll = document.querySelector(".stg-scroll"), saveBtn = $("save");
   if(!stg || !scroll || !saveBtn) return;
   var root = document.documentElement, KEY = "pb_alab";
-  var DEF = {off:false, speed:100, bounce:100, zoom:100, press:100, open:null, close:null};
+  var DEF = {style:"mixed", off:false, speed:100, bounce:100, zoom:100, press:100, open:null, close:null};
+  var STYLE_IDS = ["mixed", "macos", "pixel", "oneui"];
   var RNG = {speed:[25,300], bounce:[0,300], zoom:[0,300], press:[0,300]};
 
   function clean(o){
     var r = {}, k; for(k in DEF) r[k] = DEF[k];
     if(o && typeof o === "object"){
       if(o.off === true) r.off = true;
+      if(STYLE_IDS.indexOf(o.style) > -1) r.style = o.style;
       Object.keys(RNG).forEach(function(n){ var v = +o[n]; if(o[n] != null && isFinite(v)) r[n] = Math.max(RNG[n][0], Math.min(RNG[n][1], v)); });
       ["open","close"].forEach(function(n){ var v = +o[n]; if(o[n] != null && isFinite(v)) r[n] = Math.max(0, Math.min(1500, v)); });
     }
@@ -10408,6 +10647,7 @@ html.anim-off body *{scale:none !important}
     root.classList.toggle("a-open", S.open != null);
     root.classList.toggle("a-close", S.close != null);
     root.classList.toggle("anim-off", !!S.off);
+    if(S.style && S.style !== "mixed") root.setAttribute("data-anim", S.style); else root.removeAttribute("data-anim");
     items.forEach(function(it){ if(first || it.bez) setItem(it, b); });
   }
 
@@ -10434,6 +10674,9 @@ html.anim-off body *{scale:none !important}
   var card = document.createElement("div"); card.className = "stg-card"; card.id = "stg-anim";
   var h = '<h3>\uD83C\uDF9E\uFE0F Animation Lab</h3>' +
     '<div class="xnote">Tune how the app moves. You see changes right away. Save changes keeps them, Cancel undoes them.</div>' +
+    '<label for="al-style">Animation style</label>' +
+    '<select id="al-style"><option value="mixed">Original (One UI + Dock mix)</option><option value="macos">macOS</option><option value="pixel">Google Pixel</option><option value="oneui">One UI</option></select>' +
+    '<div class="xnote">macOS: smooth and calm, with the Dock zoom on icon rows. Google Pixel: Material 3 emphasized motion, sheets rise from the bottom. One UI: bouncy springs. The sliders below fine-tune whichever you pick.</div>' +
     '<label class="chk"><input type="checkbox" id="al-off">Turn all animations off</label>';
   ROWS.forEach(function(r){
     h += '<div class="al-row"><div class="al-head"><span>' + r.t + '</span><output id="alo-' + r.k + '"></output></div>' +
@@ -10449,7 +10692,7 @@ html.anim-off body *{scale:none !important}
   scroll.appendChild(card);
 
   function sync(){
-    $("al-off").checked = !!S.off;
+    $("al-off").checked = !!S.off; $("al-style").value = S.style || "mixed";
     ROWS.forEach(function(r){
       var v = S[r.k], el = $("al-" + r.k), o = $("alo-" + r.k);
       el.value = v == null ? r.def : v;
@@ -10460,6 +10703,7 @@ html.anim-off body *{scale:none !important}
     $("al-" + r.k).addEventListener("input", function(e){ S[r.k] = +e.target.value; $("alo-" + r.k).textContent = S[r.k] + r.unit; apply(false); });
   });
   $("al-off").addEventListener("change", function(e){ S.off = e.target.checked; apply(false); });
+  $("al-style").addEventListener("change", function(e){ S.style = e.target.value; apply(false); });
   $("al-reset").onclick = function(){ S = clean(null); apply(false); sync(); };
   $("al-play").onclick = function(){
     var p = $("al-pop"), shown = p.style.display !== "none" && !p.classList.contains("closing");
@@ -11654,6 +11898,17 @@ body:not(.hide-sb) #stg-chats{display:none !important}
 .mir .xbtn:hover{opacity:1;background:rgba(255,69,58,.25)}
 .mir .pdev{font-size:11px;opacity:.8;white-space:nowrap}
 
+/* ===== photo stacks: several photos in a row become one grid ===== */
+.msg.alb-hid{display:none !important}
+.alb-grid{display:grid;grid-template-columns:1fr 1fr;gap:3px;width:min(320px,68vw);border-radius:18px;overflow:hidden}
+.alb-grid .img{display:block;width:100% !important;height:100% !important;max-width:none !important;max-height:none !important;margin:0 !important;aspect-ratio:1/1;object-fit:cover;border-radius:0 !important;box-shadow:none !important;cursor:zoom-in}
+.alb-grid.a3 .img:first-child{grid-column:1/-1;aspect-ratio:2/1}
+.alb-grid:is(.a5,.a7,.a8){grid-template-columns:repeat(6,1fr)}
+.alb-grid.a5 .img{grid-column:span 2}.alb-grid.a5 .img:nth-child(-n+2){grid-column:span 3}
+.alb-grid.a7 .img{grid-column:span 2}.alb-grid.a7 .img:first-child{grid-column:1/-1;aspect-ratio:2/1}
+.alb-grid:is(.a6,.a9,.a10){grid-template-columns:repeat(3,1fr)}
+.alb-grid.a8 .img{grid-column:span 2}.alb-grid.a8 .img:nth-child(n+7){grid-column:span 3}
+.alb-grid.a10 .img:last-child{grid-column:1/-1;aspect-ratio:3/1}
 /* ===== Games tab ===== */
 body.in-games #topbanner{display:none}
 #games{display:none;flex:1;min-height:0;flex-direction:column;background:var(--bg);color:var(--text)}
@@ -14048,14 +14303,17 @@ body[data-hp="right"] #hdr-arrow{right:100%;left:auto;border-radius:10px 0 0 10p
 
   /* ---- live settings (the Animation Lab sets these custom properties on <html>) ---- */
   var P = {zoom:1, press:1, speed:1, bounce:1}, pDirty = true;
+  /* per animation style: mag = Dock fisheye, gen = grow on hover, sq = how much a press squishes, z = spring damping (null = follow Bounciness) */
+  var STYLES = {mixed:{mag:1, gen:1, sq:.1, z:null}, oneui:{mag:0, gen:1, sq:.1, z:null}, macos:{mag:1, gen:0, sq:.04, z:.85}, pixel:{mag:0, gen:0, sq:.05, z:.95}}, STY = STYLES.mixed;
   function num(n, d){ var v = parseFloat(root.style.getPropertyValue(n)); return isFinite(v) ? v : d; }
   function params(){
     if(!pDirty) return; pDirty = false;
+    STY = STYLES[root.getAttribute("data-anim")] || STYLES.mixed;
     P.zoom = num("--a-zoom", 1); P.press = num("--a-press", 1);
     P.speed = 1 / Math.max(.2, num("--a-dur", 1)); P.bounce = num("--a-bounce", 1);
   }
   new MutationObserver(function(){ pDirty = true; if(noAnim()) releaseAll(); })
-    .observe(root, {attributes:true, attributeFilter:["style","class"]});
+    .observe(root, {attributes:true, attributeFilter:["style","class","data-anim"]});
   function noAnim(){ return root.classList.contains("anim-off") || mqReduce.matches; }
 
   /* ---- spring engine ---- */
@@ -14063,7 +14321,7 @@ body[data-hp="right"] #hdr-arrow{right:100%;left:auto;border-radius:10px 0 0 10p
   function st(el){ return el.__dk || (el.__dk = {s:1, v:0, t:1, hov:1, pr:0}); }
   function retarget(el){
     var s = st(el);
-    s.t = s.hov * (s.pr ? 1 - .1 * P.press : 1);
+    s.t = s.hov * (s.pr ? 1 - STY.sq * P.press : 1);
     live.add(el); if(!raf){ last = performance.now(); raf = requestAnimationFrame(tick); }
   }
   function paint(el, s){
@@ -14075,7 +14333,7 @@ body[data-hp="right"] #hdr-arrow{right:100%;left:auto;border-radius:10px 0 0 10p
   function tick(now){
     raf = 0; params();
     var dt = Math.min(.034, Math.max(.001, (now - last) / 1000)); last = now;
-    var zeta = Math.max(.12, Math.min(1, 1 - .5 * P.bounce));
+    var zeta = STY.z != null ? Math.max(.12, Math.min(1, STY.z - (P.bounce - 1) * .3)) : Math.max(.12, Math.min(1, 1 - .5 * P.bounce));
     live.forEach(function(el){
       var s = st(el);
       if(!el.isConnected){ live.delete(el); return; }
@@ -14126,6 +14384,7 @@ body[data-hp="right"] #hdr-arrow{right:100%;left:auto;border-radius:10px 0 0 10p
     var el = tgt; if(!el || !el.closest){ releaseGroup(); setGeneric(null); return; }
     var g = null, box = null, i;
     for(i = 0; i < GROUPS.length; i++){ box = el.closest(GROUPS[i].box); if(box){ g = GROUPS[i]; break; } }
+    if(g && !STY.mag) g = null;
     if(!g){ releaseGroup(); }
     else {
       if(!cur || cur.box !== box || dirty || performance.now() - cur.t > 350 || (cur.list[0] && !cur.list[0].el.isConnected)){
@@ -14147,6 +14406,7 @@ body[data-hp="right"] #hdr-arrow{right:100%;left:auto;border-radius:10px 0 0 10p
     var gen = el.closest(GEN);
     if(gen && (gen.matches(SKIP) || (cur && cur.list.some(function(o){ return o.el === gen; })))) gen = null;
     if(gen && (gen.offsetWidth > 520 || gen.offsetHeight > 150)) gen = null;
+    if(!STY.gen) gen = null;
     setGeneric(gen);
   }
   document.addEventListener("pointermove", function(e){
@@ -15439,6 +15699,135 @@ body.dt-th.dtth-nat-win11 #dt-panel .ws-user .dt-si,body.dt-th.dtth-nat-win11 #d
   function thRaw(){ var c = thGet(); if(c === "native") return natId(); if(c === "match") c = B.dataset.theme || "imessage"; if(c === "macos" && TH["nat-mac"]) c = "nat-mac"; return TH[c] ? c : "imessage"; }
   function thLayout(os){ if(!os) return os; if(layGet()){ var l = TH[thRaw()].lay; if(l) return l; } return os; }
   function thClear(){ Array.prototype.slice.call(B.classList).forEach(function(c){ if(/^dtth-/.test(c) || c === "dtl" || c === "dtc-r" || c === "dt-th") B.classList.remove(c); }); }
+
+  /* =============== Terminal desktop theme: no dock, you type the name of a tab to open it ===============
+     Active whenever the desktop theme is "Terminal" (pick it in Customize desktop, or set the site theme to Terminal with
+     "Match my site"). /help lists every tab name and command. */
+  var TTY = {hist:[], hi:0}; window.__dtT0 = window.__dtT0 || Date.now();
+  function ttyNames(){
+    var out = [];
+    tabs().forEach(function(t){ out.push({key:t.label.toLowerCase(), label:t.label, ch:t.ch, sc:null}); });
+    st.sc.forEach(function(sc){ out.push({key:String(sc.name).toLowerCase(), label:sc.name, ch:"sc:" + sc.id, sc:sc}); });
+    return out;
+  }
+  function ttySync(on){
+    var el = $("dt-tty");
+    if(!on){ if(el) el.remove(); return; }
+    if(!$("dt-tty-css")){
+      var cs = D.createElement("style"); cs.id = "dt-tty-css";
+      cs.textContent =
+        "body.dt-on.dtth-terminal #dt-dock,body.dt-on.dtth-terminal #dt-shelf,body.dt-on.dtth-terminal #dt-task{display:none !important}" +
+        "body.dt-on.dtth-terminal #dt{--dt-bot:36px !important}" +
+        "#dt-tty{position:absolute;left:0;right:0;bottom:0;z-index:99985;display:flex;flex-direction:column;font-family:var(--dt-font,ui-monospace,Menlo,Consolas,monospace);font-size:14px;color:var(--dt-fg,#8affb0);user-select:text;-webkit-user-select:text}" +
+        "#dt-tty .o{display:none;max-height:58vh;overflow:auto;padding:8px 14px;background:rgba(3,10,5,.9);border-top:1px solid var(--dt-sep,#134d27);white-space:pre-wrap;line-height:1.45;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}" +
+        "#dt-tty .ff{display:flex;gap:24px;align-items:center;padding:6px 0 10px}#dt-tty .ff img{width:140px;height:auto;flex:none;filter:drop-shadow(0 0 10px rgba(57,255,122,.35))}#dt-tty .ff pre{margin:0;font:inherit;line-height:1.4;white-space:pre-wrap;min-width:0}#dt-tty .ff .k{color:var(--dt-acc,#39ff7a);font-weight:700}#dt-tty .ff .sw{display:inline-block;width:2.2ch;height:1.1em;vertical-align:middle}@media(max-width:560px){#dt-tty .ff img{width:80px}#dt-tty .ff{gap:12px}}" +
+        "#dt-tty .o.on{display:block}#dt-tty .o .e{color:#ff6b6b}#dt-tty .o .c{color:var(--dt-acc,#39ff7a)}#dt-tty .o .d{opacity:.7}" +
+        "#dt-tty .p{display:flex;align-items:center;gap:8px;height:36px;box-sizing:border-box;padding:0 14px;background:rgba(3,10,5,.96);border-top:1px solid var(--dt-sep,#134d27);cursor:text}" +
+        "#dt-tty .p b{color:var(--dt-acc,#39ff7a);font-weight:700;white-space:nowrap}" +
+        "#dt-tty input,#dt-tty input:focus,#dt-tty input:focus-visible{flex:1;min-width:0;background:none !important;border:none !important;outline:none !important;box-shadow:none !important;color:inherit;font:inherit;caret-color:var(--dt-acc,#39ff7a);padding:0}";
+      D.head.appendChild(cs);
+    }
+    if(el) return;
+    el = D.createElement("div"); el.id = "dt-tty";
+    el.innerHTML = '<div class="o" id="dt-tty-o" aria-live="polite"></div><div class="p"><b id="dt-tty-ps"></b><input id="dt-tty-i" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Terminal: type a tab name, or /help"></div>';
+    st.shell.appendChild(el);
+    var inp = $("dt-tty-i"), out = $("dt-tty-o");
+    function who(){ var u = (typeof usr !== "undefined" && usr) || "guest"; return String(u).toLowerCase().replace(/[^a-z0-9_.-]+/g, "") || "guest"; }
+    $("dt-tty-ps").textContent = who() + "@purebreds:~$";
+    function say(txt, cls){ var d = D.createElement("div"); if(cls) d.className = cls; d.textContent = txt; out.appendChild(d); out.classList.add("on"); out.scrollTop = out.scrollHeight; }
+    function ff(){
+      var ua = navigator.userAgent, br = /Edg\//.test(ua) ? "Edge" : /Firefox\//.test(ua) ? "Firefox" : /Chrome\//.test(ua) ? "Chrome" : /Safari\//.test(ua) ? "Safari" : "Browser";
+      var ver = (/(?:Edg|Firefox|Chrome|Version)\/([\d.]+)/.exec(ua) || [])[1] || "";
+      var plat = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || "unknown";
+      var up = Math.max(1, Math.round((Date.now() - (window.__dtT0 || Date.now())) / 60000));
+      var nameOf = {mac:"macOS layout", chromeos:"ChromeOS layout", win11:"Windows layout"}[st.os] || st.os;
+      var rows = [
+        ["", who() + "@purebreds"], ["", "-".repeat(who().length + 10)],
+        ["OS", "Los PureBreds 3.0"], ["Host", br + (ver ? " " + ver.split(".")[0] : "") + " on " + plat],
+        ["Kernel", "purebreds-web"], ["Uptime", up + " min"],
+        ["Packages", tabs().length + " tabs" + (st.sc.length ? ", " + st.sc.length + " shortcuts" : "")],
+        ["Shell", "purebreds-term"], ["Resolution", window.innerWidth + "x" + window.innerHeight],
+        ["DE", "Desktop mode (" + nameOf + ")"], ["Theme", "Terminal [" + (B.dataset.theme || "imessage") + "]"],
+        ["Windows", st.wins.length + " open"], ["CPU", (navigator.hardwareConcurrency || "?") + " threads"],
+        ["Memory", navigator.deviceMemory ? "~" + navigator.deviceMemory + " GB" : "unknown"],
+        ["Network", navigator.onLine === false ? "offline" : "online"]
+      ];
+      var d = D.createElement("div"); d.className = "ff";
+      var im = D.createElement("img"); im.alt = ""; im.draggable = false;
+      try{ im.src = typeof LOGO === "string" ? LOGO : ""; }catch(e){}
+      var pre = D.createElement("pre");
+      rows.forEach(function(r, i){
+        if(!r[0]){ var b = D.createElement("span"); b.className = i ? "" : "k"; b.textContent = r[1]; pre.appendChild(b); pre.appendChild(D.createTextNode("\n")); return; }
+        var k = D.createElement("span"); k.className = "k"; k.textContent = r[0]; pre.appendChild(k); pre.appendChild(D.createTextNode(": " + r[1] + "\n"));
+      });
+      pre.appendChild(D.createTextNode("\n"));
+      ["#e5484d", "#f5a623", "#e5d02b", "#39ff7a", "#12a594", "#3e63dd", "#8e4ec6", "#e6e6e6"].forEach(function(c){ var w = D.createElement("span"); w.className = "sw"; w.style.background = c; pre.appendChild(w); });
+      d.append(im, pre); out.appendChild(d); out.classList.add("on"); out.scrollTop = out.scrollHeight;
+    }
+    function help(){
+      var n = ttyNames();
+      say("Type the name of a tab to open it:", "c");
+      n.forEach(function(x){ say("  " + x.key + (x.sc ? "   (website shortcut, opens in a new browser tab)" : ""), ""); });
+      say("Commands:", "c");
+      [["/help", "show this list"], ["/fastfetch", "system info with the Los PureBreds mascot"], ["/list", "show the open windows"], ["/close <name|all>", "close a window"], ["/clear", "clear this screen"], ["/customize", "wallpaper and icons"], ["/exit", "leave desktop mode"]].forEach(function(c){ say("  " + c[0] + "   " + c[1], "d"); });
+    }
+    function find(q){
+      var n = ttyNames(), ex = n.filter(function(x){ return x.key === q || x.ch === q; });
+      if(ex.length) return ex;
+      return n.filter(function(x){ return x.key.indexOf(q) === 0; });
+    }
+    function run(line){
+      var l = line.trim(); if(!l) return;
+      say(who() + "@purebreds:~$ " + l, "d");
+      TTY.hist.push(l); TTY.hi = TTY.hist.length;
+      var q = l.toLowerCase();
+      if(q.charAt(0) === "/"){
+        var parts = q.slice(1).split(/\s+/), cmd = parts[0], arg = parts.slice(1).join(" ");
+        if(cmd === "help" || cmd === "?" || cmd === "ls" || cmd === "tabs") help();
+        else if(cmd === "fastfetch" || cmd === "neofetch") ff();
+        else if(cmd === "clear"){ out.innerHTML = ""; out.classList.remove("on"); }
+        else if(cmd === "list" || cmd === "windows"){
+          if(!st.wins.length) say("No windows are open.", "d");
+          st.wins.forEach(function(w){ say("  " + w.label + (w.min ? " (minimized)" : ""), ""); });
+        }
+        else if(cmd === "close"){
+          if(!arg) say("Usage: /close <name|all>", "e");
+          else if(arg === "all"){ st.wins.slice().forEach(closeWin); say("Closed every window.", "d"); }
+          else {
+            var hit = st.wins.filter(function(w){ return String(w.label).toLowerCase().indexOf(arg) === 0; });
+            if(!hit.length) say("No open window called \"" + arg + "\".", "e"); else { hit.forEach(closeWin); say("Closed " + hit.length + " window" + (hit.length > 1 ? "s" : "") + ".", "d"); }
+          }
+        }
+        else if(cmd === "customize"){ openCustomize(); }
+        else if(cmd === "exit" || cmd === "quit"){ exit(); }
+        else say("Unknown command: /" + cmd + ". Type /help to see all the names of the tabs.", "e");
+        return;
+      }
+      if(q === "fastfetch" || q === "neofetch"){ ff(); return; }
+      if(q.indexOf("open ") === 0) q = q.slice(5).trim();
+      var m = find(q);
+      if(m.length === 1){ var t = m[0]; say("opening " + t.label + "…", "c"); if(t.sc) launchSc(t.sc.id); else launch(t.ch); out.classList.remove("on"); out.innerHTML = ""; }
+      else if(m.length > 1) say("Which one? " + m.map(function(x){ return x.key; }).join(", "), "e");
+      else say("command not found: " + l + ". Type /help to see all the names of the tabs.", "e");
+    }
+    inp.addEventListener("keydown", function(e){
+      if(e.key === "Enter"){ e.preventDefault(); var v = inp.value; inp.value = ""; run(v); }
+      else if(e.key === "ArrowUp"){ e.preventDefault(); if(TTY.hi > 0) inp.value = TTY.hist[--TTY.hi] || ""; }
+      else if(e.key === "ArrowDown"){ e.preventDefault(); TTY.hi = Math.min(TTY.hist.length, TTY.hi + 1); inp.value = TTY.hist[TTY.hi] || ""; }
+      else if(e.key === "Escape"){ out.classList.remove("on"); }
+      else if(e.key === "Tab"){
+        e.preventDefault(); var v = inp.value.toLowerCase().replace(/^open /, ""); if(!v) return;
+        var pool = ttyNames().map(function(x){ return x.key; }).concat(["/help", "/fastfetch", "/list", "/close", "/clear", "/customize", "/exit", "fastfetch"]);
+        var c = pool.filter(function(k){ return k.indexOf(v) === 0; });
+        if(c.length === 1) inp.value = c[0]; else if(c.length > 1) say(c.join("   "), "d");
+      }
+    });
+    el.querySelector(".p").addEventListener("mousedown", function(e){ if(e.target !== inp){ e.preventDefault(); inp.focus(); } });
+    ff();
+    say("Type the name of a tab to open it. Type /help to see all the names of the tabs. (/fastfetch shows this again.)", "c");
+    out.scrollTop = 0;
+    setTimeout(function(){ try{ inp.focus(); }catch(e){} }, 60);
+  }
   function applyTheme(){
     if(!st.os) return;
     var want = thLayout(saved());
@@ -15446,6 +15835,7 @@ body.dt-th.dtth-nat-win11 #dt-panel .ws-user .dt-si,body.dt-th.dtth-nat-win11 #d
     var id = thRaw(), t = TH[id], light = false;
     if(t.lv) light = thGet() === "match" ? siteLight() : !(window.matchMedia && matchMedia("(prefers-color-scheme:dark)").matches);
     thClear(); B.classList.add("dt-th", "dtth-" + id); if(light) B.classList.add("dtl"); if(t.r) B.classList.add("dtc-r");
+    ttySync(id === "terminal");
     var s = $("dt-th-css"); if(!s){ s = D.createElement("style"); s.id = "dt-th-css"; s.textContent = thCss(); D.head.appendChild(s); }
     if(st.shell && st._nat !== isNat()){ buildShell(); }
   }
@@ -16154,9 +16544,10 @@ body.dt-th.dtth-nat-win11 #dt-panel .ws-user .dt-si,body.dt-th.dtth-nat-win11 #d
   }
   function launchSc(id, forceNew){
     var sc = st.sc.filter(function(x){ return x.id === id; })[0]; if(!sc) return;
-    var ex = st.wins.filter(function(w){ return w.ch === "sc:" + id; })[0];
-    if(ex && !forceNew){ focus(ex); return; }
-    focus(openWin({ch:"sc:" + id, label:sc.name, icon:null, sc:sc}, {}));
+    /* shortcuts open in a new browser tab, not in a mini window */
+    st.wins.filter(function(w){ return w.ch === "sc:" + id; }).forEach(closeWin);      // a window left over from before
+    var u = String(sc.url || ""); if(!/^https?:\/\//i.test(u)) u = "https://" + u;
+    try{ window.open(u, "_blank", "noopener"); }catch(e){}
   }
   function removeSc(id){
     st.sc = st.sc.filter(function(x){ return x.id !== id; }); scSave();
