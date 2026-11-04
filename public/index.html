@@ -16994,5 +16994,68 @@ body.dt-th.dtth-nat-win11 #dt-panel .ws-user .dt-si,body.dt-th.dtth-nat-win11 #d
   });
 })();
 </script>
+
+<style id="hmore-css">
+#hmore-btn{order:101;display:inline-flex;align-items:center;gap:5px;position:relative;margin-left:6px;padding:5px 12px;border:none;border-radius:999px;background:var(--row);color:var(--bar-text,var(--text));font:inherit;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0}
+#hmore-btn:hover{filter:brightness(1.15)}
+#hmore-btn .car{font-size:10px;transition:transform .15s}
+#hmore-btn[aria-expanded="true"] .car{transform:rotate(180deg)}
+#hmore-btn .dot{display:none;width:8px;height:8px;border-radius:50%;background:#ff4d4f;position:absolute;top:-1px;right:-1px}
+#hmore-btn.new .dot{display:block}
+body[data-hp="left"] #hmore-btn,body[data-hp="right"] #hmore-btn{order:97;margin:0;width:100%;justify-content:center}
+#hmore-menu{position:fixed;z-index:900;display:none;flex-direction:column;gap:2px;min-width:200px;max-width:calc(100vw - 16px);box-sizing:border-box;padding:6px;border-radius:14px;background:var(--side,#1c1c1e);color:var(--text,#fff);border:1px solid var(--line,#2c2c2e);box-shadow:0 12px 34px rgba(0,0,0,.45)}
+#hmore-menu.on{display:flex;animation:hmoreIn .14s ease-out}
+@keyframes hmoreIn{from{opacity:0;transform:translateY(-4px) scale(.98)}to{opacity:1;transform:none}}
+#hmore-menu #hdr-staff{display:flex;flex-direction:column;align-items:stretch;gap:2px;margin:0;order:1 !important}
+#hmore-menu #hmute{order:2 !important}
+#hmore-menu #hdr-log{order:3 !important}
+#hmore-menu #hdr-eh{order:4 !important}
+#hmore-menu #hdr-set{order:5 !important}
+#hmore-menu button{display:flex;align-items:center;justify-content:flex-start;gap:8px;width:100%;box-sizing:border-box;margin:0 !important;padding:9px 12px !important;border:none;border-radius:10px !important;background:transparent !important;color:var(--text,#fff) !important;font:inherit;font-size:14px !important;font-weight:600;text-align:left;white-space:nowrap;cursor:pointer;position:relative;transform:none !important}
+#hmore-menu button:hover{background:var(--row,#2c2c2e) !important;filter:none}
+#hmore-menu #hmute.on{background:#ff453a !important;color:#fff !important}
+#hmore-menu .lbl{display:inline !important}
+#hmore-menu #hdr-set::after{content:"Settings"}
+#hmore-menu #hdr-log .dot{top:8px;right:10px}
+</style>
+<script id="hmore-js">
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  var hdr = $("hdr"); if(!hdr || $("hmore-btn")) return;
+  var btn = document.createElement("button"); btn.type = "button"; btn.id = "hmore-btn"; btn.title = "More";
+  btn.setAttribute("aria-haspopup", "menu"); btn.setAttribute("aria-expanded", "false");
+  btn.innerHTML = 'More <span class="car">\u25BE</span><span class="dot"></span>';
+  hdr.appendChild(btn);
+  var menu = document.createElement("div"); menu.id = "hmore-menu"; menu.setAttribute("role", "menu");
+  document.body.appendChild(menu);
+
+  /* move the real buttons into the menu (their click handlers stay attached): owner/mod panel, mute all, changelog, edit history, settings */
+  var IDS = ["hdr-staff", "hmute", "hdr-log", "hdr-eh", "hdr-set"];
+  function adopt(){ IDS.forEach(function(id){ var el = $(id); if(el && el.parentNode !== menu) menu.appendChild(el); }); }
+  adopt(); setInterval(adopt, 1000);
+
+  /* red dot on More when there is a new changelog entry */
+  var log = $("hdr-log");
+  function dot(){ var l = $("hdr-log"); btn.classList.toggle("new", !!(l && l.classList.contains("new"))); }
+  if(log){ try{ new MutationObserver(dot).observe(log, {attributes: true, attributeFilter: ["class"]}); }catch(e){} } dot();
+
+  function place(){
+    var r = btn.getBoundingClientRect(), w = menu.offsetWidth, h = menu.offsetHeight, vw = window.innerWidth, vh = window.innerHeight, hp = document.body.getAttribute("data-hp");
+    var left, top;
+    if(hp === "left"){ left = r.right + 6; top = r.top; }
+    else if(hp === "right"){ left = r.left - w - 6; top = r.top; }
+    else { left = r.right - w; top = (r.bottom + 6 + h > vh - 8) ? r.top - h - 6 : r.bottom + 6; }
+    left = Math.max(8, Math.min(left, vw - w - 8)); top = Math.max(8, Math.min(top, vh - h - 8));
+    menu.style.left = left + "px"; menu.style.top = top + "px";
+  }
+  function open(){ adopt(); menu.classList.add("on"); btn.setAttribute("aria-expanded", "true"); place(); }
+  function close(){ menu.classList.remove("on"); btn.setAttribute("aria-expanded", "false"); }
+  btn.addEventListener("click", function(e){ e.stopPropagation(); menu.classList.contains("on") ? close() : open(); });
+  menu.addEventListener("click", function(e){ if(e.target.closest("button")) setTimeout(close, 0); });   /* run the button's own action first, then close */
+  document.addEventListener("click", function(e){ if(menu.classList.contains("on") && !menu.contains(e.target) && e.target !== btn && !btn.contains(e.target)) close(); });
+  document.addEventListener("keydown", function(e){ if(e.key === "Escape") close(); });
+  window.addEventListener("resize", function(){ if(menu.classList.contains("on")) place(); });
+})();
+</script>
 </body>
 </html>
