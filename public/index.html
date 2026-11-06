@@ -1241,7 +1241,7 @@ function renderOnline(list){
     a.dataset.dev = e.d && DEVS[e.d] ? DEVS[e.d][0] : ""; paintAv(a, e.n); box.appendChild(a);
   });
   const c = document.createElement("span"); c.className = "ocount";
-  c.textContent = list.length + " online" + (list.length > 10 ? " (+" + (list.length - 10) + ")" : "");
+  c.textContent = "People Online, " + list.length + " ▾";
   box.appendChild(c);
   lastRoster = list; renderPop(); updateDmBar(); renderDMList();
   refreshAvatars();
@@ -5193,6 +5193,7 @@ body.in-draw #box,body.in-draw #typing,body.in-draw #replybar,body.in-draw #tray
   /* shared sub-tabs: everybody can see + draw, only the person who made one can clear or delete it. id = "c" + owner id + "." + a short code */
   const okSub = b => typeof b === "string" && /^c[A-Za-z0-9_-]{1,40}\.[a-z0-9]{3,10}$/.test(b) && b.slice(1, b.indexOf(".")) !== "__proto__";
   const subOwner = b => b.slice(1, b.indexOf("."));
+  const isOwnerNow = () => { try{ return !!(window.__pbAdm && window.__pbAdm()); }catch(e){ return false; } };   // the site owner (admin): may delete anybody's sub-tab
   const cleanName = n => String(n || "").replace(/[\u0000-\u001f\u007f<>]/g, "").replace(/\s+/g, " ").trim().slice(0, 18);
   const MAXSUB_EACH = 5, MAXSUB = 40;
   const jget = (k, fb) => { try { const v = JSON.parse(load(k, "")); return v && typeof v === "object" ? v : fb; } catch(e){ return fb; } };
@@ -5214,7 +5215,8 @@ body.in-draw #box,body.in-draw #typing,body.in-draw #replybar,body.in-draw #tray
       <select id="dboard" class="dsel" title="Which drawing board"></select>
       <span id="dtag" class="dtag"></span>
       <button class="dbtn" id="dinv" type="button" title="Invite people into your private board">👥 Invite</button>
-      <button class="dbtn red" id="dsubdel" type="button" title="Delete this sub-tab for everyone (only you, its maker, can)" style="display:none">🗑 Delete tab</button>
+      <button class="dbtn red" id="dsubdel" type="button" title="Delete this sub-tab for everyone (only its maker or an owner can)" style="display:none">🗑 Delete tab</button>
+      <button class="dbtn red" id="dsuball" type="button" title="Owner only: delete every shared sub-tab, everyone's" style="display:none">🗑 Delete ALL tabs</button>
       <span class="dsep"></span>
       <div class="dmw"><button class="dbtn" id="dtoolbtn" type="button" title="Drawing tools" aria-haspopup="true" aria-expanded="false">✏️ Pen ▾</button>
         <div class="dmenu" id="dmtools"><div class="dmh">Tools</div><div class="dgrid">
@@ -5632,21 +5634,21 @@ body.in-draw #box,body.in-draw #typing,body.in-draw #replybar,body.in-draw #tray
         if(fu !== owner || !name || subs[b] || subDel[b] || Object.keys(subs).length >= MAXSUB || Object.keys(subs).filter(x => subOwner(x) === fu).length >= MAXSUB_EACH) return;
         conns.forEach(x => { if(x !== fromConn && x.open && x.uid && x.uid !== fu) x.send(d); });
       } else if(k === "sd"){
-        if(fu !== owner) return;                                                  // only the person who made the sub-tab can delete it
+        if(fu !== owner && !(fromConn && fromConn.admin)) return;                 // only the person who made the sub-tab, or an owner (the host checks the connection really is one), can delete it
         conns.forEach(x => { if(x !== fromConn && x.open && x.uid && x.uid !== fu) x.send(d); });
       } else {
         if(k === "clr" && fu !== owner) return;                                   // ...or clear it
         if(!routeSub(d, fromConn)) return;
       }
     }
-    applySub(d, b);
+    applySub(d, b, isHost);
   }
-  function applySub(d, b){
+  function applySub(d, b, hostChecked){
     const owner = subOwner(b), k = d.k, fu = d.f;
     if(!okUid(fu) || fu === uid) return;
     if(d.to && d.to !== uid) return;
     if(k === "sc"){ if(fu === owner && addSub(b, d.name, d.n, d.ts) && Date.now() - (+d.ts || 0) < 60000) sys("📌 " + String(d.n || "Someone").slice(0, 12) + " added a drawing sub-tab: " + subs[b].n + ". Open the 🎨 Draw tab to see it."); return; }
-    if(k === "sd"){ if(fu === owner) delSub(b); return; }
+    if(k === "sd"){ if(fu === owner || hostChecked || !isHost) delSub(b); return; }   // guests only ever get this from the host, which already checked the sender is the maker or an owner
     const st = states.get(b); if(!st) return;
     if(k === "clr" && fu !== owner) return;                                          // only the owner wipes a sub-tab
     if(k === "snap"){ merge(st, fu === owner ? d : Object.assign({}, d, { clr: 0 })); return; }     // other people can't clear it by sending a picture
@@ -5778,7 +5780,8 @@ body.in-draw #box,body.in-draw #typing,body.in-draw #replybar,body.in-draw #tray
     $$("dinv").style.display = priv ? "" : "none";
     $$("dinv").textContent = own ? "👥 Invite" : "👥 Members";
     $$("dclr").style.display = sub ? (subMine ? "" : "none") : (!priv || own) ? "" : "none";             // only the owner can wipe a private board or a sub-tab
-    $$("dsubdel").style.display = subMine ? "" : "none";
+    $$("dsubdel").style.display = (subMine || (sub && isOwnerNow())) ? "" : "none";
+    $$("dsuball").style.display = (isOwnerNow() && Object.keys(subs).length) ? "" : "none";
     const t = $$("dtag"); t.className = "dtag" + (priv ? " pv" : "");
     t.textContent = sub ? "📌 " + (subMine ? "Your" : subBy + "'s") + " sub-tab · everyone can see & draw · only " + (subMine ? "you" : subBy) + " can clear it"
       : !priv ? "🌐 Everyone can see & draw here"
@@ -5837,7 +5840,13 @@ body.in-draw #box,body.in-draw #typing,body.in-draw #replybar,body.in-draw #tray
     }
     invp.scrollTop = y;
   }
-  $$("dsubdel").onclick = () => { const b = S.id; if(!okSub(b) || subOwner(b) !== uid) return; if(!confirm("Delete the sub-tab \"" + (subs[b] ? subs[b].n : "") + "\" and everything drawn in it, for everyone?")) return; sendD({ k: "sd" }, b); delSub(b); };
+  $$("dsubdel").onclick = () => { const b = S.id; if(!okSub(b) || (subOwner(b) !== uid && !isOwnerNow())) return; if(!confirm("Delete the sub-tab \"" + (subs[b] ? subs[b].n : "") + "\"" + (subOwner(b) !== uid && subs[b] ? " (made by " + subs[b].on + ")" : "") + " and everything drawn in it, for everyone?")) return; sendD({ k: "sd" }, b); delSub(b); };
+  $$("dsuball").onclick = () => {
+    if(!isOwnerNow()) return;
+    const ids = Object.keys(subs).filter(okSub); if(!ids.length) return;
+    if(!confirm("Delete ALL " + ids.length + " shared sub-tab" + (ids.length === 1 ? "" : "s") + " and everything drawn in " + (ids.length === 1 ? "it" : "them") + ", for everyone? This can't be undone.")) return;
+    ids.forEach(b => { sendD({ k: "sd" }, b); delSub(b); });
+  };
   $$("dinv").onclick = () => { invp.style.display = invp.style.display === "block" ? "none" : "block"; renderInvp(); };
   tick(() => { if(invp.style.display === "block") renderInvp(); }, 2500);
   document.addEventListener("pointerdown", e => { if(invp.style.display === "block" && !invp.contains(e.target) && e.target !== $$("dinv")) invp.style.display = "none"; });
@@ -6504,7 +6513,7 @@ body.in-draw #box,body.in-draw #typing,body.in-draw #replybar,body.in-draw #tray
     _sc(c);
     document.body.classList.toggle("in-draw", c === "draw");
     $$("ch-draw").classList.toggle("active", c === "draw");
-    if(c === "draw"){ setTimeout(fit, 0); if(invNote){ invNote = 0; paintNote(); } }
+    if(c === "draw"){ setTimeout(fit, 0); try{ chrome(); }catch(e){} if(invNote){ invNote = 0; paintNote(); } }
     else invp.style.display = "none";
   };
 
@@ -9898,6 +9907,9 @@ skin();if(H.classList.contains("autoload"))loadScr(true);else welcome();
 #chtabs .tabimg{flex:none}
 
 /* ---- window too small for the labels -> emoji only (class set by the script below) ---- */
+#chtabs.fade-r{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 30px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 30px),transparent)}
+#chtabs.fade-l{-webkit-mask-image:linear-gradient(90deg,transparent,#000 30px);mask-image:linear-gradient(90deg,transparent,#000 30px)}
+#chtabs.fade-l.fade-r{-webkit-mask-image:linear-gradient(90deg,transparent,#000 30px,#000 calc(100% - 30px),transparent);mask-image:linear-gradient(90deg,transparent,#000 30px,#000 calc(100% - 30px),transparent)}
 html.tabs-ico #chtabs{gap:2px}
 html.tabs-ico #chtabs button{padding:6px 12px !important;min-width:40px;font-size:17px !important;line-height:1.15;text-align:center}
 html.tabs-ico #chtabs .tl{display:none}
@@ -9961,7 +9973,8 @@ body:not(.sb-bottom) .row-ch .csub{display:block;overflow:hidden;text-overflow:e
       var s;
       if(hasImg){ s = document.createElement("span"); s.className = "tl"; s.textContent = n.data; b.replaceChild(s, n); label += n.data; return; }
       var m = n.data.match(/^(\s*(?![A-Za-z0-9])\S+)(\s[\s\S]*)$/);
-      if(m){ n.data = m[1]; s = document.createElement("span"); s.className = "tl"; s.textContent = m[2]; b.insertBefore(s, n.nextSibling); label += m[2]; }
+      if(m){ var ti = document.createElement("span"); ti.className = "ti"; ti.textContent = m[1].trim(); b.replaceChild(ti, n); s = document.createElement("span"); s.className = "tl"; s.textContent = m[2]; b.insertBefore(s, ti.nextSibling); label += m[2]; }
+      else if(n.data.trim() && b.dataset.ch){ s = document.createElement("span"); s.className = "tl"; s.textContent = n.data; b.replaceChild(s, n); label += n.data; }
     });
     label = label.trim();
     if(label){ if(b.title !== label) b.title = label; b.setAttribute("aria-label", label); }
@@ -9971,10 +9984,25 @@ body:not(.sb-bottom) .row-ch .csub{display:block;overflow:hidden;text-overflow:e
   /* labels on -> do they fit? no -> emoji only */
   function fit(){
     raf = 0;
-    root.classList.remove("tabs-ico");
-    if(!tabs.offsetWidth) return;
-    if(tabs.scrollWidth > tabs.clientWidth + 1) root.classList.add("tabs-ico");
+    root.classList.remove("tabs-ico");   // names always stay visible; if they don't fit the bar scrolls sideways instead of dropping them
+    fade();
   }
+  /* soft edges show there are more tabs to scroll to */
+  function fade(){
+    var more = tabs.scrollWidth > tabs.clientWidth + 1;
+    tabs.classList.toggle("fade-l", more && tabs.scrollLeft > 2);
+    tabs.classList.toggle("fade-r", more && tabs.scrollLeft + tabs.clientWidth < tabs.scrollWidth - 2);
+  }
+  tabs.addEventListener("scroll", fade, {passive:true});
+  tabs.addEventListener("wheel", function(e){          // mouse wheel scrolls the tab bar sideways
+    if(tabs.scrollWidth > tabs.clientWidth && Math.abs(e.deltaY) > Math.abs(e.deltaX)){ tabs.scrollLeft += e.deltaY; e.preventDefault(); }
+  }, {passive:false});
+  new MutationObserver(function(){                       // keep the open tab in view
+    var b = tabs.querySelector("button.on"); if(!b) return;
+    var l = b.offsetLeft - tabs.offsetLeft, r = l + b.offsetWidth;
+    if(l < tabs.scrollLeft) tabs.scrollLeft = Math.max(0, l - 24);
+    else if(r > tabs.scrollLeft + tabs.clientWidth) tabs.scrollLeft = r - tabs.clientWidth + 24;
+  }).observe(tabs, {attributes:true, attributeFilter:["class"], subtree:true});
   function sched(){ if(!raf) raf = requestAnimationFrame(fit); }
 
   new MutationObserver(function(){ wrapAll(); sched(); }).observe(tabs, {childList:true, subtree:true, characterData:true});
@@ -17255,6 +17283,70 @@ body[data-hp="left"] #hmore-btn,body[data-hp="right"] #hmore-btn{order:97;margin
   document.addEventListener("click", function(e){ if(menu.classList.contains("on") && !menu.contains(e.target) && e.target !== btn && !btn.contains(e.target)) close(); });
   document.addEventListener("keydown", function(e){ if(e.key === "Escape") close(); });
   window.addEventListener("resize", function(){ if(menu.classList.contains("on")) place(); });
+})();
+</script>
+
+<!-- =====================  TOP BAR: online button on the left, tabs with the icon on top + name underneath, "more" on the right  ===================== -->
+<style id="topbar-v">
+/* people online: just a button; the avatars only show in the dropdown when you click it */
+html:not(.watch) body:not([data-theme="simple"]):not([data-theme="terminal"]):not([data-hp="left"]):not([data-hp="right"]) #online .oav{display:none !important}
+html:not(.watch) body:not([data-theme="simple"]):not([data-theme="terminal"]):not([data-hp="left"]):not([data-hp="right"]) #online{order:1;flex:0 0 auto;padding:8px 14px;border-radius:12px;background:var(--row);color:var(--text);font-weight:600;font-size:13px;white-space:nowrap}
+html:not(.watch) body:not([data-theme="simple"]):not([data-theme="terminal"]):not([data-hp="left"]):not([data-hp="right"]) #online .ocount{margin:0}
+html:not(.watch) body:not([data-theme="simple"]):not([data-theme="terminal"]):not([data-hp="left"]):not([data-hp="right"]) #onpop{left:8px;right:auto;transform-origin:top left}
+html:not(.watch) body:not([data-theme="simple"]):not([data-theme="terminal"]):not([data-hp="left"]):not([data-hp="right"]) #hdr{justify-content:flex-start !important;align-items:center;gap:8px;padding:6px 10px}
+html:not(.watch) body:not([data-theme="simple"]):not([data-theme="terminal"]):not([data-hp="left"]):not([data-hp="right"]) #status{order:90;flex:0 1 auto}
+
+/* tabs: circle icon on top, name at the bottom */
+html:not(.watch) body:not([data-theme="simple"]):not([data-theme="terminal"]):not([data-hp="left"]):not([data-hp="right"]) #chtabs{order:2;flex:1 1 0;min-width:0;max-width:none;background:transparent !important;border-radius:0;padding:0;box-shadow:none;gap:2px;justify-content:flex-start;align-items:center}
+html:not(.watch) body:not([data-theme="simple"]):not([data-theme="terminal"]):not([data-hp="left"]):not([data-hp="right"]) #chtabs button[data-ch]{display:flex !important;flex-direction:column;align-items:center;justify-content:flex-start;gap:3px;flex:1 0 auto;min-width:58px;padding:4px 8px !important;border-radius:10px;background:none !important;color:var(--bar-text,var(--text));font-size:10.5px !important;font-weight:600;line-height:1.1;text-shadow:none;box-shadow:none}
+html:not(.watch) body:not([data-theme="simple"]):not([data-theme="terminal"]):not([data-hp="left"]):not([data-hp="right"]) #chtabs button[data-ch] .ti,
+html:not(.watch) body:not([data-theme="simple"]):not([data-theme="terminal"]):not([data-hp="left"]):not([data-hp="right"]) #chtabs button[data-ch] .tabimg{width:28px;height:28px;border-radius:50% !important;margin:0 !important;flex:none;box-sizing:border-box;object-fit:cover;vertical-align:baseline;box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--text,#fff) 55%,transparent)}
+html:not(.watch) body:not([data-theme="simple"]):not([data-theme="terminal"]):not([data-hp="left"]):not([data-hp="right"]) #chtabs button[data-ch] .ti{display:flex;align-items:center;justify-content:center;font-size:15px;line-height:1}
+html:not(.watch) body:not([data-theme="simple"]):not([data-theme="terminal"]):not([data-hp="left"]):not([data-hp="right"]) #chtabs button[data-ch] .tabimg{box-shadow:0 0 0 2px color-mix(in srgb,var(--text,#fff) 55%,transparent)}
+html:not(.watch) body:not([data-theme="simple"]):not([data-theme="terminal"]):not([data-hp="left"]):not([data-hp="right"]) #chtabs button[data-ch] .tl{display:block !important;max-width:84px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+html:not(.watch) body:not([data-theme="simple"]):not([data-theme="terminal"]):not([data-hp="left"]):not([data-hp="right"]) #chtabs button[data-ch].on{color:var(--text)}
+html:not(.watch) body:not([data-theme="simple"]):not([data-theme="terminal"]):not([data-hp="left"]):not([data-hp="right"]) #chtabs button[data-ch].on .ti{background:var(--accent);color:var(--on-accent,#fff);box-shadow:none}
+html:not(.watch) body:not([data-theme="simple"]):not([data-theme="terminal"]):not([data-hp="left"]):not([data-hp="right"]) #chtabs button[data-ch].on .tabimg{box-shadow:0 0 0 2px var(--accent)}
+html:not(.watch) body:not([data-theme="simple"]):not([data-theme="terminal"]):not([data-hp="left"]):not([data-hp="right"]) #chtabs button[data-ch].on .tl{font-weight:800}
+html:not(.watch) body:not([data-theme="simple"]):not([data-theme="terminal"]):not([data-hp="left"]):not([data-hp="right"]) #chtabs button.ct-plus.on-mod{display:flex !important;align-items:center;justify-content:center;align-self:center;flex:0 0 auto;width:30px;height:30px;min-width:0;padding:0 !important;margin:0 6px;border-radius:9px;background:var(--text) !important;color:var(--bg) !important;opacity:1;font-size:16px !important}
+
+/* "more": a list of every tab */
+#hmore{display:none}
+html:not(.watch) body:not([data-theme="simple"]):not([data-theme="terminal"]):not([data-hp="left"]):not([data-hp="right"]) #hmore{display:block;order:3;flex:0 0 auto;border:none;cursor:pointer;padding:8px 14px;border-radius:12px;background:var(--row);color:var(--text);font:inherit;font-size:13px;font-weight:600}
+#tmpop{display:none;position:absolute;top:100%;right:8px;margin-top:4px;min-width:210px;max-height:60vh;overflow-y:auto;background:var(--side,var(--bg));color:var(--text);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 28px rgba(0,0,0,.5);padding:6px;z-index:5}
+#tmpop.open{display:block}
+body[data-hp="bottom"] #tmpop{top:auto;bottom:100%;margin:0 0 4px}
+#tmpop .tm-i{display:flex;align-items:center;gap:10px;width:100%;border:none;background:none;color:inherit;font:inherit;font-size:13px;text-align:left;padding:7px 9px;border-radius:8px;cursor:pointer}
+#tmpop .tm-i:hover{background:var(--row)}
+#tmpop .tm-i.on{font-weight:800;color:var(--accent)}
+#tmpop .tm-ic{width:24px;height:24px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--text,#fff) 45%,transparent);overflow:hidden}
+#tmpop .tm-ic img{width:100%;height:100%;object-fit:cover}
+@media (max-width:600px){
+  html:not(.watch) body:not([data-theme="simple"]):not([data-theme="terminal"]):not([data-hp="left"]):not([data-hp="right"]) #chtabs{order:10;flex:1 1 100%}
+  html:not(.watch) body:not([data-theme="simple"]):not([data-theme="terminal"]):not([data-hp="left"]):not([data-hp="right"]) #chtabs button[data-ch]{min-width:54px}
+}
+</style>
+<script id="topbar-v-js">
+(function(){
+  var hdr = document.getElementById("hdr"), wrap = document.getElementById("hdrwrap"), tabs = document.getElementById("chtabs");
+  if(!hdr || !wrap || !tabs) return;
+  var more = document.createElement("button"); more.id = "hmore"; more.type = "button"; more.textContent = "more"; more.title = "All tabs"; more.setAttribute("aria-haspopup", "true");
+  hdr.appendChild(more);
+  var pop = document.createElement("div"); pop.id = "tmpop"; wrap.appendChild(pop);
+  function build(){
+    pop.replaceChildren();
+    tabs.querySelectorAll("button[data-ch]").forEach(function(b){
+      var it = document.createElement("button"); it.type = "button"; it.className = "tm-i" + (b.classList.contains("on") ? " on" : "");
+      var ic = document.createElement("span"), img = b.querySelector(".tabimg"), ti = b.querySelector(".ti"); ic.className = "tm-ic";
+      if(img){ var g = new Image(); g.src = img.src; g.alt = ""; ic.appendChild(g); } else ic.textContent = ti ? ti.textContent : "";
+      var tl = b.querySelector(".tl"), nm = document.createElement("span"); nm.textContent = (tl ? tl.textContent : b.textContent).trim();
+      it.append(ic, nm); it.onclick = function(){ close(); b.click(); }; pop.appendChild(it);
+    });
+  }
+  function close(){ pop.classList.remove("open"); }
+  more.onclick = function(e){ e.stopPropagation(); if(pop.classList.contains("open")){ close(); return; } build(); pop.classList.add("open"); };
+  document.addEventListener("click", function(e){ if(!e.target.closest("#tmpop") && e.target !== more) close(); });
+  document.addEventListener("keydown", function(e){ if(e.key === "Escape") close(); });
 })();
 </script>
 </body>
