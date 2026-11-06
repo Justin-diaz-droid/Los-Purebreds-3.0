@@ -13535,6 +13535,14 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
 .ct-empty{opacity:.6;text-align:center;padding:40px 10px;font-size:15px}
 #ct-editwrap{display:none;max-width:820px;margin:0 auto;position:relative}
 .ct-ed img{cursor:pointer}
+.ct-ed.ct-drop{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent) inset;background-image:linear-gradient(rgba(127,127,127,.12),rgba(127,127,127,.12))}
+#ct-lk{position:fixed;inset:0;z-index:3100;display:none;align-items:center;justify-content:center;padding:16px;background:rgba(0,0,0,.6)}
+#ct-lk.on{display:flex}
+#ct-lk .lk-list{display:flex;flex-direction:column;gap:4px;max-height:34vh;overflow-y:auto}
+#ct-lk .lk-h{font-size:12px;font-weight:700;color:var(--muted);margin-top:4px}
+#ct-lk .lk-list button{text-align:left;border:1px solid var(--line);background:var(--row);color:var(--text);border-radius:9px;padding:8px 11px;font-size:14px;cursor:pointer}
+#ct-lk .lk-list button:hover{border-color:var(--accent)}
+.ct-doc a[data-ct],.ct-ed a[data-ct]{cursor:pointer}
 #ct-rs{position:absolute;display:none;z-index:4;pointer-events:none;border:2px solid var(--accent);border-radius:8px;box-sizing:border-box}
 #ct-rs.on{display:block}
 #ct-rs .rs-h{position:absolute;right:-9px;bottom:-9px;width:20px;height:20px;border-radius:50%;background:var(--accent);border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.5);cursor:nwse-resize;pointer-events:auto;touch-action:none}
@@ -13554,7 +13562,13 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
 #ct-err,#ctm-err{min-height:16px;font-size:13px;color:#ff6b61;flex:1}
 #ct-modal{position:fixed;inset:0;z-index:3000;display:none;align-items:center;justify-content:center;padding:16px;background:rgba(0,0,0,.6)}
 #ct-modal.on{display:flex}
-.ctm-emo{display:flex;flex-wrap:wrap;gap:6px}
+.ctm-emo{display:flex;flex-wrap:wrap;gap:4px;max-height:190px;overflow-y:auto;align-content:flex-start;padding:2px}
+.ctm-ecat{display:flex;gap:2px;overflow-x:auto;flex-shrink:0;border-bottom:1px solid var(--line)}
+.ctm-ecat button{border:none;background:none;border-bottom:3px solid transparent;font-size:18px;padding:5px 8px;cursor:pointer;opacity:.65;flex:0 0 auto}
+.ctm-ecat button.on{border-bottom-color:var(--accent);opacity:1}
+#ctm-eq{padding:9px 12px;border-radius:10px;border:1px solid var(--line);background:var(--input,var(--row));color:var(--text);font-size:15px;outline:none}
+#ctm-eq:focus{border-color:var(--accent)}
+.ctm-emo .ctm-none{width:100%;padding:14px;text-align:center;font-size:12px;color:var(--muted)}
 .ctm-emo button{border:1px solid var(--line);background:var(--row);border-radius:9px;width:36px;height:36px;font-size:18px;cursor:pointer}
 .ctm-emo button:hover{border-color:var(--accent)}
 @media(max-width:600px){.ct-subs{padding:4px 12px 0}.ct-bar{padding:10px 12px 4px}.ct-scroll{padding:6px 12px 30px}}
@@ -13573,7 +13587,8 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
   const inRoom = () => { const g = $$("gate"); return !g || getComputedStyle(g).display === "none"; };
   const okId = s => typeof s === "string" && /^[A-Za-z0-9_-]{1,40}$/.test(s) && !BUILTIN.includes(s);
   const cleanName = s => String(s || "").replace(/[\u0000-\u001f\u007f<>]/g, "").replace(/\s+/g, " ").trim().slice(0, 24);
-  const cleanIc = s => { s = String(s || "").replace(/[\u0000-\u001f\u007f<>]/g, "").trim(); return (Array.from(s).slice(0, 3).join("")) || "📄"; };
+  const _seg = (typeof Intl !== "undefined" && Intl.Segmenter) ? new Intl.Segmenter(undefined, { granularity: "grapheme" }) : null;
+  const cleanIc = s => { s = String(s || "").replace(/[\u0000-\u001f\u007f<>]/g, "").trim(); const g = _seg ? Array.from(_seg.segment(s), x => x.segment) : Array.from(s); return g.slice(0, 3).join("").slice(0, 24) || "📄"; };
   const ACLM = ["mods", "me", "list", "all"];
   const cleanAcl = a => { const m = a && ACLM.includes(a.m) ? a.m : "mods"; const l = (a && Array.isArray(a.l) ? a.l : []).map(x => cleanName(x).slice(0, 12)).filter(Boolean).filter((x, i, arr) => arr.findIndex(y => y.toLowerCase() === x.toLowerCase()) === i).slice(0, 20); return { m, l: m === "list" ? l : [] }; };
   const newId = () => "t" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
@@ -13609,6 +13624,11 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
         }
         if(!OKTAG.test(t)){ walk(n, dst, depth + 1); return; }      // unknown but harmless: keep its text
         if(t === "A"){
+          const raw = String(n.getAttribute("href") || "").trim(), im = raw.match(/^#ct:([A-Za-z0-9_-]{1,40})$/);
+          if(im && okId(im[1])){   // link to another tab / subtab
+            const a = document.createElement("a"); a.setAttribute("href", "#ct:" + im[1]); a.setAttribute("data-ct", im[1]);
+            dst.appendChild(a); walk(n, a, depth + 1); return;
+          }
           const h = hrefOk(n.getAttribute("href"));
           if(!h){ walk(n, dst, depth + 1); return; }
           const a = document.createElement("a"); a.href = h; a.target = "_blank"; a.rel = "noopener noreferrer nofollow";
@@ -13803,6 +13823,65 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
     const b = document.createElement("button"); b.type = "button"; b.textContent = x[0]; b.title = x[1]; b.setAttribute("aria-label", x[1]);
     b.onmousedown = e => e.preventDefault(); b.onclick = x[2]; tb.appendChild(b);
   });
+  /* ---------- pictures: shared by the 🖼️ button and drag & drop ---------- */
+  const PICOK = /^image\/(png|jpe?g|webp|gif)$/i;
+  function pictureData(f){
+    return new Promise((res, rej) => {
+      if(!PICOK.test(f.type)) return rej("Pick a PNG, JPG, WEBP or GIF picture.");
+      const fr = new FileReader(); fr.onerror = () => rej("Couldn’t read that picture.");
+      fr.onload = () => {
+        const im = new Image(); im.onerror = () => rej("Couldn’t read that picture.");
+        im.onload = () => {
+          let out = "";
+          for(const [S, q] of [[900, .8], [700, .68], [520, .58], [380, .5]]){
+            const r = Math.min(1, S / Math.max(im.width, im.height)), c = document.createElement("canvas");
+            c.width = Math.max(1, Math.round(im.width * r)); c.height = Math.max(1, Math.round(im.height * r));
+            const x = c.getContext("2d"); x.fillStyle = "#fff"; x.fillRect(0, 0, c.width, c.height); x.drawImage(im, 0, 0, c.width, c.height);
+            try{ out = c.toDataURL("image/jpeg", q); }catch(e){ out = ""; break; }
+            if(out.length < 240000) break;
+          }
+          if(!out || out.length >= 300000) return rej("That picture is too big to store. Try a smaller one.");
+          res(out);
+        };
+        im.src = fr.result;
+      };
+      fr.readAsDataURL(f);
+    });
+  }
+  /* inserts each picture at the current cursor, one after the other, so a multi-file drop keeps its order */
+  async function addPictures(files){
+    errEl.textContent = "";
+    for(const f of files){
+      try{ const out = await pictureData(f); ed.focus(); cmd("insertImage", out); }
+      catch(m){ errEl.textContent = String(m); }
+    }
+  }
+  /* drag pictures from your computer straight onto the page: they land where you drop them */
+  (function(){
+    const hasFiles = e => !!e.dataTransfer && Array.prototype.indexOf.call(e.dataTransfer.types || [], "Files") >= 0;
+    const rangeAt = (x, y) => {
+      if(document.caretRangeFromPoint) return document.caretRangeFromPoint(x, y);
+      if(document.caretPositionFromPoint){ const p = document.caretPositionFromPoint(x, y); if(p){ const r = document.createRange(); r.setStart(p.offsetNode, p.offset); r.collapse(true); return r; } }
+      return null;
+    };
+    let depth = 0; const off = () => { depth = 0; ed.classList.remove("ct-drop"); };
+    ed.addEventListener("dragenter", e => { if(!hasFiles(e)) return; e.preventDefault(); depth++; ed.classList.add("ct-drop"); });
+    ed.addEventListener("dragover", e => { if(!hasFiles(e)) return; e.preventDefault(); e.dataTransfer.dropEffect = "copy"; });
+    ed.addEventListener("dragleave", e => { if(!hasFiles(e)) return; if(--depth <= 0) off(); });
+    ed.addEventListener("drop", e => {
+      off(); if(!hasFiles(e)) return;           // moving a picture that's already on the page is left to the browser
+      e.preventDefault();
+      const files = Array.from(e.dataTransfer.files || []);
+      if(!files.length) return;
+      const pics = files.filter(f => PICOK.test(f.type));
+      if(!pics.length){ errEl.textContent = "Drop a PNG, JPG, WEBP or GIF picture."; return; }
+      let r = rangeAt(e.clientX, e.clientY);
+      if(!r || !ed.contains(r.startContainer)){ r = document.createRange(); r.selectNodeContents(ed); r.collapse(false); }   // dropped on the padding: add at the end
+      const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+      addPictures(pics);
+    });
+    ed.addEventListener("dragend", off);
+  })();
   (function(){   // colour + picture
     const lab = document.createElement("label"); lab.title = "Text colour"; lab.textContent = "🎨";
     const ci = document.createElement("input"); ci.type = "color"; ci.value = "#ff453a"; lab.appendChild(ci);
@@ -13813,40 +13892,74 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
     const pl = document.createElement("label"); pl.title = "Add a picture"; pl.textContent = "🖼️";
     const fi = document.createElement("input"); fi.type = "file"; fi.accept = "image/png,image/jpeg,image/webp,image/gif"; pl.appendChild(fi);
     let ps = null; pl.onmousedown = () => { const s = getSelection(); ps = s.rangeCount ? s.getRangeAt(0).cloneRange() : null; };
-    fi.onchange = () => {
+    fi.onchange = async () => {
       const f = fi.files && fi.files[0]; fi.value = ""; if(!f) return;
-      if(!/^image\/(png|jpe?g|webp|gif)$/i.test(f.type)){ errEl.textContent = "Pick a PNG, JPG, WEBP or GIF picture."; return; }
-      const fr = new FileReader(); fr.onerror = () => { errEl.textContent = "Couldn’t read that picture."; };
-      fr.onload = () => {
-        const im = new Image(); im.onerror = () => { errEl.textContent = "Couldn’t read that picture."; };
-        im.onload = () => {
-          let out = "";
-          for(const [S, q] of [[900, .8], [700, .68], [520, .58], [380, .5]]){
-            const r = Math.min(1, S / Math.max(im.width, im.height)), c = document.createElement("canvas");
-            c.width = Math.max(1, Math.round(im.width * r)); c.height = Math.max(1, Math.round(im.height * r));
-            const x = c.getContext("2d"); x.fillStyle = "#fff"; x.fillRect(0, 0, c.width, c.height); x.drawImage(im, 0, 0, c.width, c.height);
-            try{ out = c.toDataURL("image/jpeg", q); }catch(e){ out = ""; break; }
-            if(out.length < 240000) break;
-          }
-          if(!out || out.length >= 300000){ errEl.textContent = "That picture is too big to store. Try a smaller one."; return; }
-          errEl.textContent = ""; ed.focus();
-          if(ps){ const s = getSelection(); s.removeAllRanges(); s.addRange(ps); }
-          cmd("insertImage", out);
-        };
-        im.src = fr.result;
-      };
-      fr.readAsDataURL(f);
+      if(ps){ const s = getSelection(); s.removeAllRanges(); s.addRange(ps); }
+      await addPictures([f]);
     };
     tb.appendChild(pl);
   })();
-  function addLink(){
-    const s = getSelection(), had = s.rangeCount ? s.getRangeAt(0).cloneRange() : null, collapsed = !s.rangeCount || s.isCollapsed;
-    let u = prompt("Link address (https://…)", "https://"); if(u === null) return;
-    if(!/^[a-z][a-z0-9+.-]*:/i.test(u.trim())) u = "https://" + u.trim();
-    u = hrefOk(u); if(!u){ errEl.textContent = "That link has to start with https://"; return; }
-    ed.focus(); if(had){ s.removeAllRanges(); s.addRange(had); }
-    if(collapsed) cmd("insertHTML", '<a href="' + esc(u) + '">' + esc(u) + "</a>"); else cmd("createLink", u);
+  /* ---------- link picker: a web address, or one of this site's tabs / subtabs (like Google Docs tab links) ---------- */
+  const lkBox = document.createElement("div"); lkBox.id = "ct-lk";
+  lkBox.innerHTML = '<div class="gm-box" role="dialog" aria-modal="true" aria-label="Add link"><h3>Add link</h3>' +
+    '<label>Web address<input id="lk-url" type="text" autocomplete="off" placeholder="https://…"></label>' +
+    '<div class="gm-foot"><span class="gm-spacer"></span><button type="button" id="lk-go" class="gm-b pri">Link</button></div>' +
+    '<div class="lk-h">…or link to a page in this site</div><div class="lk-list" id="lk-pages"></div>' +
+    '<div id="lk-err" role="alert" style="color:#ff453a;font-size:12px"></div>' +
+    '<div class="gm-foot"><span class="gm-spacer"></span><button type="button" id="lk-cancel" class="gm-b alt">Cancel</button></div></div>';
+  document.body.appendChild(lkBox);
+  let lkSel = null, lkCollapsed = true;
+  const closeLk = () => lkBox.classList.remove("on");
+  function applyLink(href, label){
+    closeLk(); ed.focus();
+    if(lkSel){ const s = getSelection(); s.removeAllRanges(); s.addRange(lkSel); }
+    if(lkCollapsed) cmd("insertHTML", '<a href="' + esc(href) + '">' + esc(label) + "</a>"); else cmd("createLink", href);
   }
+  function addLink(){
+    const s = getSelection();
+    lkSel = s.rangeCount ? s.getRangeAt(0).cloneRange() : null; lkCollapsed = !s.rangeCount || s.isCollapsed;
+    $$("lk-url").value = "https://"; $$("lk-err").textContent = "";
+    const list = $$("lk-pages"); list.replaceChildren();
+    const add = (t, label) => { const b = document.createElement("button"); b.type = "button"; b.textContent = label; b.onclick = () => applyLink("#ct:" + t.id, t.name); list.appendChild(b); };
+    const head = txt => { const h = document.createElement("div"); h.className = "lk-h"; h.textContent = txt; list.appendChild(h); };
+    const top = byId(curId);
+    if(top){
+      head("This tab");
+      add(top, "📄 " + top.name + " (main page)");
+      subsOf(top.id).forEach(x => add(x, x.ic + " " + x.name));
+    }
+    const others = tops().filter(t => t.id !== curId);
+    if(others.length){
+      head("Other tabs");
+      others.forEach(t => { add(t, t.ic + " " + t.name); subsOf(t.id).forEach(x => add(x, "   ↳ " + x.ic + " " + x.name)); });
+    }
+    if(!list.children.length){ const e = document.createElement("div"); e.className = "ctm-note"; e.style.display = "block"; e.textContent = "No other pages yet. Add a subtab first."; list.appendChild(e); }
+    lkBox.classList.add("on"); setTimeout(() => { const u = $$("lk-url"); u.focus(); u.select(); }, 30);
+  }
+  $$("lk-go").onclick = () => {
+    let u = $$("lk-url").value.trim(); if(!u || u === "https://"){ $$("lk-err").textContent = "Type a web address, or pick a page below."; return; }
+    if(!/^[a-z][a-z0-9+.-]*:/i.test(u)) u = "https://" + u;
+    u = hrefOk(u); if(!u){ $$("lk-err").textContent = "That link has to start with https://"; return; }
+    applyLink(u, u);
+  };
+  $$("lk-cancel").onclick = closeLk;
+  lkBox.addEventListener("mousedown", e => { if(e.target === lkBox) closeLk(); });
+  lkBox.addEventListener("keydown", e => {
+    if(e.key === "Escape"){ e.stopPropagation(); closeLk(); }
+    else if(e.key === "Enter" && e.target.id === "lk-url"){ e.preventDefault(); $$("lk-go").click(); }
+  });
+  /* following a page link in the finished page */
+  function goTo(id){
+    const t = byId(id); if(!t) return;
+    if(editing){ errEl.textContent = "Save or cancel your edit before following a link."; return; }
+    if(t.p){ if(curId !== t.p) setChannel("ct:" + t.p); curSub = t.id; }
+    else { if(curId !== t.id) setChannel("ct:" + t.id); curSub = ""; }
+    renderSubs(true); renderPage(); updateBar();
+    const sc = doc.closest(".ct-scroll"); if(sc) sc.scrollTop = 0;
+  }
+  doc.addEventListener("click", e => { const a = e.target.closest && e.target.closest("a[data-ct]"); if(!a) return; e.preventDefault(); goTo(a.getAttribute("data-ct")); });
+  ed.addEventListener("click", e => { const a = e.target.closest && e.target.closest("a[data-ct]"); if(a) e.preventDefault(); });
+
   /* ---------- resize pictures: click a picture, then drag the dot or tap a size ---------- */
   (function(){
     const wrap = $$("ct-editwrap"), box = document.createElement("div"); box.id = "ct-rs";
@@ -13903,7 +14016,9 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
   modal.innerHTML =
     '<div class="gm-box" role="dialog" aria-modal="true" aria-labelledby="ctm-t"><h3 id="ctm-t">New tab</h3>' +
       '<label>Tab name<input id="ctm-name" type="text" maxlength="24" autocomplete="off" placeholder="e.g. Rules"></label>' +
-      '<label>Icon<input id="ctm-ic" type="text" maxlength="6" autocomplete="off" placeholder="📄"></label>' +
+      '<label>Icon (pick one below, or type / paste any emoji)<input id="ctm-ic" type="text" maxlength="24" autocomplete="off" placeholder="📄"></label>' +
+      '<input id="ctm-eq" type="text" autocomplete="off" placeholder="Search emojis (cat, fire, flag…)">' +
+      '<div class="ctm-ecat" id="ctm-ecat"></div>' +
       '<div class="ctm-emo" id="ctm-emo"></div>' +
       '<div id="ctm-aclbox" style="display:flex;flex-direction:column;gap:12px">' +
         '<label>Who can add &amp; edit pages in this tab<select id="ctm-acl"><option value="mods">All mods &amp; owners</option><option value="me">Only me (and owners)</option><option value="list">Only the people I name</option><option value="all">Everyone in the room</option></select></label>' +
@@ -13920,10 +14035,39 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
       '<div class="gm-foot"><button type="button" id="ctm-del" class="gm-b red">Delete tab</button><span class="gm-spacer"></span><button type="button" id="ctm-cancel" class="gm-b alt">Cancel</button><button type="button" id="ctm-save" class="gm-b pri">Save</button></div>' +
     '</div>';
   document.body.appendChild(modal);
-  ["📄", "📢", "📜", "📖", "🎉", "📅", "🏆", "💡", "🔗", "❓", "⭐", "🛠️", "📌", "🎮", "🎵", "🔒"].forEach(e => {
-    const b = document.createElement("button"); b.type = "button"; b.textContent = e; b.onclick = () => { $$("ctm-ic").value = e; };
-    $$("ctm-emo").appendChild(b);
-  });
+  /* ---------- icon picker: the full emoji set (same library as the chat picker), with search + categories ---------- */
+  const POPULAR = ["📄", "📢", "📜", "📖", "🎉", "📅", "🏆", "💡", "🔗", "❓", "⭐", "🛠️", "📌", "🎮", "🎵", "🔒"];
+  let icCat = "pop";
+  const icGroups = () => (typeof GROUP_ICONS === "object" ? Object.keys(GROUP_ICONS) : []);
+  const icList = () => (typeof EMO_LIST !== "undefined" && Array.isArray(EMO_LIST)) ? EMO_LIST : [];
+  function icFill(items){
+    const g = $$("ctm-emo"); g.replaceChildren();
+    if(!items.length){ const n = document.createElement("div"); n.className = "ctm-none"; n.textContent = (typeof emoLoading !== "undefined" && emoLoading) ? "Loading emojis…" : "No emoji found"; g.appendChild(n); return; }
+    const frag = document.createDocumentFragment();
+    items.forEach(o => { const b = document.createElement("button"); b.type = "button"; b.textContent = o.e; b.title = o.n || ""; frag.appendChild(b); });
+    g.appendChild(frag); g.scrollTop = 0;
+  }
+  function icShow(){
+    const q = $$("ctm-eq").value.trim().toLowerCase(), cats = $$("ctm-ecat");
+    [...cats.children].forEach(c => c.classList.toggle("on", !q && c.dataset.g === icCat));
+    if(q){
+      const v = q.replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+      icFill(icList().filter(o => o.names.some(n => n.includes(v)) || o.tags.some(t => t.includes(q))).slice(0, 300).map(o => ({ e: o.e, n: o.names[0] || "" })));
+    } else if(icCat === "pop") icFill(POPULAR.map(e => ({ e })));
+    else icFill(icList().filter(o => o.g === icCat).map(o => ({ e: o.e, n: o.names[0] || "" })));
+  }
+  (function(){
+    const cats = $$("ctm-ecat");
+    const mk = (g, ic, title) => { const b = document.createElement("button"); b.type = "button"; b.dataset.g = g; b.textContent = ic; b.title = title; b.onclick = () => { icCat = g; $$("ctm-eq").value = ""; icShow(); }; cats.appendChild(b); };
+    mk("pop", "⭐", "Popular");
+    icGroups().forEach(g => mk(g, GROUP_ICONS[g], (typeof GROUP_NAMES === "object" && GROUP_NAMES[g]) || ""));
+    $$("ctm-emo").addEventListener("click", e => { const b = e.target.closest("button"); if(b) $$("ctm-ic").value = b.textContent; });
+    $$("ctm-eq").addEventListener("input", icShow);
+    $$("ctm-eq").addEventListener("keydown", e => { if(e.key === "Enter"){ e.preventDefault(); e.stopPropagation(); } });
+    icShow();
+    const prev = window.refreshEmojiPicker;   // the chat picker calls this when the full emoji set has finished downloading
+    window.refreshEmojiPicker = function(){ try{ if(prev) prev.apply(this, arguments); }catch(_){} icShow(); };
+  })();
   let editId = null, delArmed = 0, newParent = "";
   function openModal(t, parent){
     if(t ? !canManage(t) : (parent ? !canEdit(byId(parent)) : !inRoom())) return;
@@ -13938,6 +14082,7 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
     const showX = !!t && !t.p;
     $$("ctm-xfer").style.display = showX ? "flex" : "none";
     if(showX){ $$("ctm-owner").textContent = "Current owner: " + (t.by || "nobody (only owners/admins manage it)"); $$("ctm-to").value = ""; xArmed = 0; $$("ctm-xbtn").textContent = "Transfer ownership"; }
+    $$("ctm-eq").value = ""; icCat = "pop"; try{ if(typeof ensureEmoji === "function") ensureEmoji(); }catch(_){} icShow();
     modal.classList.add("on"); setTimeout(() => $$("ctm-name").focus(), 30);
   }
   const closeModal = () => modal.classList.remove("on");
