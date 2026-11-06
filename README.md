@@ -40,6 +40,15 @@ Every image the site uses is a normal file in `public/assets/`. To change one:
 
 **Image not updating?** Browsers cache images. Wait a few minutes after the deploy, then hard-refresh with `Ctrl+Shift+R` (`Cmd+Shift+R` on Mac). Favicons are cached the longest, so reopening the tab or clearing site data helps.
 
+## Editing the homepage icons (owners)
+
+Turn on owner mode (Ctrl + I, or tap the title 5 times on a phone), open the Home tab and press **✏️ Edit home**.
+
+- Tap an icon to change its name, emoji or picture, and where it goes.
+- **◀ ▶** move it, **✕** removes it, **+ Add icon** makes a new one, **↺ Reset** brings back the original icons.
+- Each icon opens a tab, and can optionally jump straight to a sub-tab inside it (type the sub-tab's name, e.g. `Proxy` in Games or `Music` in Media).
+- Changes are saved for everyone in the room, the same way the owner panel's tab names and icons are.
+
 ## Deploying
 
 The site is served from the `public/` folder, as set in `wrangler.jsonc`.

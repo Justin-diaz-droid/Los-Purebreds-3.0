@@ -3443,7 +3443,7 @@ label.plus.open{transform:rotate(45deg)}
   const okCImg=x=>typeof x==="string"&&x.length<=4000000&&/^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+\/=]+$/.test(x);   // custom emoji / sticker pictures
   const okTImg=x=>typeof x==="string"&&x.length<=4600000&&/^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+\/=]+$/.test(x);   // room icons: small png/jpeg/webp pictures only
   function cleanReg(r){
-    const o={acc:{},bans:[],mutes:[],mods:[],adms:[],hid:[],tg:{},mto:false,mao:false,tn:{},ce:{},cls:0,clr:0,clg:0,clp:0,muteAll:false,v:0}; if(!r||typeof r!=="object") return o;
+    const o={acc:{},bans:[],mutes:[],mods:[],adms:[],hid:[],tg:{},mto:false,mao:false,tn:{},hm:null,ce:{},cls:0,clr:0,clg:0,clp:0,muteAll:false,v:0}; if(!r||typeof r!=="object") return o;
     if(r.acc&&typeof r.acc==="object") Object.keys(r.acc).slice(0,500).forEach(k=>{ if(k&&k.length<=12&&k!=="__proto__"&&HEX.test(String(r.acc[k]))) o.acc[k]=r.acc[k]; });
     if(Array.isArray(r.bans)) o.bans=[...new Set(r.bans.map(x=>String(x).slice(0,12).toLowerCase()).filter(Boolean))].slice(0,500);
     if(Array.isArray(r.mutes)) o.mutes=[...new Set(r.mutes.map(x=>String(x).slice(0,12).toLowerCase()).filter(Boolean))].slice(0,500);
@@ -3461,6 +3461,17 @@ label.plus.open{transform:rotate(45deg)}
           let im=okTImg(x.im)?x.im:""; if(im&&tot+im.length>20000000) im=""; tot+=im.length;
           if(n||i||im) o.tn[k]={n,i,im};
         }
+      });
+    }
+    if(Array.isArray(r.hm)){                       // homepage tiles the owners made (null = the built-in default tiles)
+      const seen=new Set(), HB=["games","chat","media","draw","shame","polls","gal","tier"]; o.hm=[];
+      r.hm.slice(0,24).forEach(x=>{
+        if(!x||typeof x!=="object") return;
+        let k=String(x.k||"").toLowerCase().replace(/[^a-z0-9]/g,"").slice(0,12); if(!k||seen.has(k)) return; seen.add(k);
+        const t=String(x.t||"").trim(); if(!/^[a-z][a-z0-9_]{0,15}$/.test(t)||t==="app"||t==="dm"||t==="grp") return;
+        const n=String(x.n||"").trim().slice(0,24), i=String(x.i||"").trim().slice(0,8), s2=String(x.s||"").trim().slice(0,24);
+        const ic=HB.includes(x.ic)?x.ic:"", im=(okTImg(x.im)&&x.im.length<=40000)?x.im:"";
+        o.hm.push({k,n:n||"Tab",i,ic,im,t,s:s2});
       });
     }
     if(r.ce&&typeof r.ce==="object"){
@@ -3531,7 +3542,7 @@ label.plus.open{transform:rotate(45deg)}
     if(gone.length){ try{ from.send({t:"BLK",i:newId(),ids:gone.slice(0,50),x:first.slice(0,2000)}); }catch(e){} }
     return !d.e.length;
   }
-  const areg=()=>({t:"A",i:newId(),acc:reg.acc,bans:reg.bans,mutes:reg.mutes,mods:reg.mods,adms:adminNames(),hid:reg.hid,tg:reg.tg,mto:reg.mto,mao:reg.mao,tn:reg.tn,ce:reg.ce,cls:reg.cls,clr:reg.clr,clg:reg.clg,clp:reg.clp,muteAll:reg.muteAll,v:reg.v});
+  const areg=()=>({t:"A",i:newId(),acc:reg.acc,bans:reg.bans,mutes:reg.mutes,mods:reg.mods,adms:adminNames(),hid:reg.hid,tg:reg.tg,mto:reg.mto,mao:reg.mao,tn:reg.tn,hm:reg.hm,ce:reg.ce,cls:reg.cls,clr:reg.clr,clg:reg.clg,clp:reg.clp,muteAll:reg.muteAll,v:reg.v});
   function adminNames(){ const a=conns.filter(c=>c.ok2&&c.admin&&c.userName).map(c=>low(c.userName)); if(adminMode&&usr) a.push(low(usr)); return [...new Set(a)]; }
   reg.muteAll=false;
   let myPwH="", adminMode=false, pendW=null;
@@ -3684,6 +3695,10 @@ label.plus.open{transform:rotate(45deg)}
     else if(m.a==="tabs"){
       reg.tn=cleanReg({tn:m.tn}).tn; commit();
       say(Object.keys(reg.tn).length?"🏷 Tab names and icons updated for everyone.":"🏷 Tab names and icons reset to default.");
+    }
+    else if(m.a==="home"){
+      reg.hm=cleanReg({hm:m.hm}).hm; commit();
+      say(reg.hm?"🏠 Homepage icons updated for everyone.":"🏠 Homepage icons reset to default.");
     }
     else if(m.a==="ce") ceOp(m,f,true,say,f.conn?f.conn.userName:usr);
     else if(m.a==="troll") runTroll(m,f,true,say,f.conn?f.conn.userName:usr);
@@ -4009,7 +4024,7 @@ label.plus.open{transform:rotate(45deg)}
     }
     else {
       if(d.t==="A"){
-        const n=cleanReg(d); if(d.ce===undefined&&reg.ce) n.ce=reg.ce;
+        const n=cleanReg(d); if(d.ce===undefined&&reg.ce) n.ce=reg.ce; if(d.hm===undefined&&reg.hm) n.hm=reg.hm;
         if(window.revealChat) window.revealChat();       // the host accepted us: now show the chat
         if(reg.v&&n.v&&n.v<reg.v){ console.warn("[reg] ignored an older registry from the host"); return; }   // a host with stale data must not demote mods / drop accounts
         const grew=n.clr>reg.clr||n.clg>reg.clg||n.cls>reg.cls||n.clp>reg.clp; reg=n; saveReg(); if(grew) applyClear(); refreshUI(); return;
@@ -4191,6 +4206,7 @@ label.plus.open{transform:rotate(45deg)}
     const st=$("pwst"); if(st&&!pendW) st.textContent=own(reg.acc,low(usr))?"🔒 Your name “"+usr+"” is password-protected.":"No password yet — anyone could use the name “"+usr+"”.";
     renderAdminLists();
     if(window.__pbTabs) window.__pbTabs();
+    if(window.__pbHomeRefresh) try{ window.__pbHomeRefresh(); }catch(e){}
   }
   new MutationObserver(refreshUI).observe($("stg"),{attributes:true,attributeFilter:["class"]});
   function sendW(m){
@@ -4702,6 +4718,11 @@ label.plus.open{transform:rotate(45deg)}
     fill();
     new MutationObserver(()=>{ if($("amod").classList.contains("open")) fill(); }).observe($("amod"),{attributes:true,attributeFilter:["class"]});
   })();
+
+  /* =============== 🏠 homepage icons: owners add / edit / remove them, everyone sees them =============== */
+  window.__pbHomeGet=()=>reg.hm;                                   // null = default tiles
+  window.__pbHomeSave=hm=>adminDo({a:"home",hm:hm});
+  window.__pbHomeRefresh=()=>{ if(window.__pbHomeRender) window.__pbHomeRender(); };
 
   /* =============== ⭐ custom emojis + stickers: show them, pick them, make them =============== */
   (function(){
@@ -12632,6 +12653,42 @@ body.in-home #home{display:flex}
 #home .hm-toast{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);z-index:3;padding:8px 16px;border-radius:12px;background:#222;color:#fff;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s}
 #home .hm-toast.on{opacity:1}
 @media(max-width:600px){#home .hm-it{width:84px;font-size:12px}#home .hm-ic{width:62px;height:62px}#home .hm-grid{gap:14px 6px}}
+#home .hm-ed{position:absolute;top:10px;right:12px;z-index:4;display:none;gap:6px}
+#home .hm-ed.on{display:flex}
+#home .hm-ed button{border:none;border-radius:999px;padding:7px 14px;background:var(--row);color:var(--text);font-size:14px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+#home .hm-ed button:hover{filter:brightness(1.15)}
+#home .hm-ed button.go{background:var(--accent);color:#fff}
+#home .hm-ic.emo{display:flex;align-items:center;justify-content:center;font-size:40px;line-height:1;background:var(--row)}
+#home .hm-ic.emo.def{background:color-mix(in srgb,var(--accent) 35%,var(--row))}
+@media(max-width:600px){#home .hm-ic.emo{font-size:30px}}
+#home .hm-cell{position:relative;width:104px;display:flex;flex-direction:column;align-items:center}
+@media(max-width:600px){#home .hm-cell{width:84px}}
+#home .hm-cell .hm-it{width:100%}
+#home.editing .hm-cell .hm-ic{outline:2px dashed var(--accent);outline-offset:3px}
+#home .hm-tools{position:absolute;top:-6px;left:0;right:0;display:none;justify-content:space-between;padding:0 2px;pointer-events:none}
+#home.editing .hm-tools{display:flex}
+#home .hm-tools button{pointer-events:auto;width:24px;height:24px;border:none;border-radius:50%;background:#222;color:#fff;font-size:12px;line-height:24px;padding:0;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.5)}
+#home .hm-tools button.x{background:#c0392b}
+#home .hm-tools button:disabled{opacity:.3;cursor:default}
+#home .hm-add .hm-ic{background:transparent;border:3px dashed var(--accent);box-shadow:none;display:flex;align-items:center;justify-content:center;font-size:38px;color:var(--accent)}
+#home .hm-hint{display:none;margin:-14px 0 18px;font-size:14px;opacity:.8;text-align:center;max-width:420px}
+#home.editing .hm-hint{display:block}
+#hm-modal{position:fixed;inset:0;z-index:9000;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.6);padding:14px}
+#hm-modal.on{display:flex}
+#hm-modal .hm-card{width:min(420px,100%);max-height:92dvh;overflow:auto;background:var(--bg);color:var(--text);border:1px solid color-mix(in srgb,var(--text) 25%,transparent);border-radius:16px;padding:16px 18px;box-shadow:0 12px 40px rgba(0,0,0,.6);font-family:system-ui,sans-serif}
+#hm-modal h3{margin:0 0 10px;font-size:18px}
+#hm-modal label{display:block;margin:10px 0 3px;font-size:12px;opacity:.75}
+#hm-modal input[type=text],#hm-modal select{width:100%;box-sizing:border-box;padding:8px 10px;border-radius:8px;border:1px solid color-mix(in srgb,var(--text) 30%,transparent);background:var(--row);color:var(--text);font-size:15px}
+#hm-modal .hm-r{display:flex;gap:8px;align-items:center}
+#hm-modal .hm-r>*{flex:1;min-width:0}
+#hm-modal .hm-r .sm{flex:none}
+#hm-modal .hm-pv{width:48px;height:48px;border-radius:50%;object-fit:cover;background:var(--row);flex:none;display:flex;align-items:center;justify-content:center;font-size:26px;overflow:hidden}
+#hm-modal .hm-pv img{width:100%;height:100%;object-fit:cover}
+#hm-modal button{border:none;border-radius:8px;padding:8px 14px;background:var(--row);color:var(--text);font-size:14px;cursor:pointer}
+#hm-modal button.go{background:var(--accent);color:#fff}
+#hm-modal button.red{background:#c0392b;color:#fff}
+#hm-modal .hm-btns{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap}
+#hm-modal .hm-note{font-size:12px;opacity:.65;margin-top:4px}
 </style>
 <script id="home-js">
 (function(){
@@ -12653,7 +12710,9 @@ body.in-home #home{display:flex}
     '<div class="hm-wrap"><div class="hm-top">Los PureBreds 3.0</div>' +
     '<img class="hm-mascot" alt="" draggable="false">' +
     '<div class="hm-banner">- Unification Initiation -</div>' +
-    '<div class="hm-grid"></div></div><div class="hm-toast" id="hm-toast"></div>';
+    '<div class="hm-hint">Owner edit mode: tap an icon to change it, ◀ ▶ to move, ✕ to remove, or add a new one.</div>' +
+    '<div class="hm-grid"></div></div><div class="hm-toast" id="hm-toast"></div>' +
+    '<div class="hm-ed" id="hm-ed"><button type="button" id="hm-reset" style="display:none">↺ Reset</button><button type="button" id="hm-edit">✏️ Edit home</button></div>';
   $$("box").after(view);
   /* scalloped circle */
   let d = ""; for(let i = 0; i <= 120; i++){ const a = i / 120 * Math.PI * 2, r = 40 + 5 * Math.sin(a * 11); d += (i ? "L" : "M") + (50 + r * Math.cos(a)).toFixed(1) + " " + (50 + r * Math.sin(a)).toFixed(1); }
@@ -12661,14 +12720,175 @@ body.in-home #home{display:flex}
   try{ view.querySelector(".hm-mascot").src = LOGO; }catch(e){ view.querySelector(".hm-mascot").style.display = "none"; }
   const toast = t => { const m = $$("hm-toast"); m.textContent = t; m.classList.add("on"); clearTimeout(toast.t); toast.t = setTimeout(() => m.classList.remove("on"), 2200); };
   const grid = view.querySelector(".hm-grid");
-  ITEMS.forEach(([ic, label, ch]) => {
-    const b = document.createElement("button"); b.type = "button"; b.className = "hm-it";
-    const i = document.createElement("span"); i.className = "hm-ic"; const im = new Image(); im.alt = ""; im.draggable = false; im.src = ICONS[ic]; i.appendChild(im);
-    const t = document.createElement("span"); t.textContent = label;
-    b.append(i, t);
-    b.onclick = () => { if(ch) setChannel(ch); else toast("Media tab comming soon"); };
-    grid.appendChild(b);
-  });
+  const AUTHOR = window.__pbHomeIcons;
+  const DEFAULTS = () => ITEMS.map(([ic, label, ch], n) => ({ k: "d" + n, n: label, i: "", ic: ic === "gal" ? "gal" : ic, im: "", t: ch, s: "" }));
+  const isOwner = () => { try{ return !!(window.__pbAdm && window.__pbAdm()); }catch(e){ return false; } };
+  let editing = false, working = null, override = null, overrideUntil = 0, lastSig = "";
+  const sameTiles = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+  const current = () => {
+    if(editing && working) return working;
+    let hm = null; try{ hm = window.__pbHomeGet ? window.__pbHomeGet() : null; }catch(e){}
+    if(override){ if(Date.now() > overrideUntil || sameTiles(hm || DEFAULTS(), override)) override = null; else return override; }
+    return hm || DEFAULTS();
+  };
+  /* ---- go to a tab, then (optionally) press a sub-tab button inside it ---- */
+  const norm = x => String(x || "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, "");
+  const vis = e => !!(e.offsetParent || e.getClientRects().length);
+  function subButtons(){ return Array.from(document.querySelectorAll(".gm-sub, .md-seg button, .dchip:not(.add)")).filter(vis); }
+  function openSub(sub, tries){
+    const want = norm(sub); if(!want) return;
+    const bs = subButtons();
+    const hit = bs.find(b => norm(b.textContent) === want) || bs.find(b => norm(b.textContent).startsWith(want)) || bs.find(b => norm(b.textContent).includes(want));
+    if(hit){ hit.click(); return; }
+    if((tries || 0) < 25) setTimeout(() => openSub(sub, (tries || 0) + 1), 120);
+    else toast("Couldn't find the sub-tab “" + sub + "”");
+  }
+  function go(t){
+    if(t.t !== "home" && !document.querySelector('#chtabs button[data-ch="' + t.t + '"]') && t.t !== "main"){ toast("That tab isn't available right now"); return; }
+    setChannel(t.t);
+    if(t.s) setTimeout(() => openSub(t.s, 0), 80);
+  }
+  function tabOptions(){
+    const out = [], seen = new Set();
+    document.querySelectorAll("#chtabs button[data-ch]").forEach(b => {
+      const k = b.dataset.ch; if(!k || k === "home" || k === "app" || k === "dm" || k === "grp" || seen.has(k)) return; seen.add(k);
+      out.push([k, (b.textContent || "").trim() || k]);
+    });
+    ["main", "gal", "polls", "shame", "draw", "tier", "games", "media"].forEach(k => { if(!seen.has(k)) out.push([k, k]); });
+    return out;
+  }
+  function iconNode(t){
+    const i = document.createElement("span"); i.className = "hm-ic";
+    const src = t.im || (t.ic && ICONS[t.ic]) || "";
+    if(src){ const im = new Image(); im.alt = ""; im.draggable = false; im.src = src; i.appendChild(im); }
+    else { i.classList.add("emo"); if(!t.i) i.classList.add("def"); i.textContent = t.i || "⭐"; }
+    return i;
+  }
+  function render(){
+    const list = current(), sig = JSON.stringify(list) + "|" + editing;
+    const own = isOwner(); $$("hm-ed").classList.toggle("on", own);
+    if(!own && editing){ editing = false; working = null; }
+    if(sig === lastSig && !(grid.dataset.own !== String(own))) return;
+    lastSig = sig; grid.dataset.own = String(own);
+    view.classList.toggle("editing", editing);
+    $$("hm-edit").textContent = editing ? "✅ Done" : "✏️ Edit home";
+    $$("hm-edit").classList.toggle("go", editing);
+    $$("hm-reset").style.display = editing ? "" : "none";
+    grid.replaceChildren();
+    list.forEach((t, n) => {
+      const cell = document.createElement("div"); cell.className = "hm-cell";
+      const b = document.createElement("button"); b.type = "button"; b.className = "hm-it";
+      const lb = document.createElement("span"); lb.textContent = t.n;
+      b.append(iconNode(t), lb);
+      b.onclick = () => { if(editing) openEditor(n); else go(t); };
+      cell.appendChild(b);
+      if(editing){
+        const tools = document.createElement("div"); tools.className = "hm-tools";
+        const mk = (txt, title, fn, cls, dis) => { const x = document.createElement("button"); x.type = "button"; x.textContent = txt; x.title = title; if(cls) x.className = cls; x.disabled = !!dis; x.onclick = e => { e.stopPropagation(); fn(); }; return x; };
+        tools.append(mk("◀", "Move earlier", () => move(n, -1), "", n === 0), mk("✕", "Remove this icon", () => remove(n), "x"), mk("▶", "Move later", () => move(n, 1), "", n === list.length - 1));
+        cell.appendChild(tools);
+      }
+      grid.appendChild(cell);
+    });
+    if(editing && list.length < 24){
+      const cell = document.createElement("div"); cell.className = "hm-cell hm-add";
+      const b = document.createElement("button"); b.type = "button"; b.className = "hm-it";
+      const i = document.createElement("span"); i.className = "hm-ic"; i.textContent = "+";
+      const lb = document.createElement("span"); lb.textContent = "Add icon";
+      b.append(i, lb); b.onclick = () => openEditor(-1); cell.appendChild(b); grid.appendChild(cell);
+    }
+  }
+  window.__pbHomeRender = render;
+  /* ---- saving (the host shares it with everybody) ---- */
+  function commit(list){
+    working = list; override = list.map(x => Object.assign({}, x)); overrideUntil = Date.now() + 5000;
+    try{ window.__pbHomeSave(list); }catch(e){ toast("Couldn't save — are you connected?"); }
+    render();
+  }
+  function move(n, d){ const l = working.slice(), m = n + d; if(m < 0 || m >= l.length) return; [l[n], l[m]] = [l[m], l[n]]; commit(l); }
+  function remove(n){ const l = working.slice(); if(!confirm("Remove “" + l[n].n + "” from the homepage?")) return; l.splice(n, 1); commit(l); }
+  $$("hm-edit").onclick = () => {
+    if(!isOwner()) return;
+    if(!editing){ editing = true; working = current().map(x => Object.assign({}, x)); }
+    else { editing = false; working = null; }
+    lastSig = ""; render();
+  };
+  $$("hm-reset").onclick = () => {
+    if(!confirm("Reset the homepage icons back to the original ones for everyone?")) return;
+    override = DEFAULTS(); overrideUntil = Date.now() + 5000; working = DEFAULTS();
+    try{ window.__pbHomeSave(null); }catch(e){ toast("Couldn't save — are you connected?"); }
+    lastSig = ""; render();
+  };
+  /* ---- the add / edit box ---- */
+  const modal = document.createElement("div"); modal.id = "hm-modal";
+  modal.innerHTML = '<div class="hm-card" role="dialog" aria-label="Homepage icon"><h3 id="hm-mt">Add icon</h3>' +
+    '<label>Name under the icon</label><input type="text" id="hm-n" maxlength="24" placeholder="e.g. Movie night">' +
+    '<label>Picture or emoji</label><div class="hm-r"><span class="hm-pv sm" id="hm-pv"></span><input type="text" id="hm-i" maxlength="8" placeholder="emoji" style="max-width:90px"><button type="button" id="hm-up" class="sm">🖼 Upload</button><button type="button" id="hm-ux" class="sm" title="Remove the picture">✕</button></div>' +
+    '<input type="file" id="hm-file" accept="image/*" hidden>' +
+    '<label>Or use one of the built-in pictures</label><select id="hm-ic"></select>' +
+    '<label>Opens this tab</label><select id="hm-t"></select>' +
+    '<label>Sub-tab (optional)</label><input type="text" id="hm-s" maxlength="24" list="hm-sl" placeholder="leave empty to just open the tab"><datalist id="hm-sl"></datalist>' +
+    '<div class="hm-note">Sub-tab = a button inside that tab, like Proxy in Games or Music in Media. Type its name.</div>' +
+    '<div class="hm-btns"><button type="button" id="hm-cx">Cancel</button><button type="button" class="go" id="hm-ok">Save</button></div></div>';
+  document.body.appendChild(modal);
+  let editIdx = -1, pic = "";
+  const BUILT = [["", "(none)"], ["games", "Games"], ["chat", "Chat"], ["media", "Media"], ["draw", "Drawing"], ["shame", "Hall of Shame"], ["polls", "Polls"], ["gal", "Gallery"], ["tier", "Tier list"]];
+  $$("hm-ic").innerHTML = BUILT.map(([k, l]) => '<option value="' + k + '">' + l + '</option>').join("");
+  const SUBHINT = { games: ["Games", "Proxy"], media: ["Watch", "Music"], draw: ["Public"] };
+  function fillSubHints(){
+    const t = $$("hm-t").value, set = new Set(SUBHINT[t] || []);
+    if(t === "draw") document.querySelectorAll(".dchip:not(.add)").forEach(c => { const x = c.textContent.replace(/[📌🌐●]/gu, "").trim(); if(x) set.add(x); });
+    $$("hm-sl").innerHTML = ""; set.forEach(x => { const o = document.createElement("option"); o.value = x; $$("hm-sl").appendChild(o); });
+  }
+  function showPv(){
+    const pv = $$("hm-pv"); pv.replaceChildren();
+    const bi = $$("hm-ic").value;
+    const src = pic || (bi && ICONS[bi]) || "";
+    if(src){ const im = new Image(); im.alt = ""; im.src = src; pv.appendChild(im); } else pv.textContent = $$("hm-i").value.trim() || "⭐";
+    $$("hm-ux").style.display = pic ? "" : "none";
+  }
+  function squarePic(f, cb){
+    if(f.type === "image/gif" || /\.gif$/i.test(f.name || "")){ const r = new FileReader(); r.onload = e => { const d = String(e.target.result); cb(d.length <= 40000 ? d : ""); }; r.readAsDataURL(f); return; }
+    const url = URL.createObjectURL(f), im = new Image();
+    im.onload = () => {
+      URL.revokeObjectURL(url);
+      const side = Math.min(im.width, im.height) || 1, sx = (im.width - side) / 2, sy = (im.height - side) / 2;
+      for(const size of [128, 96, 72, 56]){
+        const c = document.createElement("canvas"); c.width = c.height = size; c.getContext("2d").drawImage(im, sx, sy, side, side, 0, 0, size, size);
+        let d = c.toDataURL("image/webp", 0.85); if(!d.startsWith("data:image/webp")) d = c.toDataURL("image/png");
+        if(d.length <= 40000){ cb(d); return; }
+      }
+      cb("");
+    };
+    im.onerror = () => { URL.revokeObjectURL(url); cb(""); };
+    im.src = url;
+  }
+  function openEditor(n){
+    editIdx = n; const t = n >= 0 ? working[n] : { n: "", i: "", ic: "", im: "", t: "main", s: "" };
+    $$("hm-mt").textContent = n >= 0 ? "Edit icon" : "Add icon";
+    $$("hm-n").value = t.n; $$("hm-i").value = t.i; pic = t.im || ""; $$("hm-ic").value = t.ic || "";
+    $$("hm-t").innerHTML = tabOptions().map(([k, l]) => '<option value="' + k + '">' + l.replace(/[<>&"]/g, "") + '</option>').join("");
+    if(!Array.from($$("hm-t").options).some(o => o.value === t.t)){ const o = document.createElement("option"); o.value = t.t; o.textContent = t.t; $$("hm-t").appendChild(o); }
+    $$("hm-t").value = t.t; $$("hm-s").value = t.s || "";
+    fillSubHints(); showPv(); modal.classList.add("on"); setTimeout(() => $$("hm-n").focus(), 30);
+  }
+  const closeEditor = () => modal.classList.remove("on");
+  $$("hm-cx").onclick = closeEditor;
+  modal.addEventListener("mousedown", e => { if(e.target === modal) closeEditor(); });
+  $$("hm-t").onchange = fillSubHints;
+  $$("hm-i").oninput = showPv;
+  $$("hm-ic").onchange = () => { if($$("hm-ic").value) pic = ""; showPv(); };
+  $$("hm-up").onclick = () => $$("hm-file").click();
+  $$("hm-ux").onclick = () => { pic = ""; showPv(); };
+  $$("hm-file").onchange = () => { const f = $$("hm-file").files && $$("hm-file").files[0]; $$("hm-file").value = ""; if(!f) return; squarePic(f, d => { if(d){ pic = d; $$("hm-ic").value = ""; showPv(); } else toast("That picture is too big — try a simpler one"); }); };
+  $$("hm-ok").onclick = () => {
+    const name = $$("hm-n").value.trim();
+    if(!name){ $$("hm-n").focus(); return; }
+    const t = { k: editIdx >= 0 ? working[editIdx].k : "x" + Math.random().toString(36).slice(2, 9), n: name, i: $$("hm-i").value.trim(), ic: pic ? "" : $$("hm-ic").value, im: pic, t: $$("hm-t").value, s: $$("hm-s").value.trim() };
+    const l = working.slice(); if(editIdx >= 0) l[editIdx] = t; else l.push(t);
+    closeEditor(); commit(l);
+  };
+  render(); setInterval(() => { if(!document.hidden) render(); }, 1500);
   const tab = document.createElement("button"); tab.type = "button"; tab.dataset.ch = "home";
   { const hi = (window.__pbHomeIcons||{}).home;   // house picture instead of the 🏠 emoji, from the very first paint
     if(hi){ const g = new Image(); g.className = "tabimg hm"; g.alt = ""; g.src = hi; tab.append(g, document.createTextNode("Home")); tab.dataset.sig = hi + "|🏠|Home"; }
@@ -17286,7 +17506,7 @@ body[data-hp="left"] #hmore-btn,body[data-hp="right"] #hmore-btn{order:97;margin
 })();
 </script>
 
-<!-- =====================  TOP BAR: online button on the left, tabs with the icon on top + name underneath, "more" on the right  ===================== -->
+<!-- =====================  TOP BAR: online button on the left, tabs with the icon on top + name underneath  ===================== -->
 <style id="topbar-v">
 /* people online: just a button; the avatars only show in the dropdown when you click it */
 html:not(.watch) body:not([data-theme="simple"]):not([data-theme="terminal"]):not([data-hp="left"]):not([data-hp="right"]) #online .oav{display:none !important}
@@ -17310,44 +17530,11 @@ html:not(.watch) body:not([data-theme="simple"]):not([data-theme="terminal"]):no
 html:not(.watch) body:not([data-theme="simple"]):not([data-theme="terminal"]):not([data-hp="left"]):not([data-hp="right"]) #chtabs button[data-ch].on .tl{font-weight:800}
 html:not(.watch) body:not([data-theme="simple"]):not([data-theme="terminal"]):not([data-hp="left"]):not([data-hp="right"]) #chtabs button.ct-plus.on-mod{display:flex !important;align-items:center;justify-content:center;align-self:center;flex:0 0 auto;width:30px;height:30px;min-width:0;padding:0 !important;margin:0 6px;border-radius:9px;background:var(--text) !important;color:var(--bg) !important;opacity:1;font-size:16px !important}
 
-/* "more": a list of every tab */
-#hmore{display:none}
-html:not(.watch) body:not([data-theme="simple"]):not([data-theme="terminal"]):not([data-hp="left"]):not([data-hp="right"]) #hmore{display:block;order:3;flex:0 0 auto;border:none;cursor:pointer;padding:8px 14px;border-radius:12px;background:var(--row);color:var(--text);font:inherit;font-size:13px;font-weight:600}
-#tmpop{display:none;position:absolute;top:100%;right:8px;margin-top:4px;min-width:210px;max-height:60vh;overflow-y:auto;background:var(--side,var(--bg));color:var(--text);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 28px rgba(0,0,0,.5);padding:6px;z-index:5}
-#tmpop.open{display:block}
-body[data-hp="bottom"] #tmpop{top:auto;bottom:100%;margin:0 0 4px}
-#tmpop .tm-i{display:flex;align-items:center;gap:10px;width:100%;border:none;background:none;color:inherit;font:inherit;font-size:13px;text-align:left;padding:7px 9px;border-radius:8px;cursor:pointer}
-#tmpop .tm-i:hover{background:var(--row)}
-#tmpop .tm-i.on{font-weight:800;color:var(--accent)}
-#tmpop .tm-ic{width:24px;height:24px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--text,#fff) 45%,transparent);overflow:hidden}
-#tmpop .tm-ic img{width:100%;height:100%;object-fit:cover}
 @media (max-width:600px){
   html:not(.watch) body:not([data-theme="simple"]):not([data-theme="terminal"]):not([data-hp="left"]):not([data-hp="right"]) #chtabs{order:10;flex:1 1 100%}
   html:not(.watch) body:not([data-theme="simple"]):not([data-theme="terminal"]):not([data-hp="left"]):not([data-hp="right"]) #chtabs button[data-ch]{min-width:54px}
 }
 </style>
-<script id="topbar-v-js">
-(function(){
-  var hdr = document.getElementById("hdr"), wrap = document.getElementById("hdrwrap"), tabs = document.getElementById("chtabs");
-  if(!hdr || !wrap || !tabs) return;
-  var more = document.createElement("button"); more.id = "hmore"; more.type = "button"; more.textContent = "more"; more.title = "All tabs"; more.setAttribute("aria-haspopup", "true");
-  hdr.appendChild(more);
-  var pop = document.createElement("div"); pop.id = "tmpop"; wrap.appendChild(pop);
-  function build(){
-    pop.replaceChildren();
-    tabs.querySelectorAll("button[data-ch]").forEach(function(b){
-      var it = document.createElement("button"); it.type = "button"; it.className = "tm-i" + (b.classList.contains("on") ? " on" : "");
-      var ic = document.createElement("span"), img = b.querySelector(".tabimg"), ti = b.querySelector(".ti"); ic.className = "tm-ic";
-      if(img){ var g = new Image(); g.src = img.src; g.alt = ""; ic.appendChild(g); } else ic.textContent = ti ? ti.textContent : "";
-      var tl = b.querySelector(".tl"), nm = document.createElement("span"); nm.textContent = (tl ? tl.textContent : b.textContent).trim();
-      it.append(ic, nm); it.onclick = function(){ close(); b.click(); }; pop.appendChild(it);
-    });
-  }
-  function close(){ pop.classList.remove("open"); }
-  more.onclick = function(e){ e.stopPropagation(); if(pop.classList.contains("open")){ close(); return; } build(); pop.classList.add("open"); };
-  document.addEventListener("click", function(e){ if(!e.target.closest("#tmpop") && e.target !== more) close(); });
-  document.addEventListener("keydown", function(e){ if(e.key === "Escape") close(); });
-})();
-</script>
+
 </body>
 </html>
