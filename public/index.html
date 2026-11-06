@@ -13533,7 +13533,15 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
 .ct-doc table,.ct-ed table{border-collapse:collapse;max-width:100%;display:block;overflow-x:auto}
 .ct-doc :is(td,th),.ct-ed :is(td,th){border:1px solid var(--line);padding:6px 10px}
 .ct-empty{opacity:.6;text-align:center;padding:40px 10px;font-size:15px}
-#ct-editwrap{display:none;max-width:820px;margin:0 auto}
+#ct-editwrap{display:none;max-width:820px;margin:0 auto;position:relative}
+.ct-ed img{cursor:pointer}
+#ct-rs{position:absolute;display:none;z-index:4;pointer-events:none;border:2px solid var(--accent);border-radius:8px;box-sizing:border-box}
+#ct-rs.on{display:block}
+#ct-rs .rs-h{position:absolute;right:-9px;bottom:-9px;width:20px;height:20px;border-radius:50%;background:var(--accent);border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.5);cursor:nwse-resize;pointer-events:auto;touch-action:none}
+#ct-rs .rs-b{position:absolute;left:0;top:-38px;display:flex;gap:4px;padding:4px;border-radius:10px;background:var(--side,var(--row));border:1px solid var(--line);box-shadow:0 2px 8px rgba(0,0,0,.35);pointer-events:auto;white-space:nowrap}
+#ct-rs .rs-b button{border:none;border-radius:7px;background:var(--row);color:var(--text);height:26px;min-width:34px;padding:0 8px;font-size:12px;font-weight:700;cursor:pointer}
+#ct-rs .rs-b button:hover{filter:brightness(1.25)}
+#ct-rs .rs-b .rs-x{color:#ff453a}
 #ct-editwrap.on{display:block}
 .ct-tb{position:sticky;top:0;z-index:5;display:flex;flex-wrap:wrap;gap:4px;padding:8px;margin-bottom:10px;border:1px solid var(--line);border-radius:12px;background:var(--side,var(--row))}
 .ct-tb button,.ct-tb label{border:none;border-radius:8px;background:var(--row);color:var(--text);min-width:32px;height:32px;padding:0 9px;font-size:14px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
@@ -13608,7 +13616,10 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
         }
         if(t === "IMG"){
           const s = n.getAttribute("src") || "";
-          if(IMGOK.test(s) && s.length < 300000){ const im = document.createElement("img"); im.src = s; im.alt = (n.getAttribute("alt") || "").slice(0, 100); im.loading = "lazy"; im.decoding = "async"; dst.appendChild(im); }
+          if(IMGOK.test(s) && s.length < 300000){ const im = document.createElement("img"); im.src = s; im.alt = (n.getAttribute("alt") || "").slice(0, 100); im.loading = "lazy"; im.decoding = "async";
+            const wm = String(n.style && n.style.width || "").match(/^(\d{1,3}(?:\.\d+)?)%$/);   // keep a resized width (percent of the page only)
+            if(wm){ const w = Math.min(100, Math.max(5, parseFloat(wm[1]))); im.style.width = (Math.round(w * 10) / 10) + "%"; im.style.height = "auto"; }
+            dst.appendChild(im); }
           return;
         }
         const e = document.createElement(t.toLowerCase());
@@ -13836,6 +13847,50 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
     ed.focus(); if(had){ s.removeAllRanges(); s.addRange(had); }
     if(collapsed) cmd("insertHTML", '<a href="' + esc(u) + '">' + esc(u) + "</a>"); else cmd("createLink", u);
   }
+  /* ---------- resize pictures: click a picture, then drag the dot or tap a size ---------- */
+  (function(){
+    const wrap = $$("ct-editwrap"), box = document.createElement("div"); box.id = "ct-rs";
+    box.innerHTML = '<div class="rs-b"><button type="button" data-w="25">25%</button><button type="button" data-w="50">50%</button><button type="button" data-w="75">75%</button><button type="button" data-w="100">Full</button><button type="button" class="rs-x" data-x="1" title="Delete picture">🗑</button></div><div class="rs-h" title="Drag to resize"></div>';
+    wrap.appendChild(box);
+    let img = null, drag = null;
+    const contentW = () => { const cs = getComputedStyle(ed); return Math.max(40, ed.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight)); };
+    function place(){
+      if(!img || !img.isConnected || !ed.contains(img)){ hide(); return; }
+      const a = wrap.getBoundingClientRect(), r = img.getBoundingClientRect();
+      box.style.left = (r.left - a.left) + "px"; box.style.top = (r.top - a.top) + "px"; box.style.width = r.width + "px"; box.style.height = r.height + "px";
+      box.querySelector(".rs-b").style.top = (r.top - a.top < 44 ? r.height + 12 : -38) + "px";
+    }
+    function show(im){ img = im; box.classList.add("on"); place(); }
+    function hide(){ img = null; box.classList.remove("on"); }
+    const setW = pct => { if(!img) return; pct = Math.min(100, Math.max(5, pct)); img.style.width = (Math.round(pct * 10) / 10) + "%"; img.style.height = "auto"; place(); };
+    ed.addEventListener("click", e => { if(e.target && e.target.tagName === "IMG") show(e.target); else hide(); });
+    ed.addEventListener("keydown", e => {
+      if(img && (e.key === "Delete" || e.key === "Backspace")){ e.preventDefault(); img.remove(); hide(); }
+      else if(img && !e.ctrlKey && !e.metaKey && e.key.length === 1) hide();
+    });
+    ed.addEventListener("input", () => { if(img) place(); });
+    window.addEventListener("resize", () => { if(img) place(); });
+    new ResizeObserver(() => { if(img) place(); }).observe(ed);
+    box.querySelector(".rs-b").addEventListener("mousedown", e => e.preventDefault());
+    box.querySelector(".rs-b").addEventListener("click", e => {
+      const b = e.target.closest("button"); if(!b || !img) return;
+      if(b.dataset.x){ img.remove(); hide(); return; }
+      setW(+b.dataset.w);
+    });
+    const handle = box.querySelector(".rs-h");
+    handle.addEventListener("pointerdown", e => {
+      if(!img) return; e.preventDefault();
+      drag = { x: e.clientX, w: img.getBoundingClientRect().width, cw: contentW() };
+      try{ handle.setPointerCapture(e.pointerId); }catch(_){}
+    });
+    handle.addEventListener("pointermove", e => { if(drag) setW((drag.w + (e.clientX - drag.x)) / drag.cw * 100); });
+    const end = () => { drag = null; };
+    handle.addEventListener("pointerup", end); handle.addEventListener("pointercancel", end);
+    document.addEventListener("scroll", () => { if(img) place(); }, true);
+    // hide whenever the editor closes or a new page loads in it
+    new MutationObserver(() => { if(img && !ed.contains(img)) hide(); }).observe(ed, { childList: true, subtree: true });
+    const ew = new MutationObserver(() => { if(!wrap.classList.contains("on")) hide(); }); ew.observe(wrap, { attributes: true, attributeFilter: ["class"] });
+  })();
   ed.addEventListener("paste", e => {
     e.preventDefault(); const cd = e.clipboardData; if(!cd) return;
     const h = cd.getData("text/html"), t = cd.getData("text/plain");
