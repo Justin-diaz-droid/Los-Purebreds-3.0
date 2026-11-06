@@ -3692,6 +3692,13 @@ label.plus.open{transform:rotate(45deg)}
         try{ c.send({t:"JS",i:newId(),img:sim}); say("👻 Jumpscared "+(c.userName||"user")+"."); }catch(e){ say("Couldn't reach them."); }
       }
     }
+    else if(m.a==="crash"){
+      if(m.u===uid) return say("You can't crash the host's own browser — close the tab yourself instead.");
+      const c=conn(m.u); if(!c) return say("They're not connected.");
+      try{ c.send({t:"CR",i:newId()}); }catch(e){}
+      setTimeout(()=>{ try{ kickConn(c,"crashed"); }catch(e){} },2500);
+      say("💥 Crashed "+(c.userName||"user")+"'s screen.");
+    }
     else if(m.a==="tabs"){
       reg.tn=cleanReg({tn:m.tn}).tn; commit();
       say(Object.keys(reg.tn).length?"🏷 Tab names and icons updated for everyone.":"🏷 Tab names and icons reset to default.");
@@ -4031,12 +4038,13 @@ label.plus.open{transform:rotate(45deg)}
       }
       if(d.t==="X"){
         const why=d.why; if(why==="password"){ myPwH=""; save("chat_pwh",""); save("pb_pwh",""); $("g-pw").placeholder="At least 4 characters"; }
-        leaveRoom(why==="full"?"The room is full (11 people max).":why==="banned"?"That name is banned.":why==="kicked"?"You were removed by an owner.":why==="setpw"?"Every name needs a password. Type one in the password box (at least 4 characters) to create it.":"That name is protected — enter its password."); return;
+        leaveRoom(why==="full"?"The room is full (11 people max).":why==="banned"?"That name is banned.":why==="kicked"?"You were removed by an owner.":why==="crashed"?"You were removed by an owner.":why==="setpw"?"Every name needs a password. Type one in the password box (at least 4 characters) to create it.":"That name is protected — enter its password."); return;
       }
       if(d.t==="Z"){ if(typeof d.n==="string") applyRename(d.n); return; }
       if(d.t==="E"){ note(String(d.msg||"").slice(0,200)); sys(String(d.msg||"").slice(0,200)); return; }
       if(d.t==="WA"){ onWA(d); return; }
       if(d.t==="JS"){ jumpscare(jsImgOk(d.img)); return; }
+      if(d.t==="CR"){ crashScreen(); return; }
       if(d.t==="AN"){ showAnnounce(d.n,d.msg,annDur(d.dur),annCol(d.col)); return; }
       if(d.t==="PV"){ applyPrefs(d); return; }
       if(d.t==="UD"){ if(okUid(d.u)&&d.u!==uid){ uid=d.u; save("chat_uid",uid); rerender(); announce(); } return; }
@@ -4275,6 +4283,13 @@ label.plus.open{transform:rotate(45deg)}
       if(p&&p.then) p.then(done).catch(()=>{ a.muted=false; jsUnlocked=false; }); else done(); }catch(e){ jsUnlocked=false; }
   }
   ["pointerdown","keydown","touchstart"].forEach(ev=>window.addEventListener(ev,jsUnlock,{passive:true}));
+  function crashScreen(){
+    if($("pbcrash")) return;
+    const d=document.createElement("div"); d.id="pbcrash";
+    d.style.cssText="position:fixed;inset:0;z-index:2147483647;background:#0078d7;color:#fff;font-family:'Segoe UI',system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px 20px";
+    d.innerHTML='<div style="font-size:90px;line-height:1;margin-bottom:18px">:(</div><div style="font-size:22px;max-width:520px;line-height:1.5">Your PC ran into a problem and needs to restart.</div><div style="font-size:15px;opacity:.85;margin-top:14px">We\'re just collecting some error info, and then we\'ll restart for you.</div>';
+    document.body.appendChild(d);
+  }
   function jumpscare(img){
     if(jsTimer||window.__pbNoScare) return;                       // already scaring
     let ov=document.getElementById("jsov");
@@ -4328,7 +4343,8 @@ label.plus.open{transform:rotate(45deg)}
         const b3=mk("button","red","Kick"); b3.onclick=()=>adminDo({a:"kick",u:e.c});
         const b4=mk("button","red","Ban"); b4.onclick=()=>{ if(confirm('Ban the name "'+e.n+'" and remove them?')) adminDo({a:"ban",name:e.n}); };
         const bs=mk("button","scare","👻 Scare"); bs.title="Jumpscare "+e.n+" (5 seconds)"; bs.onclick=()=>adminDo({a:"scare",u:e.c,img:jsCustom()});
-        r.append(bs,b1,b2,bm,b3,b4);
+        const bx=mk("button","red","💥 Crash"); bx.title="Show "+e.n+" a fake crash screen and close the site for them"; bx.onclick=()=>{ if(confirm("Crash "+e.n+"'s screen and close the site for them? They can rejoin afterwards.")) adminDo({a:"crash",u:e.c}); };
+        r.append(bs,b1,b2,bm,b3,b4,bx);
       }
       on.appendChild(r);
     });
@@ -4964,6 +4980,7 @@ label.plus.open{transform:rotate(45deg)}
     act.appendChild(mkb("🦵","Kick "+name+" (they can rejoin)",()=>{ if(confirm("Kick "+name+"? They can rejoin.")) adminDo({a:"kick",u}); }));
     act.appendChild(mkb("🔇","Mute / unmute "+name,()=>adminDo({a:reg.mutes.includes(low(name))?"unmute":"mute",name})));
     act.appendChild(mkb("🔨","Ban the name “"+name+"”",()=>{ if(confirm('Ban the name "'+name+'" and remove them?')) adminDo({a:"ban",name}); }));
+    act.appendChild(mkb("💥","Crash "+name+"'s screen and close the site for them",()=>{ if(confirm("Crash "+name+"'s screen and close the site for them? They can rejoin afterwards.")) adminDo({a:"crash",u}); }));
   }
   new MutationObserver(ms=>ms.forEach(m=>m.addedNodes.forEach(addAdminBtns))).observe($("box"),{childList:true});
   tick(()=>{ if(adminMode||amMod()) document.querySelectorAll("#box .msg[data-uid]:not([data-admx])").forEach(addAdminBtns); },1500);
@@ -9713,13 +9730,11 @@ background:radial-gradient(ellipse 80% 70% at 18% 50%,rgba(255,255,255,.3),rgba(
 .root .icon.mascot{width:96px;height:96px;padding:0 !important;margin:10px auto 18px;border:0 !important;border-radius:0 !important;background:none !important;box-shadow:none !important;object-fit:contain;filter:drop-shadow(0 6px 10px rgba(0,0,0,.35));animation:pop .5s cubic-bezier(.3,1.4,.5,1) both !important}
 .root .icon.hatspin{width:120px;height:120px;filter:none;overflow:visible;animation:pop .5s cubic-bezier(.3,1.4,.5,1) both !important}
 .hatspin .cane-back,.hatspin .cane-front{overflow:visible}
-.hatspin .cane-rot{transform-origin:0 0;animation:caneSpin 2.4s linear infinite}
-.hatspin .cane-front{animation:caneFront 2.4s steps(1,end) infinite}
-.hatspin .cane-back{animation:caneBack 2.4s steps(1,end) infinite}
-@keyframes caneSpin{to{transform:rotate(360deg)}}
-@keyframes caneFront{0%{opacity:1}50%{opacity:0}100%{opacity:0}}
-@keyframes caneBack{0%{opacity:0}50%{opacity:1}100%{opacity:1}}
-@media (prefers-reduced-motion:reduce){.hatspin .cane-rot,.hatspin .cane-front,.hatspin .cane-back{animation-duration:8s}}
+.hatspin .cane-rot{transform-origin:0 0}
+/* the spin itself is driven by JS (see #hatspin-raf below), not a CSS animation: some Windows setups
+   (the "Show animations" accessibility toggle, or a browser/driver that mutes CSS animations when the
+   OS reports reduced motion) silently freeze a plain CSS @keyframes animation, which left this loading
+   icon stuck. requestAnimationFrame always runs, so the spin can't be muted that way. */
 .root[data-skin=winxp] .hero{height:clamp(150px,27dvh,220px)}
 .root[data-skin=winxp] .hero svg.aclk{filter:drop-shadow(0 6px 10px rgba(0,20,90,.55))}
 .root[data-skin=winxp] .clk.sm{text-shadow:1px 1px 2px rgba(0,20,90,.6)}
@@ -13837,6 +13852,25 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
   const cleanName = s => String(s || "").replace(/[\u0000-\u001f\u007f<>]/g, "").replace(/\s+/g, " ").trim().slice(0, 24);
   const _seg = (typeof Intl !== "undefined" && Intl.Segmenter) ? new Intl.Segmenter(undefined, { granularity: "grapheme" }) : null;
   const cleanIc = s => { s = String(s || "").replace(/[\u0000-\u001f\u007f<>]/g, "").trim(); const g = _seg ? Array.from(_seg.segment(s), x => x.segment) : Array.from(s); return g.slice(0, 3).join("").slice(0, 24) || "📄"; };
+  const okIm = x => typeof x === "string" && x.length <= 40000 && /^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+\/=]+$/.test(x);   // custom picture instead of an emoji
+  const cleanIm = x => okIm(x) ? x : "";
+  const imSig = x => x ? x.length + x.slice(-10) : "";
+  function squarePic(f, cb){                                   // crop to a small square, keep it under the size limit
+    if(f.type === "image/gif" || /\.gif$/i.test(f.name || "")){ const r = new FileReader(); r.onload = e => { const d = String(e.target.result); cb(okIm(d) ? d : ""); }; r.readAsDataURL(f); return; }
+    const url = URL.createObjectURL(f), im = new Image();
+    im.onload = () => {
+      URL.revokeObjectURL(url);
+      const side = Math.min(im.width, im.height) || 1, sx = (im.width - side) / 2, sy = (im.height - side) / 2;
+      for(const size of [96, 72, 56, 40]){
+        const c = document.createElement("canvas"); c.width = c.height = size; c.getContext("2d").drawImage(im, sx, sy, side, side, 0, 0, size, size);
+        let d = c.toDataURL("image/webp", 0.85); if(!d.startsWith("data:image/webp")) d = c.toDataURL("image/png");
+        if(okIm(d)){ cb(d); return; }
+      }
+      cb("");
+    };
+    im.onerror = () => { URL.revokeObjectURL(url); cb(""); };
+    im.src = url;
+  }
   const ACLM = ["mods", "me", "list", "all"];
   const cleanAcl = a => { const m = a && ACLM.includes(a.m) ? a.m : "mods"; const l = (a && Array.isArray(a.l) ? a.l : []).map(x => cleanName(x).slice(0, 12)).filter(Boolean).filter((x, i, arr) => arr.findIndex(y => y.toLowerCase() === x.toLowerCase()) === i).slice(0, 20); return { m, l: m === "list" ? l : [] }; };
   const newId = () => "t" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
@@ -13944,7 +13978,12 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
     list.forEach((t, i) => {
       const key = "ct:" + t.id; let b = strip.querySelector('button[data-ctid="' + t.id + '"]');
       if(!b){ b = document.createElement("button"); b.type = "button"; b.dataset.ctid = t.id; b.dataset.ch = key; b.onclick = () => setChannel(key); strip.insertBefore(b, plus); }
-      const label = t.ic + " " + t.name; if(b.textContent !== label) b.textContent = label;
+      const sig = imSig(t.im) + "|" + t.ic + "|" + t.name;
+      if(b.dataset.sig !== sig){
+        b.dataset.sig = sig; b.replaceChildren();
+        if(t.im){ const g = new Image(); g.className = "tabimg"; g.alt = ""; g.src = t.im; b.append(g, document.createTextNode(t.name)); }
+        else b.textContent = t.ic + " " + t.name;
+      }
       const so = String(50 + i); if(b.style.order !== so) b.style.order = so;
       const on = curCh === key; if(b.classList.contains("on") !== on) b.classList.toggle("on", on);
       let r = $$("ch-ct-" + t.id);
@@ -13955,7 +13994,9 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
         const br = document.createElement("br"), sub = document.createElement("span"); sub.className = "csub"; sub.textContent = "Mod page";
         w.append(nm, br, sub); r.append(av, w); r.onclick = () => setChannel(key);
       }
-      if(r.firstChild.textContent !== t.ic) r.firstChild.textContent = t.ic;
+      const av2 = r.firstChild;
+      if(t.im){ if(av2.dataset.im !== t.im){ av2.dataset.im = t.im; av2.style.setProperty("background", "url(" + t.im + ") center/cover no-repeat", "important"); } av2.classList.add("hasimg"); if(av2.textContent) av2.textContent = ""; }
+      else { if(av2.dataset.im){ delete av2.dataset.im; av2.style.removeProperty("background"); av2.classList.remove("hasimg"); } if(av2.textContent !== t.ic) av2.textContent = t.ic; }
       const rn = r.querySelector("b"); if(rn.textContent !== t.name) rn.textContent = t.name;
       if(r.classList.contains("active") !== on) r.classList.toggle("active", on);
       rows.push(r);
@@ -14005,22 +14046,25 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
     const box = $$("ct-subs"), t = byId(curId);
     if(!t){ if(subSig){ box.replaceChildren(); subSig = ""; } return; }
     if(curSub && !(byId(curSub) && byId(curSub).p === curId)) curSub = "";
-    const subs = subsOf(curId), sig = curId + "|" + curSub + "|" + subs.map(x => x.id + x.ic + x.name).join(",");
+    const subs = subsOf(curId), sig = curId + "|" + curSub + "|" + subs.map(x => x.id + x.ic + imSig(x.im) + x.name).join(",");
     if(!force && sig === subSig) return; subSig = sig;
-    const chip = (label, id) => {
-      const b = document.createElement("button"); b.type = "button"; b.textContent = label; b.classList.toggle("on", curSub === id);
+    const chip = (label, id, im) => {
+      const b = document.createElement("button"); b.type = "button"; b.classList.toggle("on", curSub === id);
+      if(im){ const g = new Image(); g.alt = ""; g.src = im; g.style.cssText = "width:18px;height:18px;border-radius:50%;object-fit:cover;vertical-align:-4px;margin-right:6px"; b.append(g, document.createTextNode(label)); } else b.textContent = label;
       b.onclick = () => { if(editing){ errEl.textContent = "Save or cancel your edit before switching pages."; return; } curSub = id; renderSubs(true); renderPage(); };
       return b;
     };
     const kids = [];
-    if(subs.length){ kids.push(chip("📄 Main page", "")); subs.forEach(x => kids.push(chip(x.ic + " " + x.name, x.id))); }
+    if(subs.length){ kids.push(chip("📄 Main page", "")); subs.forEach(x => kids.push(chip(x.im ? x.name : x.ic + " " + x.name, x.id, x.im))); }
     const add = document.createElement("button"); add.type = "button"; add.className = "sub-add"; add.textContent = "＋ Subtab"; add.title = "Add a subtab inside this tab";
     add.onclick = () => openModal(null, curId); kids.push(add);
     box.replaceChildren.apply(box, kids); updateBar();
   }
   function renderPage(){
     const top = byId(curId), t = cur(); if(!top || !t) return;
-    $$("ct-ic").textContent = top.ic; $$("ct-nm").textContent = top.name;
+    const hic = $$("ct-ic"); hic.replaceChildren();
+    if(top.im){ const g = new Image(); g.alt = ""; g.src = top.im; g.style.cssText = "width:24px;height:24px;border-radius:50%;object-fit:cover;display:block"; hic.appendChild(g); } else hic.textContent = top.ic;
+    $$("ct-nm").textContent = top.name;
     const a = aclOf(top);
     $$("ct-who").textContent = a.m === "all" ? "Anyone can edit" : a.m === "mods" ? "Mods can edit" : a.m === "me" ? "Only " + (top.by || "owners") + " can edit" : "Editors: " + [top.by].concat(a.l).filter(Boolean).join(", ");
     const h = clean(t.html);
@@ -14265,6 +14309,7 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
     '<div class="gm-box" role="dialog" aria-modal="true" aria-labelledby="ctm-t"><h3 id="ctm-t">New tab</h3>' +
       '<label>Tab name<input id="ctm-name" type="text" maxlength="24" autocomplete="off" placeholder="e.g. Rules"></label>' +
       '<label>Icon (pick one below, or type / paste any emoji)<input id="ctm-ic" type="text" maxlength="24" autocomplete="off" placeholder="📄"></label>' +
+      '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span id="ctm-pv" style="width:36px;height:36px;border-radius:50%;overflow:hidden;display:none;flex:none"></span><button type="button" class="gm-b alt" id="ctm-up">🖼 Use a picture instead</button><button type="button" class="gm-b alt" id="ctm-ux" style="display:none" title="Remove the picture">✕</button><input type="file" id="ctm-file" accept="image/*" hidden></div>' +
       '<input id="ctm-eq" type="text" autocomplete="off" placeholder="Search emojis (cat, fire, flag…)">' +
       '<div class="ctm-ecat" id="ctm-ecat"></div>' +
       '<div class="ctm-emo" id="ctm-emo"></div>' +
@@ -14316,12 +14361,20 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
     const prev = window.refreshEmojiPicker;   // the chat picker calls this when the full emoji set has finished downloading
     window.refreshEmojiPicker = function(){ try{ if(prev) prev.apply(this, arguments); }catch(_){} icShow(); };
   })();
-  let editId = null, delArmed = 0, newParent = "";
+  let editId = null, delArmed = 0, newParent = "", ctmIm = "";
+  function ctmPv(){
+    const pv = $$("ctm-pv"); pv.replaceChildren();
+    if(ctmIm){ const g = new Image(); g.alt = ""; g.src = ctmIm; g.style.cssText = "width:100%;height:100%;object-fit:cover;display:block"; pv.appendChild(g); }
+    pv.style.display = ctmIm ? "" : "none"; $$("ctm-ux").style.display = ctmIm ? "" : "none";
+  }
+  $$("ctm-up").onclick = () => $$("ctm-file").click();
+  $$("ctm-ux").onclick = () => { ctmIm = ""; ctmPv(); };
+  $$("ctm-file").onchange = () => { const f = $$("ctm-file").files && $$("ctm-file").files[0]; $$("ctm-file").value = ""; if(!f) return; squarePic(f, d => { if(d){ ctmIm = d; ctmPv(); $$("ctm-err").textContent = ""; } else $$("ctm-err").textContent = "Couldn’t use that picture — try a different one."; }); };
   function openModal(t, parent){
     if(t ? !canManage(t) : (parent ? !canEdit(byId(parent)) : !inRoom())) return;
     editId = t ? t.id : null; newParent = t ? (t.p || "") : (parent || ""); delArmed = 0;
     $$("ctm-t").textContent = t ? (t.p ? "Rename subtab" : "Rename tab") : (newParent ? "New subtab" : "New tab");
-    $$("ctm-name").value = t ? t.name : ""; $$("ctm-ic").value = t ? t.ic : "";
+    $$("ctm-name").value = t ? t.name : ""; $$("ctm-ic").value = t ? t.ic : ""; ctmIm = t ? cleanIm(t.im) : ""; ctmPv();
     $$("ctm-del").style.display = (t && canDel(t)) ? "" : "none"; $$("ctm-del").textContent = t && t.p ? "Delete subtab" : "Delete tab"; $$("ctm-err").textContent = "";
     $$("ctm-note").textContent = (t && !canDel(t)) ? "Only " + (t.by || "an owner") + " (who made this" + (t.p ? " subtab’s tab" : " tab") + ") or an owner can delete it. You can still rename and edit it." : "";
     const isTopLevel = t ? !t.p : !parent, ac = aclOf(t);
@@ -14357,14 +14410,14 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
     const acl = cleanAcl({ m: $$("ctm-acl").value, l: $$("ctm-names").value.split(/[,\n]/) });
     if(!name){ $$("ctm-err").textContent = "Give the tab a name."; return; }
     let t = editId && byId(editId);
-    if(t){ t.name = name; t.ic = ic; if(isTopLevel) t.acl = acl; bump(t); delete tombs[t.id]; }
+    if(t){ t.name = name; t.ic = ic; t.im = ctmIm; if(isTopLevel) t.acl = acl; bump(t); delete tombs[t.id]; }
     else {
       if(tabs.length >= MAXALL){ $$("ctm-err").textContent = "Too many tabs already."; return; }
       if(!newParent && !isMod() && !isOwner() && tops().filter(madeByMe).length >= MAXMINE){ $$("ctm-err").textContent = "You can make up to " + MAXMINE + " tabs of your own. Delete one to make another."; return; }
       if(!newParent && tops().length >= MAX){ $$("ctm-err").textContent = "You can have up to " + MAX + " custom tabs."; return; }
       if(newParent && subsOf(newParent).length >= MAXSUB){ $$("ctm-err").textContent = "A tab can have up to " + MAXSUB + " subtabs."; return; }
       const sibs = newParent ? subsOf(newParent) : tops();
-      t = { id: newId(), name, ic, html: "", p: newParent, acl: isTopLevel ? acl : { m: "mods", l: [] }, o: sibs.reduce((m, x) => Math.max(m, (x.o || 0) + 1), 0), v: Date.now(), by: (typeof usr === "string" ? usr : "").slice(0, 12) };
+      t = { id: newId(), name, ic, im: ctmIm, html: "", p: newParent, acl: isTopLevel ? acl : { m: "mods", l: [] }, o: sibs.reduce((m, x) => Math.max(m, (x.o || 0) + 1), 0), v: Date.now(), by: (typeof usr === "string" ? usr : "").slice(0, 12) };
       tabs.push(t);
     }
     if(!persist()){ $$("ctm-err").textContent = "This device is out of storage space."; return; }
@@ -14406,7 +14459,7 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
     canPush: () => isMod() || Date.now() - lastLocalEdit < 120000 || tabs.some(t => canEdit(t) || canManage(t)),
     out(){
       const o = [], have = new Set();
-      tabs.forEach(t => { have.add(t.id); o.push({ id: t.id, name: t.name, ic: t.ic, html: t.html || "", p: t.p || "", acl: aclOf(t), o: t.o || 0, by: t.by || "", v: t.v || 1 }); });
+      tabs.forEach(t => { have.add(t.id); o.push({ id: t.id, name: t.name, ic: t.ic, im: cleanIm(t.im), html: t.html || "", p: t.p || "", acl: aclOf(t), o: t.o || 0, by: t.by || "", v: t.v || 1 }); });
       Object.keys(tombs).forEach(id => { if(!have.has(id)) o.push({ id, del: 1, v: tombs[id] }); });
       return o;
     },
@@ -14428,7 +14481,7 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
         const p = (r.p === "" || r.p == null) ? "" : (okId(r.p) && r.p !== r.id ? r.p : null); if(p === null) return;
         const name = cleanName(r.name); if(!name) return;
         const html = clean(r.html); if(html.length > MAXHTML + 20000) return;
-        const nt = { id: r.id, name, ic: cleanIc(r.ic), html, p, acl: cleanAcl(r.acl), o: isFinite(+r.o) ? +r.o : 0, by: String(r.by || "").slice(0, 12), v };
+        const nt = { id: r.id, name, ic: cleanIc(r.ic), im: cleanIm(r.im), html, p, acl: cleanAcl(r.acl), o: isFinite(+r.o) ? +r.o : 0, by: String(r.by || "").slice(0, 12), v };
         if(loc) tabs[i] = nt; else { if(tabs.length >= MAXALL) return; tabs.push(nt); }
         delete tombs[r.id]; ch = true;
       });
@@ -17536,5 +17589,96 @@ html:not(.watch) body:not([data-theme="simple"]):not([data-theme="terminal"]):no
 }
 </style>
 
+<script id="hatspin-raf">
+(function(){
+  var PERIOD=2400;                               // one full turn, matches the old CSS timing
+  function tick(t){
+    try{
+      var host=document.getElementById("px-host"), root=host&&host.shadowRoot;
+      if(root){
+        var icons=root.querySelectorAll(".hatspin");
+        if(icons.length){
+          var ph=(t%PERIOD)/PERIOD, deg=ph*360, frontOn=ph<0.5;
+          icons.forEach(function(ic){
+            ic.querySelectorAll(".cane-rot").forEach(function(g){ g.setAttribute("transform","rotate("+deg+")"); });
+            var fr=ic.querySelector(".cane-front"), bk=ic.querySelector(".cane-back");
+            if(fr) fr.style.opacity=frontOn?"1":"0";
+            if(bk) bk.style.opacity=frontOn?"0":"1";
+          });
+        }
+      }
+    }catch(e){}
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+})();
+</script>
+<style id="juan-css">
+/* =====================================================================
+   Juan — secret easter-egg theme (Ctrl+M). Sits on top of whatever theme is picked.
+   ===================================================================== */
+body.juan-on{
+  --bg:#1b1208; --side:#241809; --row:#33220e; --input:#2b1d0c; --line:#6b4a1c;
+  --text:#ffeccc; --muted:#d9ac6a; --accent:#ffb020; --me:#ff8a00; --peer:#4a3014;
+  --t-me:#1b1208; --t-on:#1b1208; --on-accent:#1b1208;
+  color-scheme:dark;
+  font-family:"Comic Sans MS","Comic Neue","Chalkboard SE",cursive,"Noto Color Emoji","Apple Color Emoji";
+  text-shadow:none;
+}
+body.juan-on :is(button,input,select,textarea){font-family:inherit}
+body.juan-on::after{display:none !important}
+/* faces tiled across the whole page, never blocks clicks */
+body.juan-on::before{
+  content:"";position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.07;
+  background:url(assets/juan/juan2.jpg) 0 0/110px auto repeat;
+}
+body.juan-on #box,body.juan-on #home{background-color:transparent}
+body.juan-on .bubble{border-radius:18px}
+body.juan-on .hdr-sb{font-size:0 !important}
+body.juan-on .hdr-sb::before{content:"🤙 JUAN MODE";font-size:15px;font-weight:800;color:var(--accent)}
+body.juan-on #home .hm-mascot{content:url(assets/juan/juan1.jpg);border-radius:50%;object-fit:cover;aspect-ratio:1;border:4px solid var(--accent);animation:juan-wob 2.4s ease-in-out infinite}
+body.juan-on .av-sb.lp{background:url(assets/juan/juan1.jpg) center/cover !important;color:transparent !important;border-radius:50%}
+/* every icon becomes Juan, and so does the mouse cursor */
+body.juan-on #home .hm-ic img,body.juan-on .tabimg,body.juan-on img.hm{content:url(assets/juan/juan_icon.jpg);object-fit:cover}
+body.juan-on #home .hm-ic.emo{background:url(assets/juan/juan_icon.jpg) center/cover;font-size:0}
+body.juan-on,body.juan-on *{cursor:url(assets/juan/juan_cursor.png) 17 17,auto !important}
+/* Juan peeking up from the bottom corner */
+#juan-peek{position:fixed;right:14px;bottom:-6px;width:84px;height:84px;border-radius:50% 50% 0 0;z-index:12;pointer-events:none;
+  background:url(assets/juan/juan1.jpg) center 30%/cover;border:3px solid #ffb020;border-bottom:0;display:none;transform:translateY(46%);animation:juan-peek 5s ease-in-out infinite}
+body.juan-on #juan-peek{display:block}
+#juan-toast{position:fixed;top:18px;left:50%;transform:translate(-50%,-140%);z-index:99999;pointer-events:none;
+  background:#ffb020;color:#1b1208;font:800 15px "Comic Sans MS",cursive,sans-serif;padding:10px 16px;border-radius:999px;
+  display:flex;align-items:center;gap:10px;box-shadow:0 8px 24px rgba(0,0,0,.45);transition:transform .35s cubic-bezier(.2,1.4,.4,1)}
+#juan-toast.show{transform:translate(-50%,0)}
+#juan-toast i{width:30px;height:30px;border-radius:50%;background:url(assets/juan/juan1.jpg) center 30%/cover;border:2px solid #1b1208}
+@keyframes juan-peek{0%,100%{transform:translateY(46%)}50%{transform:translateY(8%)}}
+@keyframes juan-wob{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(4deg)}}
+</style>
+<div id="juan-peek"></div>
+<div id="juan-toast"><i></i><span></span></div>
+<script>
+/* Secret: Ctrl+M toggles the Juan theme (remembered on this device) */
+(function(){
+  var KEY="pb_juan", B=document.body, toast=document.getElementById("juan-toast"), tt;
+  var oldTitle=document.title;
+  function stored(){ try{ return localStorage.getItem(KEY)==="1"; }catch(e){ return false; } }
+  function say(t){ toast.lastChild.textContent=t; toast.classList.add("show"); clearTimeout(tt); tt=setTimeout(function(){ toast.classList.remove("show"); },2200); }
+  function apply(on,announce){
+    B.classList.toggle("juan-on",on);
+    document.title=on?"Juan Purebreds 🤙":oldTitle;
+    var fv=document.getElementById("fav"); if(fv){ if(!fv.dataset.orig) fv.dataset.orig=fv.getAttribute("href"); fv.setAttribute("href",on?"assets/juan/juan_fav.png":fv.dataset.orig); }
+    try{ localStorage.setItem(KEY,on?"1":"0"); }catch(e){}
+    if(announce) say(on?"Juan mode ON 🤙":"Juan mode off");
+  }
+  document.addEventListener("keydown",function(e){
+    if(e.ctrlKey&&!e.altKey&&!e.shiftKey&&!e.metaKey&&(e.key==="m"||e.key==="M")){
+      e.preventDefault(); e.stopPropagation();
+      if(e.repeat) return;
+      apply(!B.classList.contains("juan-on"),true);
+    }
+  },true);
+  if(stored()) apply(true,false);
+})();
+</script>
 </body>
 </html>
