@@ -13878,6 +13878,10 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
 #ct-lk .lk-list button{text-align:left;border:1px solid var(--line);background:var(--row);color:var(--text);border-radius:9px;padding:8px 11px;font-size:14px;cursor:pointer}
 #ct-lk .lk-list button:hover{border-color:var(--accent)}
 .ct-doc a[data-ct],.ct-ed a[data-ct]{cursor:pointer}
+.ct-doc :is(span,a,font)[data-adj],.ct-ed :is(span,a,font)[data-adj]{color:var(--adj) !important}
+.ct-doc img[data-imf="inv"],.ct-ed img[data-imf="inv"]{filter:invert(1)}
+.ct-doc img[data-imf="bright"],.ct-ed img[data-imf="bright"]{filter:brightness(2.4) contrast(.9)}
+.ct-doc img[data-imf="dim"],.ct-ed img[data-imf="dim"]{filter:brightness(.4)}
 #ct-rs{position:absolute;display:none;z-index:4;pointer-events:none;border:2px solid var(--accent);border-radius:8px;box-sizing:border-box}
 #ct-rs.on{display:block}
 #ct-rs .rs-h{position:absolute;right:-9px;bottom:-9px;width:20px;height:20px;border-radius:50%;background:var(--accent);border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.5);cursor:nwse-resize;pointer-events:auto;touch-action:none}
@@ -13998,6 +14002,12 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
           const raw = String(n.getAttribute("href") || "").trim(), im = raw.match(/^#ct:([A-Za-z0-9_-]{1,40})$/);
           if(im && okId(im[1])){   // link to another tab / subtab
             const a = document.createElement("a"); a.setAttribute("href", "#ct:" + im[1]); a.setAttribute("data-ct", im[1]);
+            dst.appendChild(a); walk(n, a, depth + 1); return;
+          }
+          const bm = raw.match(/^#tab:(home|main|gal|polls|shame|draw|tier|games)(?::(games|proxy|media|music))?$/);
+          if(bm && (!bm[2] || bm[1] === "games")){   // link to a built-in tab (or a Games & Media sub-tab)
+            const a = document.createElement("a"); a.setAttribute("href", raw); a.setAttribute("data-tab", bm[1] + (bm[2] ? ":" + bm[2] : ""));
+            { const lc = ((n.getAttribute("style") || "").match(COLOR) || [])[1]; if(lc) a.style.color = lc; }
             dst.appendChild(a); walk(n, a, depth + 1); return;
           }
           const h = hrefOk(n.getAttribute("href"));
@@ -14165,11 +14175,12 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
     const h = clean(t.html);
     if(h.replace(/<[^>]*>/g, "").trim() || /<img|<hr|<table/i.test(h)) doc.innerHTML = h;
     else doc.innerHTML = '<div class="ct-empty">This page is empty.' + (canEdit(t) ? "<br>Tap “✎ Edit page” to add something." : "") + "</div>";
+    scheduleAdj();
   }
   function stopEdit(){ editing = false; $$("ct-editwrap").classList.remove("on"); doc.style.display = ""; $$("ct-edit").style.display = ""; errEl.textContent = ""; }
   function startEdit(){
     const t = cur(); if(!t || !canEdit(t)) return;
-    editing = true; baseV = t.v || 0; warned = false; ed.innerHTML = clean(t.html); errEl.textContent = "";
+    editing = true; baseV = t.v || 0; warned = false; ed.innerHTML = clean(t.html); errEl.textContent = ""; scheduleAdj();
     doc.style.display = "none"; $$("ct-edit").style.display = "none"; $$("ct-editwrap").classList.add("on");
     setTimeout(() => ed.focus(), 30);
   }
@@ -14193,6 +14204,115 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
     persist(); buildTabs(); renderSubs(true);
   }
   $$("ct-left").onclick = () => move(-1); $$("ct-right").onclick = () => move(1);
+
+
+  /* ---------- auto contrast: text / pictures that vanish against this theme get brightened or inverted (display only, never saved) ---------- */
+  const _cx = document.createElement("canvas").getContext("2d");
+  function parseColor(str){
+    if(!str) return null; _cx.fillStyle = "#000"; _cx.fillStyle = String(str); const v = String(_cx.fillStyle);
+    let m = /^#([0-9a-f]{6})$/i.exec(v); if(m){ const n = parseInt(m[1], 16); return { r: n >> 16 & 255, g: n >> 8 & 255, b: n & 255, a: 1 }; }
+    m = /^rgba?\(([^)]+)\)/.exec(v); if(m){ const q = m[1].split(",").map(parseFloat); return { r: q[0], g: q[1], b: q[2], a: q.length > 3 ? q[3] : 1 }; }
+    m = /^color\(\s*srgb\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)(?:\s*\/\s*([\d.]+))?/i.exec(v); if(m) return { r: m[1] * 255, g: m[2] * 255, b: m[3] * 255, a: m[4] == null ? 1 : +m[4] };
+    return null;
+  }
+  const relLum = c => { const f = v => { v /= 255; return v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); }; return .2126 * f(c.r) + .7152 * f(c.g) + .0722 * f(c.b); };
+  const contrast = (a, b) => { const x = relLum(a), y = relLum(b); return (Math.max(x, y) + .05) / (Math.min(x, y) + .05); };
+  function toHsl(c){ const r = c.r / 255, g = c.g / 255, b = c.b / 255, mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2; let h = 0, sa = 0;
+    if(mx !== mn){ const d = mx - mn; sa = l > .5 ? d / (2 - mx - mn) : d / (mx + mn); h = mx === r ? (g - b) / d + (g < b ? 6 : 0) : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; h /= 6; } return [h, sa, l]; }
+  function fromHsl(h, sa, l){ const f = (p, q, t) => { if(t < 0) t += 1; if(t > 1) t -= 1; return t < 1 / 6 ? p + (q - p) * 6 * t : t < .5 ? q : t < 2 / 3 ? p + (q - p) * (2 / 3 - t) * 6 : p; };
+    let r, g, b; if(!sa){ r = g = b = l; } else { const q = l < .5 ? l * (1 + sa) : l + sa - l * sa, pp = 2 * l - q; r = f(pp, q, h + 1 / 3); g = f(pp, q, h); b = f(pp, q, h - 1 / 3); }
+    return { r: r * 255, g: g * 255, b: b * 255, a: 1 }; }
+  const css = c => "rgb(" + Math.round(c.r) + "," + Math.round(c.g) + "," + Math.round(c.b) + ")";
+  function bgOf(el){
+    for(let x = el; x && x.nodeType === 1; x = x.parentElement){ const c = parseColor(getComputedStyle(x).backgroundColor); if(c && c.a >= .6) return c; }
+    return parseColor(getComputedStyle(document.body).backgroundColor) || { r: 255, g: 255, b: 255, a: 1 };
+  }
+  function fixContrast(rgb, bg){
+    if(contrast(rgb, bg) >= 3) return null;                       // readable already
+    const hsl = toHsl(rgb), inv = fromHsl(hsl[0], hsl[1], 1 - hsl[2]);   // e.g. white on a light theme -> black
+    if(contrast(inv, bg) >= 4.5) return css(inv);
+    const dir = relLum(bg) < .5 ? 1 : -1; let l = 1 - hsl[2], c = inv;
+    for(let i = 0; i < 30 && contrast(c, bg) < 4.5; i++){ l = Math.min(1, Math.max(0, l + dir * .04)); c = fromHsl(hsl[0], hsl[1], l); }
+    return css(c);
+  }
+  const imgInfo = new Map();
+  function analyse(src){
+    if(imgInfo.has(src)) return imgInfo.get(src);
+    const o = { ready: false }; imgInfo.set(src, o); const im = new Image();
+    im.onload = () => { try{
+      const S = 48, r = Math.min(1, S / Math.max(im.naturalWidth, im.naturalHeight, 1)), c = document.createElement("canvas");
+      c.width = Math.max(1, Math.round(im.naturalWidth * r)); c.height = Math.max(1, Math.round(im.naturalHeight * r));
+      const x = c.getContext("2d", { willReadFrequently: true }); x.drawImage(im, 0, 0, c.width, c.height);
+      const d = x.getImageData(0, 0, c.width, c.height).data; let n = 0, lum = 0, sat = 0;
+      for(let i = 0; i < d.length; i += 4){ if(d[i + 3] < 40) continue; n++; const R = d[i], G = d[i + 1], B = d[i + 2], mx = Math.max(R, G, B), mn = Math.min(R, G, B); lum += (.2126 * R + .7152 * G + .0722 * B) / 255; sat += mx ? (mx - mn) / mx : 0; }
+      o.opaque = n / (c.width * c.height); o.lum = n ? lum / n : .5; o.sat = n ? sat / n : 0; o.ready = true; scheduleAdj();
+    }catch(e){} };
+    im.src = src; return o;
+  }
+  function imgFix(o, dark){
+    const gray = o.sat < .15, clear = o.opaque < .75;
+    if(dark){ if(gray){ if(clear && o.lum < .4) return "inv"; if(!clear && o.lum > .8) return "inv"; } else if(clear && o.lum < .3) return "bright"; }
+    else { if(gray){ if(clear && o.lum > .6) return "inv"; if(!clear && o.lum < .2) return "inv"; } else if(clear && o.lum > .8) return "dim"; }
+    return "";
+  }
+  function pbAdjust(root){
+    if(!root) return;
+    const dark = relLum(bgOf(root)) < .45;
+    root.querySelectorAll('[style*="color"]').forEach(el => {
+      const rgb = parseColor(el.style.color); if(!rgb || el.tagName === "IMG") return;
+      const fx = fixContrast(rgb, bgOf(el));
+      if(fx){ if(el.getAttribute("data-adj") !== "1") el.setAttribute("data-adj", "1"); if(el.style.getPropertyValue("--adj") !== fx) el.style.setProperty("--adj", fx); }
+      else if(el.hasAttribute("data-adj")){ el.removeAttribute("data-adj"); el.style.removeProperty("--adj"); }
+    });
+    root.querySelectorAll("img").forEach(im => {
+      const src = im.getAttribute("src") || ""; if(!/^data:image\//.test(src)) return;
+      const o = analyse(src); const f = o.ready ? imgFix(o, dark) : "";
+      if(f){ if(im.getAttribute("data-imf") !== f) im.setAttribute("data-imf", f); } else if(im.hasAttribute("data-imf")) im.removeAttribute("data-imf");
+    });
+  }
+  let adjT = 0, adjSig = "";
+  function scheduleAdj(){ clearTimeout(adjT); adjT = setTimeout(() => { try{ pbAdjust(doc); pbAdjust(ed); }catch(e){} }, 120); }
+  setInterval(() => { if(document.hidden) return; try{ const sg = css(bgOf(doc)) + "|" + css(bgOf(ed)); if(sg !== adjSig){ adjSig = sg; scheduleAdj(); } }catch(e){} }, 1000);
+  ed.addEventListener("input", scheduleAdj);
+
+  /* ---------- text colour that also sticks on links: after the browser's own foreColor, fix anything it skipped ---------- */
+  function authoredColor(node){
+    for(let x = node.parentElement; x && x !== ed; x = x.parentElement){
+      if(x.style && x.style.color){ return parseColor(x.style.color); }
+      if(x.tagName === "FONT" && x.getAttribute("color")) return parseColor(x.getAttribute("color"));
+    }
+    return null;
+  }
+  const sameCol = (a, b) => !!a && !!b && Math.abs(a.r - b.r) < 2 && Math.abs(a.g - b.g) < 2 && Math.abs(a.b - b.b) < 2;
+  function textNodesIn(range){
+    const root = range.commonAncestorContainer.nodeType === 1 ? range.commonAncestorContainer : range.commonAncestorContainer.parentNode, out = [];
+    const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT); let n;
+    while((n = w.nextNode())){
+      if(!n.nodeValue.trim() || !range.intersectsNode(n)) continue;
+      if(n === range.startContainer && range.startOffset >= n.length) continue;
+      if(n === range.endContainer && range.endOffset === 0) continue;
+      out.push(n);
+    }
+    return out;
+  }
+  function forceColor(range, color){
+    const want = parseColor(color); if(!want || !range || range.collapsed) return;
+    let sc = range.startContainer, so = range.startOffset, ec = range.endContainer, eo = range.endOffset;
+    if(ec.nodeType === 3 && eo > 0 && eo < ec.length) ec.splitText(eo);                    // cut the end first, so offsets in a one-node selection stay right
+    if(sc.nodeType === 3 && so > 0 && so < sc.length){ const t = sc.splitText(so); if(sc === ec) ec = t; sc = t; so = 0; }
+    const r2 = document.createRange(); r2.setStart(sc, so); r2.setEnd(ec, ec.nodeType === 3 ? Math.min(ec.length, eo > ec.length ? ec.length : (ec === sc ? ec.length : eo)) : eo);
+    const nodes = textNodesIn(r2.collapsed ? range : r2);
+    nodes.forEach(n => {
+      if(sameCol(authoredColor(n), want)) return;
+      const sp = document.createElement("span"); sp.style.color = color; n.parentNode.insertBefore(sp, n); sp.appendChild(n);   // wrapped inside a link too, so it beats the link's own blue
+    });
+    ed.querySelectorAll("a").forEach(a => {                                              // whole link recoloured: colour its underline as well
+      if(!range.intersectsNode(a)) return;
+      const tn = []; const w = document.createTreeWalker(a, NodeFilter.SHOW_TEXT); let x; while((x = w.nextNode())) if(x.nodeValue.trim()) tn.push(x);
+      if(tn.length && tn.every(t => sameCol(authoredColor(t), want))) a.style.color = color;
+    });
+    try{ const f = nodes[0], l = nodes[nodes.length - 1]; if(f && l){ const sl = getSelection(), nr = document.createRange(); nr.setStart(f, 0); nr.setEnd(l, l.length); sl.removeAllRanges(); sl.addRange(nr); } }catch(e){}
+  }
 
   /* ---------- editor toolbar ---------- */
   const tb = $$("ct-tb");
@@ -14278,7 +14398,8 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
     const paint = () => {
       ed.focus(); if(saved){ const sl = getSelection(); sl.removeAllRanges(); sl.addRange(saved); }
       try{ document.execCommand("styleWithCSS", false, true); document.execCommand("foreColor", false, ci.value); document.execCommand("styleWithCSS", false, false); }catch(e){}
-      grab();   // the edit rebuilt the nodes: remember where the selection is now, so the next colour change still hits the same text
+      try{ const sl = getSelection(); if(sl.rangeCount) forceColor(sl.getRangeAt(0), ci.value); }catch(e){}
+      scheduleAdj(); grab();   // the edit rebuilt the nodes: remember where the selection is now, so the next colour change still hits the same text
     };
     ci.oninput = paint; ci.onchange = paint;
     tb.appendChild(lab);
@@ -14323,6 +14444,15 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
       add(top, "📄 " + top.name + " (main page)");
       subsOf(top.id).forEach(x => add(x, x.ic + " " + x.name));
     }
+    { const BI = [["home","🏠","Home"],["main","💬","Chat"],["gal","🖼️","Image Gallery"],["polls","📊","Polls"],["shame","🚨","Hall of Shame"],["draw","🎨","Draw"],["tier","🏆","Tiers"],["games","🎮","Games & Media"]];
+      const nm = (k, ic, d) => { const b = document.querySelector('#chtabs button[data-ch="' + k + '"]'); return b ? (b.textContent || "").replace(/\s+/g, " ").trim() || (ic + " " + d) : ""; };
+      const rows = BI.map(([k, ic, d]) => [k, nm(k, ic, d)]).filter(x => x[1]);
+      if(rows.length){
+        head("Built-in tabs");
+        const addB = (href, label) => { const b = document.createElement("button"); b.type = "button"; b.textContent = label; b.onclick = () => applyLink(href, label.replace(/^[\s↳]+/, "").replace(/^\p{Extended_Pictographic}\uFE0F?\s*/u, "")); list.appendChild(b); };
+        rows.forEach(([k, label]) => { addB("#tab:" + k, label); if(k === "games") [["games","🎮 Games"],["proxy","🌐 Proxy"],["media","🎬 Media"],["music","🎵 Music"]].forEach(([sk, sl]) => addB("#tab:games:" + sk, "   ↳ " + sl)); });
+      }
+    }
     const others = tops().filter(t => t.id !== curId);
     if(others.length){
       head("Other tabs");
@@ -14353,7 +14483,15 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
     const sc = doc.closest(".ct-scroll"); if(sc) sc.scrollTop = 0;
   }
   doc.addEventListener("click", e => { const a = e.target.closest && e.target.closest("a[data-ct]"); if(!a) return; e.preventDefault(); goTo(a.getAttribute("data-ct")); });
-  ed.addEventListener("click", e => { const a = e.target.closest && e.target.closest("a[data-ct]"); if(a) e.preventDefault(); });
+  ed.addEventListener("click", e => { const a = e.target.closest && e.target.closest("a[data-ct],a[data-tab]"); if(a) e.preventDefault(); });
+  doc.addEventListener("click", e => {
+    const a = e.target.closest && e.target.closest("a[data-tab]"); if(!a) return; e.preventDefault();
+    if(editing){ errEl.textContent = "Save or cancel your edit before following a link."; return; }
+    const [k, sub] = a.getAttribute("data-tab").split(":");
+    if(!document.querySelector('#chtabs button[data-ch="' + k + '"]') && k !== "main"){ errEl.textContent = "That tab isn't available right now."; return; }
+    setChannel(k);
+    if(sub) setTimeout(() => { const b = document.querySelector('#games .gm-sub[data-sub="' + sub + '"]'); if(b) b.click(); }, 80);
+  });
 
   /* ---------- resize pictures: click a picture, then drag the dot or tap a size ---------- */
   (function(){
