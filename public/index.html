@@ -14065,7 +14065,7 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
         if(t.im){ const g = new Image(); g.className = "tabimg"; g.alt = ""; g.src = t.im; b.append(g, document.createTextNode(t.name)); }
         else b.textContent = t.ic + " " + t.name;
       }
-      const so = String(50 + i); if(b.style.order !== so) b.style.order = so;
+      if(!(document.body.dataset.theme === "gdocs" && document.body.dataset.hp === "left")){ const so = String(50 + i); if(b.style.order !== so) b.style.order = so; }   /* in the Docs side panel the nested-tab layout owns the order */
       const on = curCh === key; if(b.classList.contains("on") !== on) b.classList.toggle("on", on);
       let r = $$("ch-ct-" + t.id);
       if(!r){
@@ -14591,7 +14591,7 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
     }
   };
 
-  buildTabs();
+  buildTabs(); window.__pbBuildTabs = buildTabs;
   setInterval(() => { if(!document.hidden) buildTabs(); }, 3000);
 })();
 </script>
@@ -18247,7 +18247,9 @@ html body[data-theme="gdocs"] #hmore-menu #hdr-log .dot{top:10px;right:14px}
   function download(){ var t=chatText(); if(!t){ snk("Nothing to download yet"); return; }
     var a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([t],{type:"text/plain"})); a.download=(($("gd-title").textContent||"chat").trim()||"chat")+".txt"; document.body.appendChild(a); a.click(); a.remove(); snk("Downloaded as .txt"); }
   function copyLink(){ try{ navigator.clipboard.writeText(location.href).then(function(){ snk("Link copied"); },function(){ snk("Couldn't copy the link"); }); }catch(e){ snk("Couldn't copy the link"); } }
-  function zoom(z){ if(kindOf()==="draw"){ snk("Zoom isn't available in the Drawing tab"); return; } B.style.setProperty("--gdz",z); snk("Zoom "+Math.round(z*100)+"%"); var zs=$("gd-zoom"); if(zs) zs.firstChild.textContent=Math.round(z*100)+"%"; }
+  var curZ=1;
+  function showZ(){ var zi=$("gd-zoomin"); if(zi&&document.activeElement!==zi) zi.value=Math.round(curZ*100); else if(zi) zi.value=Math.round(curZ*100); }
+  function zoom(z){ if(kindOf()==="draw"){ snk("Zoom isn't available in the Drawing tab"); showZ(); return; } z=+z; if(!isFinite(z)||z<=0){ showZ(); return; } z=Math.max(.25,Math.min(5,z)); curZ=z; B.style.setProperty("--gdz",z); snk("Zoom "+Math.round(z*100)+"%"); showZ(); }
   var fs=11;
   function size(d){ fs=Math.max(8,Math.min(36,(d===0?11:fs+d))); B.style.setProperty("--gdfs",fs+"pt"); var n=$("gd-fsn"); if(n) n.textContent=fs; }
   function click(sel){ if(!trayOK()){ snk("Open a chat or gallery tab to use this"); return; } var e=document.querySelector(sel); if(e) e.click(); else snk("Not available here"); }
@@ -18296,7 +18298,7 @@ html body[data-theme="gdocs"] #hmore-menu #hdr-log .dot{top:10px;right:14px}
   function setVar(k,v){ if(v===null) B.style.removeProperty(k); else B.style.setProperty(k,v); }
   function colorPick(cb,start){ var c=document.createElement("input"); c.type="color"; c.value=start||"#000000"; c.style.cssText="position:fixed;left:-99px;top:0;opacity:0"; document.body.appendChild(c); c.oninput=function(){ cb(c.value); }; c.onchange=function(){ cb(c.value); c.remove(); }; c.click(); }
   /* keep the message box focused / selection intact when clicking toolbar buttons */
-  bar.addEventListener("mousedown",function(e){ if(e.target.closest&&!e.target.closest("#gd-title,#gd-fsn")&&e.target.closest(".gd-tb")) e.preventDefault(); });
+  bar.addEventListener("mousedown",function(e){ if(e.target.closest&&!e.target.closest("#gd-title,#gd-fsn,#gd-zoomin")&&e.target.closest(".gd-tb")) e.preventDefault(); });
 
   /* find in chat */
   var find=document.createElement("div"); find.id="gd-find"; find.innerHTML='<input type="text" placeholder="Find" spellcheck="false"><span class="n" style="min-width:48px;text-align:center;color:#5f6368"></span><button type="button" title="Previous match">&#9650;</button><button type="button" title="Next match">&#9660;</button><button type="button" title="Close">&#10005;</button>';
@@ -18332,7 +18334,22 @@ html body[data-theme="gdocs"] #hmore-menu #hdr-log .dot{top:10px;right:14px}
   var spOn=true; fx(ib("spell","Spelling and grammar check",function(){ spOn=!spOn; B.spellcheck=spOn; var i=inp(); if(i) i.spellcheck=spOn; snk("Spell check "+(spOn?"on":"off")); }));
   var painted=null; fx(ib("paint","Paint format (copies the current text style, then click again to reset)",function(){ if(!painted){ painted={f:Object.assign({},FX)}; snk("Style copied — click again to clear formatting"); } else { painted=null; resetFmt(); snk("Formatting cleared"); } }));
   sep();
-  var z=dd("100%","Zoom",function(e){ e.stopPropagation(); MENUS.__z=[["50%","",function(){zoom(.5);}],["75%","",function(){zoom(.75);}],["100%","",function(){zoom(1);}],["125%","",function(){zoom(1.25);}],["150%","",function(){zoom(1.5);}],["200%","",function(){zoom(2);}]]; openMenu(z,"__z"); },"gd-zoom"); fx(z);
+  var zw=document.createElement("span"); zw.className="gd-zoomw"; zw.id="gd-zoom";
+  zw.innerHTML='<input id="gd-zoomin" type="text" inputmode="numeric" maxlength="3" value="100" autocomplete="off" spellcheck="false" aria-label="Zoom percent" title="Zoom: type any number from 25 to 500, then press Enter (Up / Down arrows change it by 5)"><span class="gd-zp">%</span><button type="button" class="gd-ib gd-mini" title="Zoom presets">'+svg("down")+'</button>';
+  tb.appendChild(zw); fx(zw);
+  var zin=zw.firstChild, zar=zw.lastChild;
+  function zcommit(){ var v=parseFloat(String(zin.value).replace(/[^\d.]/g,"")); if(!isFinite(v)||v<=0){ showZ(); return; } if(Math.round(v)!==Math.round(curZ*100)) zoom(v/100); else showZ(); }
+  zin.addEventListener("focus",function(){ setTimeout(function(){ try{ zin.select(); }catch(e){} },0); });
+  zin.addEventListener("keydown",function(e){
+    e.stopPropagation();
+    if(e.key==="Enter"){ e.preventDefault(); zcommit(); zin.blur(); }
+    else if(e.key==="Escape"){ showZ(); zin.blur(); }
+    else if(e.key==="ArrowUp"||e.key==="ArrowDown"){ e.preventDefault(); var v=parseFloat(zin.value); if(!isFinite(v)) v=Math.round(curZ*100); zoom((v+(e.key==="ArrowUp"?5:-5))/100); }
+  });
+  zin.addEventListener("keyup",function(e){ e.stopPropagation(); }); zin.addEventListener("keypress",function(e){ e.stopPropagation(); });
+  zin.addEventListener("input",function(){ var c=zin.value.replace(/[^\d]/g,"").slice(0,3); if(c!==zin.value) zin.value=c; });
+  zin.addEventListener("blur",zcommit);
+  zar.onclick=function(e){ e.stopPropagation(); MENUS.__z=[["25%","",function(){zoom(.25);}],["50%","",function(){zoom(.5);}],["75%","",function(){zoom(.75);}],["90%","",function(){zoom(.9);}],["100%","",function(){zoom(1);}],["125%","",function(){zoom(1.25);}],["150%","",function(){zoom(1.5);}],["200%","",function(){zoom(2);}],["300%","",function(){zoom(3);}],["400%","",function(){zoom(4);}],["500%","",function(){zoom(5);}],"-",["Type your own number in the box","",null]]; openMenu(zar,"__z"); };
   sep();
   var STY=[["Normal text",1],["Title",2.2],["Heading 1",1.8],["Heading 2",1.5],["Heading 3",1.25],["Small text",.85]], styB;
   styB=dd("Normal text","Styles",pick(null,[])); fx(styB);
@@ -18652,9 +18669,22 @@ html body.juan-on[data-theme="gdocs"] #juan-apple,html body.juan-on[data-theme="
 html body.juan-on[data-theme="gdocs"] #juan-toast{z-index:99999}
 html body.juan-on[data-theme="gdocs"] #home .hm-mascot{animation:juan-wob 2.4s ease-in-out infinite !important}
 </style>
+<style id="gdocs-zoombox">
+#gd-bar .gd-zoomw{display:inline-flex;align-items:center;height:32px;flex:none;border-radius:4px;font:400 13px "Google Sans",Roboto,Arial,sans-serif;color:#1f1f1f}
+#gd-bar .gd-zoomw:hover{background:rgba(68,71,70,.08)}
+#gd-bar .gd-zoomw input{width:32px;height:24px;box-sizing:border-box;border:1px solid transparent;border-radius:4px;background:transparent;color:#1f1f1f;font:inherit;text-align:right;padding:0 1px;margin:0;outline:0;-webkit-user-select:text;user-select:text;cursor:text}
+#gd-bar .gd-zoomw input:hover{border-color:#c4c7c5}
+#gd-bar .gd-zoomw input:focus{border-color:#0b57d0;box-shadow:0 0 0 1px #0b57d0;background:#fff;color:#1f1f1f}
+#gd-bar .gd-zoomw .gd-zp{margin-left:1px}
+#gd-bar .gd-zoomw .gd-mini{margin-left:0}
+body.gd-dark #gd-bar .gd-zoomw,body.gd-dark #gd-bar .gd-zoomw input{color:#e3e3e3}
+body.gd-dark #gd-bar .gd-zoomw input:hover{border-color:#5f6368}
+body.gd-dark #gd-bar .gd-zoomw input:focus{background:#1e1f20;border-color:#a8c7fa;box-shadow:0 0 0 1px #a8c7fa}
+#gd-tb.gd-k-draw #gd-zoom{opacity:.35;pointer-events:none}
+</style>
 <style id="gdocs-subtabs">
 /* Docs theme, left tabs panel: tabs can sit inside other tabs (drag a tab onto the middle of another one) */
-html body[data-theme="gdocs"][data-hp="left"] #chtabs button[data-ch]{position:relative}
+html body[data-theme="gdocs"][data-hp="left"] #chtabs button[data-ch]{position:relative;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
 html body[data-theme="gdocs"][data-hp="left"] #chtabs button.gd-sub{padding-left:calc(14px + var(--gd-d,0) * 22px) !important}
 html body[data-theme="gdocs"][data-hp="left"] #chtabs button.gd-subhide{display:none !important}
 html body[data-theme="gdocs"] #chtabs .gd-chev{display:none}
@@ -18705,13 +18735,14 @@ html body[data-theme="gdocs"][data-hp="left"] #chtabs button.gd-dz-into{backgrou
     b.style.removeProperty("--gd-d"); b.style.removeProperty("order");
     var c=b.querySelector(".gd-chev"); if(c) c.remove();
   }
-  var lastSig="";
+  var lastSig="", lastAct=null;
   function render(){
     var bs=btns();
-    if(!active()){ if(lastSig!=="off"){ [].slice.call(CH.querySelectorAll("button[data-ch]")).forEach(clearBtn); lastSig="off"; } return; }
+    if(!active()){ if(lastSig!=="off"){ [].slice.call(CH.querySelectorAll("button[data-ch]")).forEach(clearBtn); lastSig="off"; lastAct=null; try{ if(window.__pbBuildTabs) window.__pbBuildTabs(); }catch(e){} } return; }
     var m=model(), els={}; bs.forEach(function(b){ els[b.dataset.ch]=b; });
     var act=null; bs.forEach(function(b){ if(b.classList.contains("on")) act=b.dataset.ch; });
-    var forced={}; for(var a=act; a&&m.p[a]; a=m.p[a]) forced[m.p[a]]=1;      // the open tab's parents stay open so you can see where you are
+    if(act!==lastAct){ lastAct=act; var chg=false; for(var a=act; a&&m.p[a]; a=m.p[a]){ var ci=collapsed.indexOf(m.p[a]); if(ci>-1){ collapsed.splice(ci,1); chg=true; } } if(chg) saveCollapsed(); }   // going to a nested tab opens its parents once; after that the arrow can collapse them
+    var forced={};
     m.flat.forEach(function(k,i){
       var b=els[k]; if(!b) return;
       var d=m.depth[k], kidsN=(m.kids[k]||[]).length, isCol=collapsed.indexOf(k)>-1&&!forced[k], hide=false;
@@ -18814,7 +18845,7 @@ html body[data-theme="gdocs"][data-hp="left"] #chtabs button.gd-dz-into{backgrou
   function finish(e,doIt){
     if(!drag) return; var d=drag; drag=null; clearTimeout(d.timer);
     if(!d.on) return;
-    d.el.classList.remove("gd-dragging"); d.el.style.transform=""; B.classList.remove("tab-dragging"); clearMarks();
+    d.el.classList.remove("gd-dragging"); d.el.style.removeProperty("transform"); B.classList.remove("tab-dragging"); clearMarks();
     noClick=Date.now()+350;
     if(!doIt) return;
     drag=d; var t=calc(e); drag=null;
@@ -18834,7 +18865,7 @@ html body[data-theme="gdocs"][data-hp="left"] #chtabs button.gd-dz-into{backgrou
       if(drag.touch){ if(Math.hypot(dx,dy)>10){ clearTimeout(drag.timer); drag=null; } return; }
       if(Math.hypot(dx,dy)<7) return; begin();
     }
-    drag.el.style.transform="translateY("+dy+"px)"; mark(e);
+    drag.el.style.setProperty("transform","translateY("+dy+"px)","important"); mark(e);
   },true);
   window.addEventListener("pointerup",function(e){ if(drag&&e.pointerId===drag.id) finish(e,true); },true);
   window.addEventListener("pointercancel",function(e){ if(drag&&e.pointerId===drag.id) finish(e,false); },true);
