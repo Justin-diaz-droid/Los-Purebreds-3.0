@@ -77,7 +77,10 @@ if(L.getItem("pb_autologin")==="1"&&L.getItem("pb_code")==="lospurebro"&&L.getIt
     "https://fonts.googleapis.com/css2?family=Pirata+One&family=UnifrakturMaguntia&family=Playfair+Display&family=Cinzel&family=Lora&family=Merriweather&family=Fredericka+the+Great&display=swap",
         "https://fonts.googleapis.com/css2?family=Roboto+Flex&display=swap",
     "https://fonts.googleapis.com/css2?family=Google+Sans+Flex&display=swap",
-    "https://fonts.googleapis.com/css2?family=Itim&display=swap"
+    "https://fonts.googleapis.com/css2?family=Itim&display=swap",
+    "https://fonts.googleapis.com/css2?family=Open+Sans&family=Lato&family=Inter&family=Source+Sans+3&family=Work+Sans&family=DM+Sans&family=Manrope&family=Lexend&family=Josefin+Sans&family=Ubuntu&family=Fira+Sans&family=Barlow&family=Cabin&family=Archivo&display=swap",
+    "https://fonts.googleapis.com/css2?family=PT+Serif&family=EB+Garamond&family=Libre+Baskerville&family=Crimson+Text&family=Spectral&family=Cormorant+Garamond&family=Zilla+Slab&family=Alfa+Slab+One&family=Source+Code+Pro&family=Fira+Code&family=Space+Mono&family=Courier+Prime&display=swap",
+    "https://fonts.googleapis.com/css2?family=Amatic+SC&family=Pangolin&family=Handlee&family=Gochi+Hand&family=Sacramento&family=Great+Vibes&family=Courgette&family=Cookie&display=swap"
   ];
   function go(){
     var sc = document.createElement("script"); sc.async = true; sc.src = "https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"; document.head.appendChild(sc);
@@ -1180,13 +1183,48 @@ const FONT_MAP = {
   "Merriweather":"'Merriweather', serif",
   "Fredericka the Great":"'Fredericka the Great', cursive",
   "Palatino Linotype":"'Palatino Linotype', serif",
-  "Garamond":"'Garamond', serif"
+  "Garamond":"'Garamond', serif",
+  "Open Sans":"'Open Sans', sans-serif",
+  "Lato":"'Lato', sans-serif",
+  "Inter":"'Inter', sans-serif",
+  "Source Sans 3":"'Source Sans 3', sans-serif",
+  "Work Sans":"'Work Sans', sans-serif",
+  "DM Sans":"'DM Sans', sans-serif",
+  "Manrope":"'Manrope', sans-serif",
+  "Lexend":"'Lexend', sans-serif",
+  "Josefin Sans":"'Josefin Sans', sans-serif",
+  "Ubuntu":"'Ubuntu', sans-serif",
+  "Fira Sans":"'Fira Sans', sans-serif",
+  "Barlow":"'Barlow', sans-serif",
+  "Cabin":"'Cabin', sans-serif",
+  "Archivo":"'Archivo', sans-serif",
+  "PT Serif":"'PT Serif', serif",
+  "EB Garamond":"'EB Garamond', serif",
+  "Libre Baskerville":"'Libre Baskerville', serif",
+  "Crimson Text":"'Crimson Text', serif",
+  "Spectral":"'Spectral', serif",
+  "Cormorant Garamond":"'Cormorant Garamond', serif",
+  "Zilla Slab":"'Zilla Slab', serif",
+  "Alfa Slab One":"'Alfa Slab One', serif",
+  "Source Code Pro":"'Source Code Pro', monospace",
+  "Fira Code":"'Fira Code', monospace",
+  "Space Mono":"'Space Mono', monospace",
+  "Courier Prime":"'Courier Prime', monospace",
+  "Amatic SC":"'Amatic SC', cursive",
+  "Pangolin":"'Pangolin', cursive",
+  "Handlee":"'Handlee', cursive",
+  "Gochi Hand":"'Gochi Hand', cursive",
+  "Sacramento":"'Sacramento', cursive",
+  "Great Vibes":"'Great Vibes', cursive",
+  "Courgette":"'Courgette', cursive",
+  "Cookie":"'Cookie', cursive"
 };
 let myFont = "", myAvatar = "";
 const avatars = {};
 (function(){
   const sel = $("font"), d = document.createElement("option"); d.value = ""; d.textContent = "Default"; sel.appendChild(d);
   const FONT_GROUPS = [["Everyday", ["Verdana", "Tahoma", "Segoe UI", "Poppins", "Montserrat", "Raleway", "Nunito", "Quicksand", "Oswald"]], ["Handwriting & fun", ["Caveat", "Satisfy", "Indie Flower", "Shadows Into Light", "Patrick Hand", "Kalam", "Gloria Hallelujah", "Rock Salt", "Permanent Marker", "Chewy", "Fredoka", "Bubblegum Sans"]], ["Bold & display", ["Anton", "Bebas Neue", "Bungee", "Righteous", "Russo One", "Luckiest Guy", "Rubik Mono One", "Audiowide", "Monoton", "Abril Fatface"]], ["Retro & pixel", ["VT323", "Silkscreen", "Special Elite"]], ["Spooky & medieval", ["Creepster", "Nosifer", "Butcherman", "Metal Mania", "Pirata One", "UnifrakturMaguntia"]], ["Elegant & serif", ["Playfair Display", "Cinzel", "Lora", "Merriweather", "Fredericka the Great", "Palatino Linotype", "Garamond"]]];
+  FONT_GROUPS.push(["More fonts", ["Open Sans", "Lato", "Inter", "Source Sans 3", "Work Sans", "DM Sans", "Manrope", "Lexend", "Josefin Sans", "Ubuntu", "Fira Sans", "Barlow", "Cabin", "Archivo", "PT Serif", "EB Garamond", "Libre Baskerville", "Crimson Text", "Spectral", "Cormorant Garamond", "Zilla Slab", "Alfa Slab One", "Source Code Pro", "Fira Code", "Space Mono", "Courier Prime", "Amatic SC", "Pangolin", "Handlee", "Gochi Hand", "Sacramento", "Great Vibes", "Courgette", "Cookie"]]);
   const mk = (k, par) => { const o = document.createElement("option"); o.value = k; o.textContent = k; o.style.fontFamily = FONT_MAP[k]; par.appendChild(o); };
   const grouped = {}; FONT_GROUPS.forEach(g => g[1].forEach(n => grouped[n] = 1));
   Object.keys(FONT_MAP).filter(k => !grouped[k]).forEach(k => mk(k, sel));            // the original fonts first
@@ -1274,6 +1312,9 @@ window.addEventListener("load", () => {
   try { const c = JSON.parse(load("chat_avatars", "{}")); Object.keys(c).forEach(k => { if(okAv(c[k])) avatars[k] = c[k]; }); } catch(e){}
   if(myAvatar) avatars[usr] = myAvatar;
   $("hi").value = usr; $("g-name").value = usr === "User" ? "" : usr; updateYou();
+  /* one-time reset (2026-11-07): everyone starts on the Google Docs theme; after this they can change it in Settings and it sticks.
+     pb_pts is bumped so an older synced look from another device can't put the old theme back. To reset everyone again, change the flag name. */
+  try{ if(!localStorage.getItem("theme_reset_20261107")){ localStorage.setItem("theme_reset_20261107","1"); save("chat_theme","gdocs"); save("pb_pts",String(Date.now())); } }catch(e){}
   setTheme(load("chat_theme", "gdocs")); applyWall(); wallBigLoad(); applyBars(); refreshAvatars();
   myBc = okBc(load("chat_bc", "")); myBi = okBi(load("chat_bi", ""));
   try { const c = JSON.parse(load("chat_bstyle", "{}")); Object.keys(c).forEach(k => { if(okUid(k) && c[k] && typeof c[k] === "object") bstyle[k] = { bc: okBc(c[k].bc), bi: okBi(c[k].bi), v: +c[k].v || 0 }; }); } catch(e){}
@@ -17991,7 +18032,7 @@ html body[data-theme="gdocs"] #chtabs button[data-ch=home]{order:-1}
 /* Homepage = the grey doc page */
 body[data-theme="gdocs"] #home{background:#f9fbfd;color:#111;font-family:"Architects Daughter","Itim","Comic Sans MS",cursive;justify-content:flex-start;overflow:hidden auto}
 body[data-theme="gdocs"] #home *{font-family:inherit}
-body[data-theme="gdocs"] .hm-page{display:block;position:relative;width:min(816px,100%);flex:1 0 auto;min-height:100%;overflow:hidden;background:#9b9b9b url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 816 483%22 preserveAspectRatio=%22none%22%3E%3Cpath fill=%22%239b9b9b%22 d=%22M0,0 L100,0 C173,173 320,220 427,223 C587,227 700,300 816,427 L816,483 L0,483Z%22/%3E%3Crect x=%2260%22 y=%22318%22 width=%22230%22 height=%22200%22 rx=%2246%22 transform=%22rotate%28-14 60 318%29%22 fill=%22%23a2a2a2%22/%3E%3Cpath fill=%22%23d8d8d8%22 d=%22M88.0 247.0L89.8 249.4L91.2 251.8L91.9 254.3L91.8 256.8L90.8 259.1L89.1 261.3L86.9 263.2L84.5 264.9L82.3 266.6L80.4 268.2L79.0 270.0L78.4 272.1L78.3 274.5L78.7 277.1L79.2 280.0L79.5 282.9L79.5 285.8L78.9 288.3L77.5 290.4L75.5 291.9L73.0 292.9L70.1 293.5L67.2 293.8L64.4 294.1L61.9 294.6L59.9 295.5L58.3 296.9L57.0 298.9L56.0 301.4L55.0 304.2L53.8 306.9L52.4 309.3L50.6 311.2L48.4 312.3L45.9 312.7L43.2 312.3L40.4 311.3L37.7 310.1L35.2 309.0L32.8 308.2L30.6 307.9L28.5 308.4L26.4 309.5L24.2 311.1L22.0 313.0L19.6 314.8L17.2 316.2L14.7 316.9L12.2 316.8L9.9 315.8L7.7 314.1L5.8 311.9L4.1 309.5L2.4 307.3L0.8 305.4L-1.0 304.0L-3.1 303.4L-5.5 303.3L-8.1 303.7L-11.0 304.2L-13.9 304.5L-16.8 304.5L-19.3 303.9L-21.4 302.5L-22.9 300.5L-23.9 298.0L-24.5 295.1L-24.8 292.2L-25.1 289.4L-25.6 286.9L-26.5 284.9L-27.9 283.3L-29.9 282.0L-32.4 281.0L-35.2 280.0L-37.9 278.8L-40.3 277.4L-42.2 275.6L-43.3 273.4L-43.7 270.9L-43.3 268.2L-42.3 265.4L-41.1 262.7L-40.0 260.2L-39.2 257.8L-38.9 255.6L-39.4 253.5L-40.5 251.4L-42.1 249.2L-44.0 247.0L-45.8 244.6L-47.2 242.2L-47.9 239.7L-47.8 237.2L-46.8 234.9L-45.1 232.7L-42.9 230.8L-40.5 229.1L-38.3 227.4L-36.4 225.8L-35.0 224.0L-34.4 221.9L-34.3 219.5L-34.7 216.9L-35.2 214.0L-35.5 211.1L-35.5 208.2L-34.9 205.7L-33.5 203.6L-31.5 202.1L-29.0 201.1L-26.1 200.5L-23.2 200.2L-20.4 199.9L-17.9 199.4L-15.9 198.5L-14.3 197.1L-13.0 195.1L-12.0 192.6L-11.0 189.8L-9.8 187.1L-8.4 184.7L-6.6 182.8L-4.4 181.7L-1.9 181.3L0.8 181.7L3.6 182.7L6.3 183.9L8.8 185.0L11.2 185.8L13.4 186.1L15.5 185.6L17.6 184.5L19.8 182.9L22.0 181.0L24.4 179.2L26.8 177.8L29.3 177.1L31.8 177.2L34.1 178.2L36.3 179.9L38.2 182.1L39.9 184.5L41.6 186.7L43.2 188.6L45.0 190.0L47.1 190.6L49.5 190.7L52.1 190.3L55.0 189.8L57.9 189.5L60.8 189.5L63.3 190.1L65.4 191.5L66.9 193.5L67.9 196.0L68.5 198.9L68.8 201.8L69.1 204.6L69.6 207.1L70.5 209.1L71.9 210.7L73.9 212.0L76.4 213.0L79.2 214.0L81.9 215.2L84.3 216.6L86.2 218.4L87.3 220.6L87.7 223.1L87.3 225.8L86.3 228.6L85.1 231.3L84.0 233.8L83.2 236.2L82.9 238.4L83.4 240.5L84.5 242.6L86.1 244.8L88.0 247.0Z%22/%3E%3Ccircle cx=%22250%22 cy=%22250%22 r=%2243%22 fill=%22%23d2d2d2%22/%3E%3Cpolygon points=%22112,108 184,92 168,166%22 fill=%22%23595959%22 stroke=%22%23595959%22 stroke-width=%2230%22 stroke-linejoin=%22round%22/%3E%3C/svg%3E") 0 0/100% auto no-repeat;box-shadow:0 0 0 1px #c7c7c7}
+body[data-theme="gdocs"] .hm-page{display:block;position:relative;width:min(816px,100%);flex:1 0 auto;min-height:100%;overflow:hidden;background:#d2d2d2 url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22816%22 height=%222400%22 viewBox=%220 0 816 2400%22%3E%3Cpath fill=%22%239b9b9b%22 d=%22M0,0 L100,0 C173,173 320,220 427,223 C587,227 700,300 816,427 L816,2400 L0,2400Z%22/%3E%3Crect x=%2260%22 y=%22318%22 width=%22230%22 height=%22200%22 rx=%2246%22 transform=%22rotate%28-14 60 318%29%22 fill=%22%23a2a2a2%22/%3E%3Cpath fill=%22%23d8d8d8%22 d=%22M88.0 247.0L89.8 249.4L91.2 251.8L91.9 254.3L91.8 256.8L90.8 259.1L89.1 261.3L86.9 263.2L84.5 264.9L82.3 266.6L80.4 268.2L79.0 270.0L78.4 272.1L78.3 274.5L78.7 277.1L79.2 280.0L79.5 282.9L79.5 285.8L78.9 288.3L77.5 290.4L75.5 291.9L73.0 292.9L70.1 293.5L67.2 293.8L64.4 294.1L61.9 294.6L59.9 295.5L58.3 296.9L57.0 298.9L56.0 301.4L55.0 304.2L53.8 306.9L52.4 309.3L50.6 311.2L48.4 312.3L45.9 312.7L43.2 312.3L40.4 311.3L37.7 310.1L35.2 309.0L32.8 308.2L30.6 307.9L28.5 308.4L26.4 309.5L24.2 311.1L22.0 313.0L19.6 314.8L17.2 316.2L14.7 316.9L12.2 316.8L9.9 315.8L7.7 314.1L5.8 311.9L4.1 309.5L2.4 307.3L0.8 305.4L-1.0 304.0L-3.1 303.4L-5.5 303.3L-8.1 303.7L-11.0 304.2L-13.9 304.5L-16.8 304.5L-19.3 303.9L-21.4 302.5L-22.9 300.5L-23.9 298.0L-24.5 295.1L-24.8 292.2L-25.1 289.4L-25.6 286.9L-26.5 284.9L-27.9 283.3L-29.9 282.0L-32.4 281.0L-35.2 280.0L-37.9 278.8L-40.3 277.4L-42.2 275.6L-43.3 273.4L-43.7 270.9L-43.3 268.2L-42.3 265.4L-41.1 262.7L-40.0 260.2L-39.2 257.8L-38.9 255.6L-39.4 253.5L-40.5 251.4L-42.1 249.2L-44.0 247.0L-45.8 244.6L-47.2 242.2L-47.9 239.7L-47.8 237.2L-46.8 234.9L-45.1 232.7L-42.9 230.8L-40.5 229.1L-38.3 227.4L-36.4 225.8L-35.0 224.0L-34.4 221.9L-34.3 219.5L-34.7 216.9L-35.2 214.0L-35.5 211.1L-35.5 208.2L-34.9 205.7L-33.5 203.6L-31.5 202.1L-29.0 201.1L-26.1 200.5L-23.2 200.2L-20.4 199.9L-17.9 199.4L-15.9 198.5L-14.3 197.1L-13.0 195.1L-12.0 192.6L-11.0 189.8L-9.8 187.1L-8.4 184.7L-6.6 182.8L-4.4 181.7L-1.9 181.3L0.8 181.7L3.6 182.7L6.3 183.9L8.8 185.0L11.2 185.8L13.4 186.1L15.5 185.6L17.6 184.5L19.8 182.9L22.0 181.0L24.4 179.2L26.8 177.8L29.3 177.1L31.8 177.2L34.1 178.2L36.3 179.9L38.2 182.1L39.9 184.5L41.6 186.7L43.2 188.6L45.0 190.0L47.1 190.6L49.5 190.7L52.1 190.3L55.0 189.8L57.9 189.5L60.8 189.5L63.3 190.1L65.4 191.5L66.9 193.5L67.9 196.0L68.5 198.9L68.8 201.8L69.1 204.6L69.6 207.1L70.5 209.1L71.9 210.7L73.9 212.0L76.4 213.0L79.2 214.0L81.9 215.2L84.3 216.6L86.2 218.4L87.3 220.6L87.7 223.1L87.3 225.8L86.3 228.6L85.1 231.3L84.0 233.8L83.2 236.2L82.9 238.4L83.4 240.5L84.5 242.6L86.1 244.8L88.0 247.0Z%22/%3E%3Ccircle cx=%22250%22 cy=%22250%22 r=%2243%22 fill=%22%23d2d2d2%22/%3E%3Cpolygon points=%22112,108 184,92 168,166%22 fill=%22%23595959%22 stroke=%22%23595959%22 stroke-width=%2230%22 stroke-linejoin=%22round%22/%3E%3C/svg%3E") 0 0/100% auto no-repeat;box-shadow:0 0 0 1px #c7c7c7}
 body[data-theme="gdocs"] .hm-page::before,body[data-theme="gdocs"] .hm-page::after{content:"";position:absolute;top:2px;width:32px;height:42px;background:url(assets/mascot_logo.png) center/contain no-repeat;filter:grayscale(1) contrast(1.2);z-index:2}
 body[data-theme="gdocs"] .hm-page::before{left:2px}
 body[data-theme="gdocs"] .hm-page::after{right:2px}
@@ -18018,9 +18059,9 @@ body[data-theme="gdocs"] #home .hm-ic.emo{font-size:30px}
 <style id="gdocs-noanim">
 /* Google Docs theme: no animations, except what Docs itself animates (collapsing the tabs panel / the top bar) */
 html:has(body[data-theme="gdocs"]){scroll-behavior:auto !important}
-body[data-theme="gdocs"] *:not(#hdr):not(#hdrwrap):not(#main):not(#hdr-arrow):not(#gd-bar):not(#gd-rail):not(.al-spin):not(.al-card):not(#autoload):not(#gd-bar *):not(#gd-menu):not(#gd-menu *):not(#gd-snack):not(#gd-find):not(#gd-find *):not(.gd-rip):not(.gd-rip *),
-body[data-theme="gdocs"] *:not(#hdr):not(#hdrwrap):not(#main):not(#hdr-arrow):not(#gd-bar):not(#gd-rail):not(.al-spin):not(.al-card):not(#autoload):not(#gd-bar *):not(#gd-menu):not(#gd-menu *):not(#gd-snack):not(#gd-find):not(#gd-find *):not(.gd-rip):not(.gd-rip *)::before,
-body[data-theme="gdocs"] *:not(#hdr):not(#hdrwrap):not(#main):not(#hdr-arrow):not(#gd-bar):not(#gd-rail):not(.al-spin):not(.al-card):not(#autoload):not(#gd-bar *):not(#gd-menu):not(#gd-menu *):not(#gd-snack):not(#gd-find):not(#gd-find *):not(.gd-rip):not(.gd-rip *)::after{animation:none !important;transition:none !important}
+body[data-theme="gdocs"] *:not(#hdr):not(#hdrwrap):not(#main):not(#hdr-arrow):not(#gd-bar):not(#gd-rail):not(.al-spin):not(.al-card):not(#autoload):not(#gd-bar *):not(#gd-menu):not(#gd-menu *):not(#gd-snack):not(#gd-find):not(#gd-find *):not(.gd-rip):not(.gd-rip *):not(#juan-peek):not(#juan-apple):not(#juan-apple *):not(#juan-toast):not(#juan-toast *):not(.hm-mascot),
+body[data-theme="gdocs"] *:not(#hdr):not(#hdrwrap):not(#main):not(#hdr-arrow):not(#gd-bar):not(#gd-rail):not(.al-spin):not(.al-card):not(#autoload):not(#gd-bar *):not(#gd-menu):not(#gd-menu *):not(#gd-snack):not(#gd-find):not(#gd-find *):not(.gd-rip):not(.gd-rip *):not(#juan-peek):not(#juan-apple):not(#juan-apple *):not(#juan-toast):not(#juan-toast *):not(.hm-mascot)::before,
+body[data-theme="gdocs"] *:not(#hdr):not(#hdrwrap):not(#main):not(#hdr-arrow):not(#gd-bar):not(#gd-rail):not(.al-spin):not(.al-card):not(#autoload):not(#gd-bar *):not(#gd-menu):not(#gd-menu *):not(#gd-snack):not(#gd-find):not(#gd-find *):not(.gd-rip):not(.gd-rip *):not(#juan-peek):not(#juan-apple):not(#juan-apple *):not(#juan-toast):not(#juan-toast *):not(.hm-mascot)::after{animation:none !important;transition:none !important}
 body[data-theme="gdocs"] :is(button,.btn,.stg-btn,.row-ch,.plus,#emo-btn,#sendbtn,.hm-it,.hm-cell,.goback,.chip,a,select,input,label):not(#gd-show):not(#hdr-arrow):is(:hover,:active,:focus-visible){transform:none !important}
 /* Docs-style slide for the top bar + right rail (like hiding the menus in Docs) */
 body[data-theme="gdocs"] #gd-bar{display:block;position:fixed;top:0;left:0;right:0;z-index:50;background:#f9fbfd;transform:translateY(-100%);visibility:hidden;transition:transform .2s ease,visibility 0s .2s}
@@ -18034,6 +18075,9 @@ body[data-theme="gdocs"]:not(.gd-bar-on) #main{padding-right:0}
 /* the left tabs panel is completely still: no slide, no spring, no bounce */
 html body[data-theme="gdocs"] :is(#hdr,#hdrwrap,#hdr-arrow,#main,#sb-arrow),html body[data-theme="gdocs"] :is(#hdr,#hdrwrap) :is(*,*::before,*::after),html body[data-theme="gdocs"] :is(#hdr-arrow,#main)::before,html body[data-theme="gdocs"] #hdr-arrow::after{animation:none !important;transition:none !important}
 html body[data-theme="gdocs"] :is(#chtabs button,#hdr .row-ch){transition:background-color .15s linear,color .15s linear !important}
+html body[data-theme="gdocs"] #hdr :is(*):is(:hover,:active,:focus-visible){transform:none !important}
+@media(prefers-reduced-motion:reduce){body[data-theme="gdocs"] #gd-bar,body[data-theme="gdocs"] #gd-rail,body[data-theme="gdocs"]{transition:none !important}}
+d-color .15s linear,color .15s linear !important}
 html body[data-theme="gdocs"] #hdr :is(*):is(:hover,:active,:focus-visible){transform:none !important}
 @media(prefers-reduced-motion:reduce){body[data-theme="gdocs"] #gd-bar,body[data-theme="gdocs"] #gd-rail,body[data-theme="gdocs"]{transition:none !important}}
 </style>
@@ -18189,7 +18233,7 @@ html body[data-theme="gdocs"] #hmore-menu #hdr-log .dot{top:10px;right:14px}
   var MENUS={
     File:[["Share","",copyLink],["Download as .txt","",download],"-",["Print","Ctrl+P",function(){window.print();}]],
     Edit:[["Find","Ctrl+Alt+F",function(){ openFind(); }],"-",["Undo","Ctrl+Z",function(){ undoRedo("undo"); }],["Redo","Ctrl+Y",function(){ undoRedo("redo"); }],"-",["Select all","Ctrl+A",function(){document.execCommand("selectAll");}],["Copy","Ctrl+C",function(){document.execCommand("copy");}]],
-    View:[["Show / hide tabs panel","",function(){ click("#hdr-arrow"); }],"-",["Zoom 75%","",function(){zoom(.75);}],["Zoom 100%","",function(){zoom(1);}],["Zoom 125%","",function(){zoom(1.25);}],["Zoom 150%","",function(){zoom(1.5);}],"-",["Full screen","",function(){ var d=document.documentElement; if(document.fullscreenElement) document.exitFullscreen(); else if(d.requestFullscreen) d.requestFullscreen(); }],["Hide the Docs top bar","",toggleBar]],
+    View:[["Show / hide tabs panel","",function(){ click("#hdr-arrow"); }],"-",["Zoom 75%","",function(){zoom(.75);}],["Zoom 100%","",function(){zoom(1);}],["Zoom 125%","",function(){zoom(1.25);}],["Zoom 150%","",function(){zoom(1.5);}],"-",["Dark mode (on / off)","",function(){ try{ var on=window.gdDark.toggle(); snk(on?"Dark mode on":"Dark mode off"); }catch(e){ snk("Dark mode isn’t available"); } }],"-",["Full screen","",function(){ var d=document.documentElement; if(document.fullscreenElement) document.exitFullscreen(); else if(d.requestFullscreen) d.requestFullscreen(); }],["Hide the Docs top bar","",toggleBar]],
     Insert:[["Link","Ctrl+K",function(){ if(!trayOK()||kindOf()!=="chat"){ snk("Open a chat tab to insert a link"); return; } var u=window.prompt("Link URL","https://"); if(u&&u!=="https://"){ var i=$("inp"); if(i&&!i.disabled){ i.value+=(i.value?" ":"")+u; i.dispatchEvent(new Event("input",{bubbles:true})); i.focus(); } } }],["Image","",function(){click("label.plus");}],["Emoji","",function(){ if(kindOf()!=="chat"||!trayOK()){ snk("Open a chat tab to insert an emoji"); return; } click("#emo-btn");}],["GIF","",function(){ if(kindOf()!=="chat"||!trayOK()){ snk("Open a chat tab to insert a GIF"); return; } click("#gif-btn");}]],
     Format:[["Bold","",function(){ if(fmtOK()) fmtBtn.b.click(); }],["Italic","",function(){ if(fmtOK()) fmtBtn.i.click(); }],["Underline","",function(){ if(fmtOK()) fmtBtn.u.click(); }],"-",["Increase text size","",function(){ if(fmtOK()) size(1); }],["Decrease text size","",function(){ if(fmtOK()) size(-1); }],["Reset text size","",function(){ if(fmtOK()) size(0); }],"-",["Clear formatting","",function(){ if(fmtOK()){ resetFmt(); snk("Formatting cleared"); } }]],
     Tools:[["Word count","Ctrl+Shift+C",words],"-",["Settings","",function(){ try{ setStg(true); }catch(e){ snk("Open Settings from the gear"); } }]],
@@ -18201,7 +18245,7 @@ html body[data-theme="gdocs"] #hmore-menu #hdr-log .dot{top:10px;right:14px}
   function closeMenu(){ menu.classList.remove("on"); document.querySelectorAll("#gd-bar .open").forEach(function(x){x.classList.remove("open");}); }
   function openMenu(btn,name){
     var was=btn.classList.contains("open"); closeMenu(); if(was) return;
-    menu.innerHTML=""; MENUS[name].forEach(function(it){
+    menu.innerHTML=""; menu.classList.remove("gd-fontmenu"); MENUS[name].forEach(function(it){
       if(it==="-"){ menu.appendChild(document.createElement("hr")); return; }
       var b=document.createElement("button"); b.type="button"; b.innerHTML="<span></span><small></small>"; b.firstChild.textContent=it[0]; b.lastChild.textContent=it[1];
       if(!it[2]) b.disabled=true; else b.onclick=function(){ closeMenu(); it[2](); };
@@ -18271,9 +18315,13 @@ html body[data-theme="gdocs"] #hmore-menu #hdr-log .dot{top:10px;right:14px}
   styB=dd("Normal text","Styles",pick(null,[])); fx(styB);
   styB.onclick=function(e){ e.stopPropagation(); MENUS.__d=STY.map(function(r){ return [r[0],"",function(){ setVar("--gdsz",r[1]); styB.firstChild.textContent=r[0]; }]; }); openMenu(styB,"__d"); };
   sep();
-  var FONTS=[["Architects Daughter","'Architects Daughter',cursive"],["Arial","Arial,Helvetica,sans-serif"],["Roboto","Roboto,Arial,sans-serif"],["Georgia","Georgia,serif"],["Times New Roman","'Times New Roman',Times,serif"],["Verdana","Verdana,sans-serif"],["Courier New","'Courier New',monospace"],["Comic Sans MS","'Comic Sans MS',cursive"]], fontB;
+  var FONTS=(function(){
+    var m={"Architects Daughter":"'Architects Daughter',cursive","Roboto":"Roboto,Arial,sans-serif"};
+    try{ Object.keys(FONT_MAP).forEach(function(k){ if(k!=="Minecraft") m[k]=FONT_MAP[k]; }); }catch(e){ m["Arial"]="Arial,Helvetica,sans-serif"; m["Georgia"]="Georgia,serif"; m["Verdana"]="Verdana,sans-serif"; m["Courier New"]="'Courier New',monospace"; }
+    return Object.keys(m).sort(function(x,y){ return x.toLowerCase()<y.toLowerCase()?-1:1; }).map(function(k){ return [k,m[k]]; });
+  })(), fontB;
   fontB=dd("Arial","Font",null); fontB.classList.add("gd-font"); fx(fontB);
-  fontB.onclick=function(e){ e.stopPropagation(); MENUS.__d=FONTS.map(function(r){ return [r[0],"",function(){ setVar("--gdff",r[1]); fontB.firstChild.textContent=r[0]; }]; }); openMenu(fontB,"__d"); };
+  fontB.onclick=function(e){ e.stopPropagation(); MENUS.__d=FONTS.map(function(r){ return [r[0],"",function(){ setVar("--gdff",r[1]); fontB.firstChild.textContent=r[0]; }]; }); openMenu(fontB,"__d"); menu.classList.add("gd-fontmenu"); Array.prototype.forEach.call(menu.querySelectorAll("button"),function(bt,i){ if(FONTS[i]) bt.firstChild.style.fontFamily=FONTS[i][1]; }); var cur=fontB.firstChild.textContent; Array.prototype.some.call(menu.querySelectorAll("button"),function(bt){ if(bt.firstChild.textContent===cur){ bt.style.background="#e9eef6"; menu.scrollTop=Math.max(0,bt.offsetTop-120); return true; } }); };
   sep();
   var fsw=document.createElement("span"); fsw.className="gd-fs"; fsw.innerHTML='<button class="gd-ib" title="Decrease font size" type="button" style="font:700 18px Arial">&minus;</button><span class="num" id="gd-fsn">11</span><button class="gd-ib" title="Increase font size" type="button" style="font:700 18px Arial">+</button>';
   fsw.children[0].onclick=function(){size(-1);}; fsw.children[2].onclick=function(){size(1);}; tb.appendChild(fsw); fx(fsw);
@@ -18504,5 +18552,82 @@ html body[data-theme="gdocs"] #chtabs{-webkit-mask-image:none !important;mask-im
   if(ct) ct.addEventListener("click",function(e){ if(!th()||!mq.matches) return; var b=e.target.closest&&e.target.closest("button[data-ch]:not(.ct-plus)"); if(b) setTimeout(function(){ try{ save("hide_hdr","1"); applyBars(); }catch(err){} },60); });
 })();
 </script>
+<style id="gdocs-overlays">/* the Docs top bar (z 50) and right rail (z 51) were drawn over Settings and other windows, hiding the top of the page and the Save area */
+html body[data-theme="gdocs"] :is(#stg,#amod,#mmod,#ct-modal){z-index:2500}
+</style>
+<style id="gdocs-dark-base">
+html body[data-theme="gdocs"].gd-dark{--bg:#131314;--side:#131314;--row:#2d2f31;--input:#1e1f20;--line:#444746;--text:#e3e3e3;--muted:#9aa0a6;--accent:#a8c7fa;--on-accent:#062e6f;--t-me:#e3e3e3;--t-on:#e3e3e3;color-scheme:dark;background:#131314;color:#e3e3e3}
+html:has(body[data-theme="gdocs"].gd-dark){background:#131314;color-scheme:dark}
+html body[data-theme="gdocs"].gd-dark img.gd-keep,html body[data-theme="gdocs"].gd-dark #gd-bar .gd-logo img{filter:none}
+</style>
+<style id="gdocs-dark-gen"></style>
+<script id="gdocs-dark-js">
+(function(){
+  var B=document.body, KEY="gd_dark", built=false;
+  /* Docs dark palette. Backgrounds and text/line colours map differently (white is a surface in one, a label colour in the other). */
+  var BG={"f9fbfd":"131314","ffffff":"1e1f20","fff":"1e1f20","edf2fa":"282a2c","e9eef6":"2d2f31","d3e3fd":"004a77","f1f3f4":"2b2c2f","e1e5ea":"303134","dde6f3":"303134","d0d0d0":"4a4d51","dadce0":"444746","c7c7c7":"5f6368"};
+  var FG={"1f1f1f":"e3e3e3","111111":"e8eaed","111":"e8eaed","000000":"e8eaed","000":"e8eaed","444746":"c4c7c5","5f6368":"9aa0a6","80868b":"9aa0a6","565656":"bdc1c6","7d7d7d":"9aa0a6","041e49":"c2e7ff","0b57d0":"a8c7fa","0842a0":"d3e3fd","dadce0":"444746","c7c7c7":"5f6368"};
+  var BGP=/^(background|background-color)$/, FGP=/^(color|fill|stroke|caret-color|outline-color|text-decoration-color|border(-top|-right|-bottom|-left)?-color)$/;
+  function hex(r,g,b){ return [r,g,b].map(function(v){ v=(+v).toString(16); return v.length<2?"0"+v:v; }).join(""); }
+  function mapVal(prop,val){
+    var tbl=BGP.test(prop)?BG:FGP.test(prop)?FG:null; if(!tbl||!val||/gradient|url\(|var\(/.test(val)) return null;
+    var m=val.match(/^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([\d.]+)\s*)?\)$/); if(!m) return null;
+    var h=hex(m[1],m[2],m[3]), t=tbl[h]; if(!t) return null;
+    var n=[parseInt(t.slice(0,2),16),parseInt(t.slice(2,4),16),parseInt(t.slice(4,6),16)];
+    return m[4]!==undefined&&+m[4]<1 ? "rgba("+n.join(",")+","+m[4]+")" : "#"+t;
+  }
+  function mapGrad(prop,val){                                  // the white "page" is a gradient: recolour the stops
+    if(!/^background(-image)?$/.test(prop)||!/gradient\(/.test(val)) return null; var ch=false;
+    var o=val.replace(/rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)/g,function(m,r,g,b){ var t=BG[hex(r,g,b)]; if(!t) return m; ch=true; return "#"+t; });
+    return ch?o:null;
+  }
+  function ruleText(r,out){
+    if(r.type===1){
+      var sel=r.selectorText, themed=sel.indexOf('[data-theme="gdocs"]')>=0;
+      if(!themed&&!/(#|\.)gd-|#gdocs/.test(sel)) return "";
+      var decl="", st=r.style;
+      for(var i=0;i<st.length;i++){ var p=st[i]; if(p.indexOf("--")===0) continue; var val=st.getPropertyValue(p), v=mapVal(p,val)||mapGrad(p,val); if(v) decl+=p+":"+v+" !important;"; }
+      if(!decl) return "";
+      return (themed ? sel.split('[data-theme="gdocs"]').join('[data-theme="gdocs"].gd-dark') : 'body[data-theme="gdocs"].gd-dark :is('+sel+')')+"{"+decl+"}\n";
+    }
+    if((r.type===4||r.type===12)&&r.cssRules){ var inner=""; for(var j=0;j<r.cssRules.length;j++) inner+=ruleText(r.cssRules[j]); return inner ? (r.type===4?"@media "+r.conditionText:"@supports "+r.conditionText)+"{\n"+inner+"}\n" : ""; }
+    return "";
+  }
+  function build(){
+    var css="";
+    for(var i=0;i<document.styleSheets.length;i++){ var rs; try{ rs=document.styleSheets[i].cssRules; }catch(e){ continue; } if(!rs) continue; for(var j=0;j<rs.length;j++){ try{ css+=ruleText(rs[j]); }catch(e){} } }
+    document.getElementById("gdocs-dark-gen").textContent=css; built=true;
+  }
+  function apply(on){
+    if(on&&!built) build();
+    B.classList.toggle("gd-dark",!!on);
+    var m=document.querySelector('meta[name="theme-color"]'); if(m){ if(on){ m.dataset.gdPrev=m.content; m.content="#131314"; } else if(m.dataset.gdPrev) m.content=m.dataset.gdPrev; }
+  }
+  function get(){ try{ return localStorage.getItem(KEY)==="1"; }catch(e){ return false; } }
+  window.gdDark={ get:get, toggle:function(){ var on=!B.classList.contains("gd-dark"); try{ localStorage.setItem(KEY,on?"1":"0"); }catch(e){} apply(on); return on; } };
+  if(get()) apply(true);
+})();
+</script>
+<style id="gdocs-zfix">/* Docs bars sit under every window (Settings, admin panel, etc.), not over them */
+html body[data-theme="gdocs"] #gd-bar,html body[data-theme="gdocs"].gd-bar-on #gd-bar{z-index:30 !important}
+html body[data-theme="gdocs"] #gd-rail{z-index:31 !important}
+html body[data-theme="gdocs"] :is(#stg,#amod,#mmod,#ct-modal,#pollmod,#profmod,#frmod,#tldlg){z-index:2500 !important}
+</style>
+<style id="gdocs-fontmenu">#gd-menu.gd-fontmenu{max-height:min(70vh,520px);overflow-y:auto;min-width:260px}#gd-menu.gd-fontmenu button span{font-size:15px}</style>
+<style id="hm-ed-quiet">/* the owner-only "Edit home" button: small and faint until you point at it (or while you're editing) */
+html body #home .hm-ed{top:8px;right:46px;gap:4px}
+html body #home .hm-ed button{padding:2px 8px;font-size:11px;opacity:.35;box-shadow:none;transition:opacity .15s linear}
+html body #home .hm-ed:hover button,html body #home .hm-ed button:focus-visible,html body #home .hm-ed button.go{opacity:1}
+@media(hover:none){html body #home .hm-ed button{opacity:.5}}
+</style>
+<style id="gdocs-juan">/* Juan mode inside the Docs theme: his wallpaper behind the page, and his animations (apple, peek, toast, wobble) left running */
+html body.juan-on[data-theme="gdocs"] :is(#main,#home){background:#1b1208 url(assets/juan/juan_tile.jpg) 0 0/72px 72px repeat !important}
+html body.juan-on[data-theme="gdocs"] :is(#box,#home){text-shadow:none}
+html body.juan-on[data-theme="gdocs"] #hdr,html body.juan-on[data-theme="gdocs"] #sb{background:#fff7e6 !important}
+html body.juan-on[data-theme="gdocs"] #chtabs button.on,html body.juan-on[data-theme="gdocs"] .row-ch.active{background:#ffd98a;color:#3a2405}
+html body.juan-on[data-theme="gdocs"] #juan-apple,html body.juan-on[data-theme="gdocs"] #juan-peek{z-index:45}
+html body.juan-on[data-theme="gdocs"] #juan-toast{z-index:99999}
+html body.juan-on[data-theme="gdocs"] #home .hm-mascot{animation:juan-wob 2.4s ease-in-out infinite !important}
+</style>
 </body>
 </html>
