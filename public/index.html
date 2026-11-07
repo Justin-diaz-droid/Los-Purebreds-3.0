@@ -3468,7 +3468,7 @@ label.plus.open{transform:rotate(45deg)}
       r.hm.slice(0,24).forEach(x=>{
         if(!x||typeof x!=="object") return;
         let k=String(x.k||"").toLowerCase().replace(/[^a-z0-9]/g,"").slice(0,12); if(!k||seen.has(k)) return; seen.add(k);
-        const t=String(x.t||"").trim(); if(!/^[a-z][a-z0-9_]{0,15}$/.test(t)||t==="app"||t==="dm"||t==="grp") return;
+        const t=String(x.t||"").trim(); if(!/^(?:[a-z][a-z0-9_]{0,15}|ct:[A-Za-z0-9_-]{1,40})$/.test(t)||t==="app"||t==="dm"||t==="grp") return;
         const n=String(x.n||"").trim().slice(0,24), i=String(x.i||"").trim().slice(0,8), s2=String(x.s||"").trim().slice(0,24);
         const ic=HB.includes(x.ic)?x.ic:"", im=(okTImg(x.im)&&x.im.length<=40000)?x.im:"";
         o.hm.push({k,n:n||"Tab",i,ic,im,t,s:s2});
