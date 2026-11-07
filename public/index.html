@@ -794,7 +794,7 @@ html.watch #watch-note.on{display:block}
     <a class="goback" href="https://docs.google.com/document/d/1oa90mU-jYczqySulirTvHqqNWTSaNwPGnnArgBdVGrs/edit?tab=t.pqncc0vmsgzp" rel="noopener">← Go back</a>
   </div>
     <div id="gver">Version 3.0</div>
-  <label class="fld" id="g-themefld"><span>Themes</span><select id="g-theme"><option value="imessage">iMessage</option><option value="ios6">iOS 6</option><option value="discord">Discord</option><option value="whatsapp">WhatsApp</option><option value="tiktok">TikTok</option><option value="roblox">Roblox</option><option value="instagram">Instagram</option><option value="twitter">Twitter</option><option value="material">Android 17 (Material 3 Expressive)</option><option value="kde">KDE Plasma (Breeze)</option><option value="kitkat">Android 4.4 KitKat</option><option value="terminal">Terminal</option><option value="simple">Simple</option><option value="glass">Liquid Glass</option><option value="macos">macOS</option><option value="win95">Windows 95</option><option value="winxp">Windows XP</option><option value="minecraft">Minecraft</option></select></label>
+  <label class="fld" id="g-themefld"><span>Themes</span><select id="g-theme"><option value="imessage">iMessage</option><option value="ios6">iOS 6</option><option value="discord">Discord</option><option value="whatsapp">WhatsApp</option><option value="tiktok">TikTok</option><option value="roblox">Roblox</option><option value="instagram">Instagram</option><option value="twitter">Twitter</option><option value="material">Android 17 (Material 3 Expressive)</option><option value="kde">KDE Plasma (Breeze)</option><option value="kitkat">Android 4.4 KitKat</option><option value="terminal">Terminal</option><option value="simple">Simple</option><option value="glass">Liquid Glass</option><option value="macos">macOS</option><option value="win95">Windows 95</option><option value="winxp">Windows XP</option><option value="minecraft">Minecraft</option><option value="rule34">34 theme</option></select></label>
 </div>
 
 <div id="sb">
@@ -839,7 +839,7 @@ html.watch #watch-note.on{display:block}
         <div class="seg" id="cm-seg" role="group" aria-label="Color mode"><button type="button" id="cm-light" data-m="light">☀️ Light mode</button><button type="button" id="cm-dark" data-m="dark">🌙 Dark mode</button><button type="button" id="cm-auto" data-m="auto">Auto</button></div>
         <div class="xnote" style="font-size:12px;opacity:.7;line-height:1.4">Switches themes that have both a light and a dark look. Auto follows your device. Themes that only come in one look (like Terminal) stay as they are.</div>
         <label>Theme</label>
-        <select id="theme"><option value="imessage">iMessage</option><option value="ios6">iOS 6</option><option value="discord">Discord</option><option value="whatsapp">WhatsApp</option><option value="tiktok">TikTok</option><option value="roblox">Roblox</option><option value="instagram">Instagram</option><option value="twitter">Twitter</option><option value="material">Android 17 (Material 3 Expressive)</option><option value="kde">KDE Plasma (Breeze)</option><option value="kitkat">Android 4.4 KitKat</option><option value="terminal">Terminal</option><option value="simple">Simple</option><option value="glass">Liquid Glass</option><option value="macos">macOS</option><option value="win95">Windows 95</option><option value="winxp">Windows XP</option><option value="minecraft">Minecraft</option></select>
+        <select id="theme"><option value="imessage">iMessage</option><option value="ios6">iOS 6</option><option value="discord">Discord</option><option value="whatsapp">WhatsApp</option><option value="tiktok">TikTok</option><option value="roblox">Roblox</option><option value="instagram">Instagram</option><option value="twitter">Twitter</option><option value="material">Android 17 (Material 3 Expressive)</option><option value="kde">KDE Plasma (Breeze)</option><option value="kitkat">Android 4.4 KitKat</option><option value="terminal">Terminal</option><option value="simple">Simple</option><option value="glass">Liquid Glass</option><option value="macos">macOS</option><option value="win95">Windows 95</option><option value="winxp">Windows XP</option><option value="minecraft">Minecraft</option><option value="rule34">34 theme</option></select>
         <label>Wallpaper &amp; accent color (also tints top bar, message bar &amp; left bar)</label><input type="color" id="wcol" value="#000000">
         <label>Wallpaper image (syncs to your other devices)</label>
         <div class="stg-row"><button id="wimg" type="button" class="btn">Choose image</button><button id="wreset" type="button" class="btn alt">Reset wallpaper</button><input type="file" id="wfile" accept="image/*" style="display:none"></div>
@@ -931,9 +931,9 @@ let usr = "User", peer = null, conns = [], isHost = false, logs = [];
 /* private DM state */
 let dmWith = "", dmNm = "", chipT = null;
 let seen = {}; try { seen = JSON.parse(load("dm_seen", "{}")) || {}; } catch(e){ seen = {}; }
-const PH = {discord:"Message #purebred-chat",whatsapp:"Type a message",tiktok:"Send a message...",roblox:"To chat click here or press / key",instagram:"Message...",twitter:"Start a new message",imessage:"iMessage",ios6:"iMessage",material:"Text message",kitkat:"Type a message",terminal:"enter message…",simple:"Message",glass:"Message",win95:"Type a message",winxp:"Type a message",minecraft:"Type a message or /command",kde:"Type a message…",macos:"iMessage"};
-const THEMES = ["imessage","ios6","discord","whatsapp","tiktok","roblox","instagram","twitter","material","kde","kitkat","terminal","simple","glass","win95","winxp","minecraft","macos"];
-const CHNAME = {discord:"# purebred-chat",whatsapp:"WhatsApp Group",tiktok:"TikTok Inbox",roblox:"Roblox Chat",instagram:"Instagram Direct",twitter:"Twitter Messages",imessage:"iMessage Channel",ios6:"Messages",material:"Messages",kitkat:"Hangouts",terminal:"/dev/purebred",simple:"Messages",glass:"Messages",win95:"Messages",winxp:"Messenger",minecraft:"Minecraft Chat",kde:"Konversation",macos:"Messages"};
+const PH = {discord:"Message #purebred-chat",whatsapp:"Type a message",tiktok:"Send a message...",roblox:"To chat click here or press / key",instagram:"Message...",twitter:"Start a new message",imessage:"iMessage",ios6:"iMessage",material:"Text message",kitkat:"Type a message",terminal:"enter message…",simple:"Message",glass:"Message",win95:"Type a message",winxp:"Type a message",minecraft:"Type a message or /command",rule34:"Tags: type a message",kde:"Type a message…",macos:"iMessage"};
+const THEMES = ["imessage","ios6","discord","whatsapp","tiktok","roblox","instagram","twitter","material","kde","kitkat","terminal","simple","glass","win95","winxp","minecraft","rule34","macos"];
+const CHNAME = {discord:"# purebred-chat",whatsapp:"WhatsApp Group",tiktok:"TikTok Inbox",roblox:"Roblox Chat",instagram:"Instagram Direct",twitter:"Twitter Messages",imessage:"iMessage Channel",ios6:"Messages",material:"Messages",kitkat:"Hangouts",terminal:"/dev/purebred",simple:"Messages",glass:"Messages",win95:"Messages",winxp:"Messenger",minecraft:"Minecraft Chat",rule34:"34 Chat",kde:"Konversation",macos:"Messages"};
 let draft = null, stgOpen = false, pvLoaded = false, pvq = 0;
 const shownKeys = new Set();
 let groups = {};
@@ -986,11 +986,11 @@ const myDevice = detectDevice();
 
 /* ---------- theme ---------- */
 function setTheme(t){
-  if(!["imessage","ios6","discord","whatsapp","tiktok","roblox","instagram","twitter","material","kde","kitkat","terminal","simple","glass","win95","winxp","minecraft","macos"].includes(t)) t = "imessage";
+  if(!["imessage","ios6","discord","whatsapp","tiktok","roblox","instagram","twitter","material","kde","kitkat","terminal","simple","glass","win95","winxp","minecraft","rule34","macos"].includes(t)) t = "imessage";
   document.body.dataset.theme = t;
   $("theme").value = t; $("g-theme").value = t;
-  $("chname").textContent = {discord:"# purebred-chat",whatsapp:"WhatsApp Group",tiktok:"TikTok Inbox",roblox:"Roblox Chat",instagram:"Instagram Direct",twitter:"Twitter Messages",imessage:"iMessage Channel",ios6:"Messages",material:"Messages",kitkat:"Hangouts",terminal:"/dev/purebred",simple:"Messages",glass:"Messages",win95:"Messages",winxp:"Messenger",minecraft:"Minecraft Chat",kde:"Konversation",macos:"Messages"}[t];
-  $("inp").placeholder = {discord:"Message #purebred-chat",whatsapp:"Type a message",tiktok:"Send a message...",roblox:"To chat click here or press / key",instagram:"Message...",twitter:"Start a new message",imessage:"iMessage",ios6:"iMessage",material:"Text message",kitkat:"Type a message",terminal:"enter message…",simple:"Message",glass:"Message",win95:"Type a message",winxp:"Type a message",minecraft:"Type a message or /command",kde:"Type a message…",macos:"iMessage"}[t];
+  $("chname").textContent = {discord:"# purebred-chat",whatsapp:"WhatsApp Group",tiktok:"TikTok Inbox",roblox:"Roblox Chat",instagram:"Instagram Direct",twitter:"Twitter Messages",imessage:"iMessage Channel",ios6:"Messages",material:"Messages",kitkat:"Hangouts",terminal:"/dev/purebred",simple:"Messages",glass:"Messages",win95:"Messages",winxp:"Messenger",minecraft:"Minecraft Chat",rule34:"34 Chat",kde:"Konversation",macos:"Messages"}[t];
+  $("inp").placeholder = {discord:"Message #purebred-chat",whatsapp:"Type a message",tiktok:"Send a message...",roblox:"To chat click here or press / key",instagram:"Message...",twitter:"Start a new message",imessage:"iMessage",ios6:"iMessage",material:"Text message",kitkat:"Type a message",terminal:"enter message…",simple:"Message",glass:"Message",win95:"Type a message",winxp:"Type a message",minecraft:"Type a message or /command",rule34:"Tags: type a message",kde:"Type a message…",macos:"iMessage"}[t];
   save("chat_theme", t); if(curCh === "dm") updateDmBar();
   applyWall();
   restyleAll();
@@ -1241,7 +1241,7 @@ function renderOnline(list){
     a.dataset.dev = e.d && DEVS[e.d] ? DEVS[e.d][0] : ""; paintAv(a, e.n); box.appendChild(a);
   });
   const c = document.createElement("span"); c.className = "ocount";
-  c.textContent = "People Online, " + list.length + " ▾";
+  c.textContent = "Users Online, " + list.length + " ▾";
   box.appendChild(c);
   lastRoster = list; renderPop(); updateDmBar(); renderDMList();
   refreshAvatars();
@@ -17613,6 +17613,43 @@ html:not(.watch) body:not([data-theme="simple"]):not([data-theme="terminal"]):no
   requestAnimationFrame(tick);
 })();
 </script>
+<style id="rule34-css">
+/* =====================================================================
+   34 theme (joke) — pale-green image-board look, blue links, and a thick blue frame on every picture. Fully SFW.
+   ===================================================================== */
+body[data-theme="rule34"]{
+  --bg:#e9f7e7; --side:#d3efd0; --row:#bfe6bb; --input:#ffffff; --line:#7cc576;
+  --text:#1c2a1c; --muted:#4d7a4a; --accent:#006ffa; --me:#006ffa; --peer:#ffffff;
+  --t-me:#ffffff; --t-on:#ffffff; --on-accent:#ffffff;
+  color-scheme:light;
+  font-family:Verdana,Tahoma,"Segoe UI",sans-serif,"Noto Color Emoji","Apple Color Emoji";
+  font-size:13px; --r:4px; --r-sm:3px;
+}
+body[data-theme="rule34"] :is(#hdr,#sb .hdr-sb){background:#aae5a4;border-bottom:2px solid #006ffa}
+body[data-theme="rule34"] .hdr-sb{font-size:0 !important}
+body[data-theme="rule34"] .hdr-sb::before{content:"34 ★";font-size:17px;font-weight:800;color:#006ffa;letter-spacing:1px}
+body[data-theme="rule34"] #sb{background:var(--side);border-right:2px solid #7cc576}
+body[data-theme="rule34"] .row-ch{border-radius:3px}
+body[data-theme="rule34"] .row-ch.active{background:#fff;outline:2px solid #006ffa;outline-offset:-2px}
+body[data-theme="rule34"] .bubble{border-radius:4px;border:1px solid #7cc576;box-shadow:none}
+body[data-theme="rule34"] .me .bubble{border-color:#0050b8}
+body[data-theme="rule34"] .peer .bubble{color:#1c2a1c}
+body[data-theme="rule34"] .lbl{color:#006ffa;font-weight:700}
+body[data-theme="rule34"] .lbl:hover{text-decoration:underline}
+body[data-theme="rule34"] .pill{background:#fff;border:2px solid #7cc576;border-radius:4px}
+body[data-theme="rule34"] .pill:focus-within{border-color:#006ffa}
+body[data-theme="rule34"] :is(#tray,#replybar,#dmbar){background:#aae5a4;border-top:2px solid #006ffa}
+body[data-theme="rule34"] #chtabs button{border-radius:3px}
+body[data-theme="rule34"] #onpop{background:#fff;border:2px solid #006ffa;border-radius:4px}
+/* the blue frame on every picture */
+body[data-theme="rule34"] .img{
+  border-radius:2px;margin-top:6px;
+  border:4px solid #006ffa;
+  box-shadow:0 0 0 2px #fff,0 0 0 4px #0050b8,0 3px 8px rgba(0,0,0,.35);
+  background:#fff;
+}
+body[data-theme="rule34"] .img:hover{border-color:#4d9bff}
+</style>
 <style id="juan-css">
 /* =====================================================================
    Juan — secret easter-egg theme (Ctrl+M). Sits on top of whatever theme is picked.
@@ -17627,11 +17664,9 @@ body.juan-on{
 }
 body.juan-on :is(button,input,select,textarea){font-family:inherit}
 body.juan-on::after{display:none !important}
-/* faces tiled across the whole page, never blocks clicks */
-body.juan-on::before{
-  content:"";position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.07;
-  background:url(assets/juan/juan2.jpg) 0 0/110px auto repeat;
-}
+/* background: full-brightness little squares of Juan behind everything */
+body.juan-on #main{background:#1b1208 url(assets/juan/juan_tile.jpg) 0 0/72px 72px repeat}
+body.juan-on #box,body.juan-on #home{text-shadow:0 1px 3px rgba(0,0,0,.95),0 0 2px rgba(0,0,0,.9)}
 body.juan-on #box,body.juan-on #home{background-color:transparent}
 body.juan-on .bubble{border-radius:18px}
 body.juan-on .hdr-sb{font-size:0 !important}
@@ -17642,6 +17677,26 @@ body.juan-on .av-sb.lp{background:url(assets/juan/juan1.jpg) center/cover !impor
 body.juan-on #home .hm-ic img,body.juan-on .tabimg,body.juan-on img.hm{content:url(assets/juan/juan_icon.jpg);object-fit:cover}
 body.juan-on #home .hm-ic.emo{background:url(assets/juan/juan_icon.jpg) center/cover;font-size:0}
 body.juan-on,body.juan-on *{cursor:url(assets/juan/juan_cursor.png) 17 17,auto !important}
+/* spinning apple you can smash (inside joke) */
+#juan-apple{position:fixed;left:16px;bottom:16px;width:84px;height:96px;z-index:13;display:none;perspective:500px;-webkit-tap-highlight-color:transparent;user-select:none}
+body.juan-on #juan-apple{display:block}
+#juan-apple img{position:absolute;pointer-events:none;-webkit-user-drag:none}
+#juan-apple .ap{left:0;bottom:0;width:100%;filter:drop-shadow(0 6px 6px rgba(0,0,0,.5));animation:juan-spin 2.2s linear infinite}
+#juan-apple .sm{display:none;left:-22px;bottom:-4px;width:130px;filter:drop-shadow(0 4px 5px rgba(0,0,0,.5))}
+#juan-apple .fist{display:none;left:-6px;bottom:0;width:96px;transform-origin:50% 100%}
+#juan-apple.smashed .ap{display:none}
+#juan-apple.smashed .sm{display:block;animation:juan-splat .25s ease-out}
+#juan-apple.smashing .fist{display:block;animation:juan-punch .5s ease-in forwards}
+#juan-apple.respawn .ap{animation:juan-spin 2.2s linear infinite,juan-drop .5s cubic-bezier(.3,1.5,.5,1)}
+#juan-apple .dur{position:absolute;left:50%;bottom:100%;transform:translateX(-50%);white-space:nowrap;pointer-events:none;opacity:0;
+  background:#fff;color:#1b1208;font:800 16px "Comic Sans MS",cursive,sans-serif;padding:5px 12px;border-radius:14px;border:2px solid #1b1208}
+#juan-apple .dur.go{animation:juan-dur 1.3s ease-out forwards}
+body.juan-on #juan-apple,body.juan-on #juan-apple *{cursor:url(assets/juan/fist_cursor.png) 26 26,pointer !important}
+@keyframes juan-spin{to{transform:rotateY(360deg)}}
+@keyframes juan-punch{0%{transform:translateY(-150px) rotate(-10deg);opacity:1}55%{transform:translateY(-6px) rotate(0)}70%{transform:translateY(-6px);opacity:1}100%{transform:translateY(-6px);opacity:0}}
+@keyframes juan-splat{0%{transform:scale(.5,1.4)}60%{transform:scale(1.15,.8)}100%{transform:scale(1)}}
+@keyframes juan-drop{0%{transform:translateY(-220px) rotateY(0)}100%{transform:translateY(0) rotateY(360deg)}}
+@keyframes juan-dur{0%{opacity:0;transform:translate(-50%,10px) scale(.6)}15%{opacity:1;transform:translate(-50%,-4px) scale(1.1)}30%{transform:translate(-50%,-4px) scale(1)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-26px)}}
 /* Juan peeking up from the bottom corner */
 #juan-peek{position:fixed;right:14px;bottom:-6px;width:84px;height:84px;border-radius:50% 50% 0 0;z-index:12;pointer-events:none;
   background:url(assets/juan/juan1.jpg) center 30%/cover;border:3px solid #ffb020;border-bottom:0;display:none;transform:translateY(46%);animation:juan-peek 5s ease-in-out infinite}
@@ -17655,6 +17710,7 @@ body.juan-on #juan-peek{display:block}
 @keyframes juan-wob{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(4deg)}}
 </style>
 <div id="juan-peek"></div>
+<div id="juan-apple" title=""><img class="ap" src="assets/juan/apple.png" alt=""><img class="sm" src="assets/juan/apple_smashed.png" alt=""><img class="fist" src="assets/juan/fist.png" alt=""><span class="dur">dur dur</span></div>
 <div id="juan-toast"><i></i><span></span></div>
 <script>
 /* Secret: Ctrl+M toggles the Juan theme (remembered on this device) */
@@ -17678,6 +17734,27 @@ body.juan-on #juan-peek{display:block}
     }
   },true);
   if(stored()) apply(true,false);
+})();
+
+/* smash the apple */
+(function(){
+  var el=document.getElementById("juan-apple"), dur=el.querySelector(".dur"), busy=false;
+  var snd=new Audio("assets/juan/splat.mp3"); snd.preload="auto";
+  function splat(){ try{ snd.currentTime=0; var p=snd.play(); if(p&&p.catch) p.catch(function(){}); }catch(e){} }
+  function smash(e){
+    e.preventDefault(); e.stopPropagation();
+    if(busy) return; busy=true;
+    el.classList.add("smashing");
+    setTimeout(function(){
+      el.classList.add("smashed"); splat();
+      dur.classList.remove("go"); void dur.offsetWidth; dur.classList.add("go");
+    },230);
+    setTimeout(function(){
+      el.classList.remove("smashing","smashed"); el.classList.add("respawn");
+      setTimeout(function(){ el.classList.remove("respawn"); busy=false; },520);
+    },2300);
+  }
+  el.addEventListener("click",smash);
 })();
 </script>
 </body>
