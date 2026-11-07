@@ -777,7 +777,7 @@ html.watch .arrow{display:none !important}
 html.watch #watch-note.on{display:block}
 </style>
 </head>
-<body data-theme="imessage">
+<body data-theme="gdocs">
 <div id="autoload" role="status" aria-live="polite"><div class="al-card"><div class="al-spin"></div><b>Auto loading…</b><span id="al-sub">Signing you in</span><button id="al-skip" type="button">Go to login screen instead</button></div></div>
 
 <div id="gate">
@@ -794,7 +794,7 @@ html.watch #watch-note.on{display:block}
     <a class="goback" href="https://docs.google.com/document/d/1oa90mU-jYczqySulirTvHqqNWTSaNwPGnnArgBdVGrs/edit?tab=t.pqncc0vmsgzp" rel="noopener">← Go back</a>
   </div>
     <div id="gver">Version 3.0</div>
-  <label class="fld" id="g-themefld"><span>Themes</span><select id="g-theme"><option value="imessage">iMessage</option><option value="ios6">iOS 6</option><option value="discord">Discord</option><option value="whatsapp">WhatsApp</option><option value="tiktok">TikTok</option><option value="roblox">Roblox</option><option value="instagram">Instagram</option><option value="twitter">Twitter</option><option value="material">Android 17 (Material 3 Expressive)</option><option value="kde">KDE Plasma (Breeze)</option><option value="kitkat">Android 4.4 KitKat</option><option value="terminal">Terminal</option><option value="simple">Simple</option><option value="glass">Liquid Glass</option><option value="macos">macOS</option><option value="win95">Windows 95</option><option value="winxp">Windows XP</option><option value="minecraft">Minecraft</option><option value="rule34">34 theme</option></select></label>
+  <label class="fld" id="g-themefld"><span>Themes</span><select id="g-theme"><option value="imessage">iMessage</option><option value="ios6">iOS 6</option><option value="discord">Discord</option><option value="whatsapp">WhatsApp</option><option value="tiktok">TikTok</option><option value="roblox">Roblox</option><option value="instagram">Instagram</option><option value="twitter">Twitter</option><option value="material">Android 17 (Material 3 Expressive)</option><option value="kde">KDE Plasma (Breeze)</option><option value="kitkat">Android 4.4 KitKat</option><option value="terminal">Terminal</option><option value="simple">Simple</option><option value="glass">Liquid Glass</option><option value="macos">macOS</option><option value="win95">Windows 95</option><option value="winxp">Windows XP</option><option value="minecraft">Minecraft</option><option value="rule34">34 theme</option><option value="gdocs">Google Docs</option></select></label>
 </div>
 
 <div id="sb">
@@ -839,7 +839,7 @@ html.watch #watch-note.on{display:block}
         <div class="seg" id="cm-seg" role="group" aria-label="Color mode"><button type="button" id="cm-light" data-m="light">☀️ Light mode</button><button type="button" id="cm-dark" data-m="dark">🌙 Dark mode</button><button type="button" id="cm-auto" data-m="auto">Auto</button></div>
         <div class="xnote" style="font-size:12px;opacity:.7;line-height:1.4">Switches themes that have both a light and a dark look. Auto follows your device. Themes that only come in one look (like Terminal) stay as they are.</div>
         <label>Theme</label>
-        <select id="theme"><option value="imessage">iMessage</option><option value="ios6">iOS 6</option><option value="discord">Discord</option><option value="whatsapp">WhatsApp</option><option value="tiktok">TikTok</option><option value="roblox">Roblox</option><option value="instagram">Instagram</option><option value="twitter">Twitter</option><option value="material">Android 17 (Material 3 Expressive)</option><option value="kde">KDE Plasma (Breeze)</option><option value="kitkat">Android 4.4 KitKat</option><option value="terminal">Terminal</option><option value="simple">Simple</option><option value="glass">Liquid Glass</option><option value="macos">macOS</option><option value="win95">Windows 95</option><option value="winxp">Windows XP</option><option value="minecraft">Minecraft</option><option value="rule34">34 theme</option></select>
+        <select id="theme"><option value="imessage">iMessage</option><option value="ios6">iOS 6</option><option value="discord">Discord</option><option value="whatsapp">WhatsApp</option><option value="tiktok">TikTok</option><option value="roblox">Roblox</option><option value="instagram">Instagram</option><option value="twitter">Twitter</option><option value="material">Android 17 (Material 3 Expressive)</option><option value="kde">KDE Plasma (Breeze)</option><option value="kitkat">Android 4.4 KitKat</option><option value="terminal">Terminal</option><option value="simple">Simple</option><option value="glass">Liquid Glass</option><option value="macos">macOS</option><option value="win95">Windows 95</option><option value="winxp">Windows XP</option><option value="minecraft">Minecraft</option><option value="rule34">34 theme</option><option value="gdocs">Google Docs</option></select>
         <label>Wallpaper &amp; accent color (also tints top bar, message bar &amp; left bar)</label><input type="color" id="wcol" value="#000000">
         <label>Wallpaper image (syncs to your other devices)</label>
         <div class="stg-row"><button id="wimg" type="button" class="btn">Choose image</button><button id="wreset" type="button" class="btn alt">Reset wallpaper</button><input type="file" id="wfile" accept="image/*" style="display:none"></div>
@@ -870,6 +870,7 @@ html.watch #watch-note.on{display:block}
       </div>
       <div class="stg-card"><h3>🧩 Layout</h3>
         <label class="chk"><input type="checkbox" id="hh">Hide top bar</label>
+        <label class="chk"><input type="checkbox" id="gdbar" checked>Show the Google Docs top bar (Google Docs theme only)</label>
         <label class="chk" for="hdrpos" style="gap:10px;flex-wrap:wrap">Top bar position <select id="hdrpos" style="margin-left:auto;background:var(--row);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:5px 8px;font:inherit"><option value="top">Top (default)</option><option value="left">Left</option><option value="right">Right</option><option value="bottom">Bottom</option></select></label>
         <label class="chk"><input type="checkbox" id="hs">Show messages sidebar</label>
         <div class="stg-note">The sidebar is off by default. Turn it on to keep your channels, chats and who's online on the left.</div>
@@ -931,9 +932,9 @@ let usr = "User", peer = null, conns = [], isHost = false, logs = [];
 /* private DM state */
 let dmWith = "", dmNm = "", chipT = null;
 let seen = {}; try { seen = JSON.parse(load("dm_seen", "{}")) || {}; } catch(e){ seen = {}; }
-const PH = {discord:"Message #purebred-chat",whatsapp:"Type a message",tiktok:"Send a message...",roblox:"To chat click here or press / key",instagram:"Message...",twitter:"Start a new message",imessage:"iMessage",ios6:"iMessage",material:"Text message",kitkat:"Type a message",terminal:"enter message…",simple:"Message",glass:"Message",win95:"Type a message",winxp:"Type a message",minecraft:"Type a message or /command",rule34:"Tags: type a message",kde:"Type a message…",macos:"iMessage"};
-const THEMES = ["imessage","ios6","discord","whatsapp","tiktok","roblox","instagram","twitter","material","kde","kitkat","terminal","simple","glass","win95","winxp","minecraft","rule34","macos"];
-const CHNAME = {discord:"# purebred-chat",whatsapp:"WhatsApp Group",tiktok:"TikTok Inbox",roblox:"Roblox Chat",instagram:"Instagram Direct",twitter:"Twitter Messages",imessage:"iMessage Channel",ios6:"Messages",material:"Messages",kitkat:"Hangouts",terminal:"/dev/purebred",simple:"Messages",glass:"Messages",win95:"Messages",winxp:"Messenger",minecraft:"Minecraft Chat",rule34:"34 Chat",kde:"Konversation",macos:"Messages"};
+const PH = {discord:"Message #purebred-chat",whatsapp:"Type a message",tiktok:"Send a message...",roblox:"To chat click here or press / key",instagram:"Message...",twitter:"Start a new message",imessage:"iMessage",ios6:"iMessage",material:"Text message",kitkat:"Type a message",terminal:"enter message…",simple:"Message",glass:"Message",win95:"Type a message",winxp:"Type a message",minecraft:"Type a message or /command",rule34:"Tags: type a message",gdocs:"Type @ to insert",kde:"Type a message…",macos:"iMessage"};
+const THEMES = ["imessage","ios6","discord","whatsapp","tiktok","roblox","instagram","twitter","material","kde","kitkat","terminal","simple","glass","win95","winxp","minecraft","rule34","gdocs","macos"];
+const CHNAME = {discord:"# purebred-chat",whatsapp:"WhatsApp Group",tiktok:"TikTok Inbox",roblox:"Roblox Chat",instagram:"Instagram Direct",twitter:"Twitter Messages",imessage:"iMessage Channel",ios6:"Messages",material:"Messages",kitkat:"Hangouts",terminal:"/dev/purebred",simple:"Messages",glass:"Messages",win95:"Messages",winxp:"Messenger",minecraft:"Minecraft Chat",rule34:"34 Chat",gdocs:"Google Docs",kde:"Konversation",macos:"Messages"};
 let draft = null, stgOpen = false, pvLoaded = false, pvq = 0;
 const shownKeys = new Set();
 let groups = {};
@@ -986,11 +987,11 @@ const myDevice = detectDevice();
 
 /* ---------- theme ---------- */
 function setTheme(t){
-  if(!["imessage","ios6","discord","whatsapp","tiktok","roblox","instagram","twitter","material","kde","kitkat","terminal","simple","glass","win95","winxp","minecraft","rule34","macos"].includes(t)) t = "imessage";
+  if(!["imessage","ios6","discord","whatsapp","tiktok","roblox","instagram","twitter","material","kde","kitkat","terminal","simple","glass","win95","winxp","minecraft","rule34","gdocs","macos"].includes(t)) t = "gdocs";
   document.body.dataset.theme = t;
   $("theme").value = t; $("g-theme").value = t;
-  $("chname").textContent = {discord:"# purebred-chat",whatsapp:"WhatsApp Group",tiktok:"TikTok Inbox",roblox:"Roblox Chat",instagram:"Instagram Direct",twitter:"Twitter Messages",imessage:"iMessage Channel",ios6:"Messages",material:"Messages",kitkat:"Hangouts",terminal:"/dev/purebred",simple:"Messages",glass:"Messages",win95:"Messages",winxp:"Messenger",minecraft:"Minecraft Chat",rule34:"34 Chat",kde:"Konversation",macos:"Messages"}[t];
-  $("inp").placeholder = {discord:"Message #purebred-chat",whatsapp:"Type a message",tiktok:"Send a message...",roblox:"To chat click here or press / key",instagram:"Message...",twitter:"Start a new message",imessage:"iMessage",ios6:"iMessage",material:"Text message",kitkat:"Type a message",terminal:"enter message…",simple:"Message",glass:"Message",win95:"Type a message",winxp:"Type a message",minecraft:"Type a message or /command",rule34:"Tags: type a message",kde:"Type a message…",macos:"iMessage"}[t];
+  $("chname").textContent = {discord:"# purebred-chat",whatsapp:"WhatsApp Group",tiktok:"TikTok Inbox",roblox:"Roblox Chat",instagram:"Instagram Direct",twitter:"Twitter Messages",imessage:"iMessage Channel",ios6:"Messages",material:"Messages",kitkat:"Hangouts",terminal:"/dev/purebred",simple:"Messages",glass:"Messages",win95:"Messages",winxp:"Messenger",minecraft:"Minecraft Chat",rule34:"34 Chat",gdocs:"Google Docs",kde:"Konversation",macos:"Messages"}[t];
+  $("inp").placeholder = {discord:"Message #purebred-chat",whatsapp:"Type a message",tiktok:"Send a message...",roblox:"To chat click here or press / key",instagram:"Message...",twitter:"Start a new message",imessage:"iMessage",ios6:"iMessage",material:"Text message",kitkat:"Type a message",terminal:"enter message…",simple:"Message",glass:"Message",win95:"Type a message",winxp:"Type a message",minecraft:"Type a message or /command",rule34:"Tags: type a message",gdocs:"Type @ to insert",kde:"Type a message…",macos:"iMessage"}[t];
   save("chat_theme", t); if(curCh === "dm") updateDmBar();
   applyWall();
   restyleAll();
@@ -1275,7 +1276,7 @@ window.addEventListener("load", () => {
   try { const c = JSON.parse(load("chat_avatars", "{}")); Object.keys(c).forEach(k => { if(okAv(c[k])) avatars[k] = c[k]; }); } catch(e){}
   if(myAvatar) avatars[usr] = myAvatar;
   $("hi").value = usr; $("g-name").value = usr === "User" ? "" : usr; updateYou();
-  setTheme(load("chat_theme", "imessage")); applyWall(); wallBigLoad(); applyBars(); refreshAvatars();
+  setTheme(load("chat_theme", "gdocs")); applyWall(); wallBigLoad(); applyBars(); refreshAvatars();
   myBc = okBc(load("chat_bc", "")); myBi = okBi(load("chat_bi", ""));
   try { const c = JSON.parse(load("chat_bstyle", "{}")); Object.keys(c).forEach(k => { if(okUid(k) && c[k] && typeof c[k] === "object") bstyle[k] = { bc: okBc(c[k].bc), bi: okBi(c[k].bi), v: +c[k].v || 0 }; }); } catch(e){}
   bstyle[uid] = { bc: myBc, bi: myBi, v: +load("chat_bv", "0") || 0 };
@@ -3845,13 +3846,13 @@ label.plus.open{transform:rotate(45deg)}
     const o=cleanPrefs(d.p,ts); if(!o) return; prefsDB[l]=o; persistPrefs();
   }
   let pts=+load("pb_pts","0")||0, lastJSON=null;
-  const collectPrefs=()=>({th:load("chat_theme","imessage"),wk:load("wall_kind","none"),wc:load("wall_color","#000000"),wd:load("wall_dim","30"),
+  const collectPrefs=()=>({th:load("chat_theme","gdocs"),wk:load("wall_kind","none"),wc:load("wall_color","#000000"),wd:load("wall_dim","30"),
     wi:load("wall_kind","none")==="image"&&/^data:/.test(load("wall_img",""))?load("wall_img",""):"",wic:load("wall_img_col",""),hh:load("hide_hdr","0")==="1",hs:load("hide_sb","1")==="1",
     ft:myFont||"",bc:myBc||"",bi:myBi||"",av:myAvatar||""});
   const sigStr=v=>v?(v.length+":"+v.slice(0,48)+v.slice(-48)):"";
   const prefsSig=()=>{                          // cheap "did my look change?" fingerprint (no multi-MB JSON every 2 s)
     const wk=load("wall_kind","none"), wi=wk==="image"?load("wall_img",""):"";
-    return [load("chat_theme","imessage"),wk,load("wall_color","#000000"),load("wall_dim","30"),/^data:/.test(wi)?sigStr(wi):"",load("wall_img_col",""),
+    return [load("chat_theme","gdocs"),wk,load("wall_color","#000000"),load("wall_dim","30"),/^data:/.test(wi)?sigStr(wi):"",load("wall_img_col",""),
       load("hide_hdr","0"),load("hide_sb","1"),myFont||"",myBc||"",sigStr(myBi),sigStr(myAvatar)].join("|");
   };
   function pushPrefs(){
@@ -4172,7 +4173,7 @@ label.plus.open{transform:rotate(45deg)}
     myFont=""; myAvatar=""; myBc=""; myBi=""; myPwH=""; pts=0; lastJSON=null; window.__pbResync=false;
     bstyle[uid]={bc:"",bi:"",v:0};
     try{ $("font").value=""; $("inp").style.fontFamily=""; $("bcol").value="#0a84ff"; }catch(e){}
-    try{ setTheme("imessage"); applyWall(); applyBars(); refreshAvatars(); }catch(e){}
+    try{ setTheme("gdocs"); applyWall(); applyBars(); refreshAvatars(); }catch(e){}
   }
   $("g-go").onclick=()=>{
     if($("g-code").value.trim().toLowerCase()!==ROOM_CODE){ origGo(); return; }
@@ -12719,6 +12720,7 @@ body.in-home #home{display:flex}
   if(window.__pbTabs) try{ window.__pbTabs(); }catch(e){}
   const view = document.createElement("div"); view.id = "home";
   view.innerHTML =
+    '<div class="hm-page">' +
     '<div class="hm-deco hm-curve"></div><div class="hm-deco hm-curve2"></div>' +
     '<svg class="hm-deco hm-tri" viewBox="0 0 100 100" aria-hidden="true"><polygon points="14,14 88,50 14,86" fill="currentColor" stroke="currentColor" stroke-width="16" stroke-linejoin="round"/></svg>' +
     '<svg class="hm-deco hm-scal" viewBox="0 0 100 100" aria-hidden="true"><path id="hm-scalp" fill="currentColor"/></svg>' +
@@ -12726,7 +12728,7 @@ body.in-home #home{display:flex}
     '<img class="hm-mascot" alt="" draggable="false">' +
     '<div class="hm-banner">- Unification Initiation -</div>' +
     '<div class="hm-hint">Owner edit mode: tap an icon to change it, ◀ ▶ to move, ✕ to remove, or add a new one.</div>' +
-    '<div class="hm-grid"></div></div><div class="hm-toast" id="hm-toast"></div>' +
+    '<div class="hm-grid"></div></div></div><div class="hm-toast" id="hm-toast"></div>' +
     '<div class="hm-ed" id="hm-ed"><button type="button" id="hm-reset" style="display:none">↺ Reset</button><button type="button" id="hm-edit">✏️ Edit home</button></div>';
   $$("box").after(view);
   /* scalloped circle */
@@ -17704,7 +17706,8 @@ body.juan-on #juan-peek{display:block}
 #juan-toast{position:fixed;top:18px;left:50%;transform:translate(-50%,-140%);z-index:99999;pointer-events:none;
   background:#ffb020;color:#1b1208;font:800 15px "Comic Sans MS",cursive,sans-serif;padding:10px 16px;border-radius:999px;
   display:flex;align-items:center;gap:10px;box-shadow:0 8px 24px rgba(0,0,0,.45);transition:transform .35s cubic-bezier(.2,1.4,.4,1)}
-#juan-toast.show{transform:translate(-50%,0)}
+#juan-toast{opacity:0}
+#juan-toast.show{transform:translate(-50%,0);opacity:1}
 #juan-toast i{width:30px;height:30px;border-radius:50%;background:url(assets/juan/juan1.jpg) center 30%/cover;border:2px solid #1b1208}
 @keyframes juan-peek{0%,100%{transform:translateY(46%)}50%{transform:translateY(8%)}}
 @keyframes juan-wob{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(4deg)}}
@@ -17755,6 +17758,396 @@ body.juan-on #juan-peek{display:block}
     },2300);
   }
   el.addEventListener("click",smash);
+})();
+</script>
+<style id="gdocs-css">
+/* =====================================================================
+   Google Docs theme — Docs-style toolbar on top, the tab/outline panel on the left, the chat as a white page.
+   ===================================================================== */
+body[data-theme="gdocs"]{
+  --bg:#f9fbfd; --side:#f9fbfd; --row:#e9eef6; --input:#ffffff; --line:#dadce0;
+  --text:#1f1f1f; --muted:#5f6368; --accent:#0b57d0; --me:transparent; --peer:transparent;
+  --t-me:#1f1f1f; --t-on:#ffffff; --on-accent:#ffffff; --r:8px; --r-sm:6px; --hpw:176px;
+  color-scheme:light;
+  font-family:"Google Sans",Roboto,"Segoe UI",Arial,sans-serif,"Noto Color Emoji","Apple Color Emoji";
+  font-size:14px;
+}
+body[data-theme="gdocs"].gd-bar-on{padding-top:var(--gdh,112px);box-sizing:border-box}
+body[data-theme="gdocs"] #main{background:#f9fbfd}
+/* the left panel (what used to be the top bar) = Docs "Tabs" panel */
+body[data-theme="gdocs"] #hdr{background:#f9fbfd !important;border-right:1px solid #dadce0 !important;box-shadow:none !important}
+body[data-theme="gdocs"] #chtabs{background:transparent !important}
+body[data-theme="gdocs"] #chtabs button{background:transparent;color:#1f1f1f;border-radius:999px;font-weight:500}
+body[data-theme="gdocs"] #chtabs button:hover{background:#e9eef6}
+body[data-theme="gdocs"] #chtabs button.on{background:#d3e3fd;color:#041e49}
+body[data-theme="gdocs"] #online{background:#fff;border:1px solid #dadce0;color:#1f1f1f;border-radius:999px}
+body[data-theme="gdocs"] #onpop{background:#fff;border:1px solid #dadce0;border-radius:8px;box-shadow:0 2px 6px 2px rgba(60,64,67,.15)}
+body[data-theme="gdocs"] #sb{background:#f9fbfd;border-right:1px solid #dadce0}
+body[data-theme="gdocs"] .hdr-sb{font-size:0 !important}
+body[data-theme="gdocs"] .hdr-sb::before{content:"Document tabs";font-size:14px;font-weight:500;color:#1f1f1f}
+body[data-theme="gdocs"] .row-ch{border-radius:999px;border-left:0 !important}
+body[data-theme="gdocs"] .row-ch.active{background:#d3e3fd;color:#041e49}
+/* the white page */
+body[data-theme="gdocs"] #box{
+  gap:0;
+  padding:32px max(16px,calc(50% - 408px + 72px)) 24px;
+  background-color:#f9fbfd;
+  background-image:linear-gradient(to right,transparent 0 calc(50% - min(408px,50%) - 1px),#c7c7c7 0 calc(50% - min(408px,50%)),#fff 0 calc(50% + min(408px,50%)),#c7c7c7 0 calc(50% + min(408px,50%) + 1px),transparent 0);
+  zoom:var(--gdz,1);
+}
+body[data-theme="gdocs"] .msg,body[data-theme="gdocs"] .msg.me{align-self:stretch;max-width:100%;flex-direction:row;margin:0 0 6px}
+body[data-theme="gdocs"] .av{display:none !important}
+body[data-theme="gdocs"] .col,body[data-theme="gdocs"] .me .col{align-items:flex-start;max-width:100%}
+body[data-theme="gdocs"] .me .bwrap{flex-direction:row}
+body[data-theme="gdocs"] .me .rx{justify-content:flex-start}
+body[data-theme="gdocs"] .lbl{font:700 9pt Arial,sans-serif;color:#5f6368;margin:8px 0 0}
+body[data-theme="gdocs"] .me .lbl,body[data-theme="gdocs"] .msg:not(.first) .lbl{display:none}
+body[data-theme="gdocs"] .bubble,body[data-theme="gdocs"] .me .bubble{
+  background:transparent !important;color:#000 !important;border:0 !important;box-shadow:none !important;border-radius:0 !important;padding:0 !important;
+  font-family:Arial,"Helvetica Neue",sans-serif !important;font-size:var(--gdfs,11pt) !important;line-height:1.5 !important;
+}
+body[data-theme="gdocs"] .bubble::before,body[data-theme="gdocs"] .bubble::after{display:none}
+body[data-theme="gdocs"] .tsep{display:block;align-self:flex-start;margin:14px 0 2px;font:500 9pt Arial,sans-serif;color:#80868b}
+body[data-theme="gdocs"] .msg.sys{color:#80868b;font:italic 10pt Arial,sans-serif}
+body[data-theme="gdocs"] .img{border-radius:0;border:1px solid #dadce0;margin:4px 0}
+body[data-theme="gdocs"] .quote{background:#f1f3f4;border-left:3px solid #1a73e8;border-radius:0;color:#3c4043}
+body[data-theme="gdocs"] .rx .chip{background:#f1f3f4;border:1px solid #dadce0;border-radius:999px}
+body[data-theme="gdocs"] .act{background:#fff;border:1px solid #dadce0;border-radius:8px;box-shadow:0 1px 3px rgba(60,64,67,.3)}
+/* message box */
+body[data-theme="gdocs"] :is(#tray,#replybar,#dmbar){background:#f9fbfd;border-top:1px solid #dadce0;color:#1f1f1f}
+body[data-theme="gdocs"] .pill{background:#fff;border:1px solid #c4c7c5;border-radius:999px;box-shadow:none}
+body[data-theme="gdocs"] .pill:focus-within{border-color:#0b57d0;box-shadow:0 0 0 1px #0b57d0}
+body[data-theme="gdocs"] #inp{color:#1f1f1f;font-family:Arial,sans-serif}
+body[data-theme="gdocs"] #sendbtn{background:#0b57d0;color:#fff;border-radius:50%}
+
+/* ---------- the Docs top bar ---------- */
+#gd-bar{display:none}
+body[data-theme="gdocs"].gd-bar-on #gd-bar{display:block;position:fixed;top:0;left:0;right:0;z-index:50;background:#f9fbfd;font-family:"Google Sans",Roboto,Arial,sans-serif;color:#1f1f1f;user-select:none;-webkit-user-select:none}
+#gd-bar .gd-r1{display:flex;align-items:flex-start;gap:6px;padding:8px 16px 0 12px;height:56px;box-sizing:border-box}
+#gd-bar .gd-logo{width:40px;height:40px;display:flex;align-items:center;justify-content:center;flex:none;margin-top:0}
+#gd-bar .gd-mid{flex:1 1 auto;min-width:0}
+#gd-bar .gd-tr{display:flex;align-items:center;gap:2px;height:26px}
+#gd-bar #gd-title{font-size:18px;line-height:24px;padding:0 6px;border-radius:4px;border:1px solid transparent;outline:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:46vw;cursor:text}
+#gd-bar #gd-title:hover{border-color:#747775}
+#gd-bar #gd-title:focus{border-color:#0b57d0;box-shadow:0 0 0 1px #0b57d0}
+#gd-bar .gd-ib{width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;border:0;background:transparent;cursor:pointer;padding:0;color:#444746;flex:none}
+#gd-bar .gd-ib:hover{background:rgba(68,71,70,.08)}
+#gd-bar .gd-ib svg,#gd-bar .gd-tb svg{width:20px;height:20px;fill:currentColor}
+#gd-bar .gd-menus{display:flex;align-items:center;height:26px;overflow:visible;margin-top:1px}
+#gd-bar .gd-m{font:400 13px/20px "Google Sans",Roboto,Arial,sans-serif;color:#1f1f1f;background:transparent;border:0;border-radius:4px;padding:2px 7px;cursor:pointer}
+#gd-bar .gd-m:hover,#gd-bar .gd-m.open{background:#e1e5ea}
+#gd-bar .gd-right{margin-left:auto;display:flex;align-items:center;gap:8px;height:40px;flex:none}
+#gd-bar .gd-share{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 20px 0 14px;border-radius:999px;background:#c2e7ff;color:#001d35;border:0;font:500 14px "Google Sans",Roboto,Arial,sans-serif;cursor:pointer}
+#gd-bar .gd-share:hover{background:#b3dcf6;box-shadow:0 1px 2px rgba(60,64,67,.3)}
+#gd-bar .gd-share svg{width:18px;height:18px;fill:currentColor}
+#gd-bar .gd-av{width:32px;height:32px;border-radius:50%;background:#7b1fa2;color:#fff;display:flex;align-items:center;justify-content:center;font:500 15px Roboto,Arial,sans-serif;flex:none;border:2px solid #fff;box-shadow:0 0 0 1px #dadce0}
+#gd-bar .gd-tbwrap{padding:0 16px 8px 12px;height:56px;box-sizing:border-box;display:flex;align-items:center}
+#gd-bar .gd-tb{flex:1;min-width:0;height:40px;background:#edf2fa;border-radius:999px;display:flex;align-items:center;gap:2px;padding:0 8px;overflow-x:auto;scrollbar-width:none}
+#gd-bar .gd-tb::-webkit-scrollbar{display:none}
+#gd-bar .gd-tb .gd-ib{border-radius:4px;width:30px;height:30px}
+#gd-bar .gd-sep{width:1px;height:20px;background:#c7c7c7;margin:0 6px;flex:none}
+#gd-bar .gd-dd{display:inline-flex;align-items:center;gap:2px;height:30px;padding:0 6px 0 8px;border-radius:4px;border:0;background:transparent;font:400 13px "Google Sans",Roboto,Arial,sans-serif;color:#1f1f1f;cursor:pointer;flex:none;white-space:nowrap}
+#gd-bar .gd-dd:hover{background:rgba(68,71,70,.08)}
+#gd-bar .gd-dd svg{width:18px;height:18px}
+#gd-bar .gd-fs{display:inline-flex;align-items:center;flex:none}
+#gd-bar .gd-fs .num{min-width:30px;text-align:center;height:22px;line-height:22px;border:1px solid #747775;border-radius:4px;font:13px Arial,sans-serif;background:#fff}
+#gd-bar .gd-edit{margin-left:auto;display:inline-flex;align-items:center;gap:4px;padding:0 6px 0 8px;height:30px;border-radius:4px;background:transparent;border:0;font:400 13px "Google Sans",Roboto,Arial,sans-serif;color:#1f1f1f;cursor:default;flex:none}
+#gd-bar .gd-edit svg{width:18px;height:18px}
+#gd-bar .gd-fmt{font:700 15px Arial,sans-serif;width:30px;height:30px}
+#gd-menu{position:fixed;z-index:60;min-width:240px;background:#fff;border:1px solid #dadce0;border-radius:4px;box-shadow:0 2px 6px 2px rgba(60,64,67,.15),0 1px 2px rgba(60,64,67,.3);padding:6px 0;display:none;font:400 14px "Google Sans",Roboto,Arial,sans-serif;color:#1f1f1f}
+#gd-menu.on{display:block}
+#gd-menu button{display:flex;width:100%;align-items:center;justify-content:space-between;gap:24px;padding:6px 16px;background:transparent;border:0;text-align:left;font:inherit;color:inherit;cursor:pointer}
+#gd-menu button:hover{background:#f1f3f4}
+#gd-menu button[disabled]{color:#9aa0a6;cursor:default;background:transparent}
+#gd-menu button small{color:#5f6368;font-size:12px}
+#gd-menu hr{border:0;border-top:1px solid #dadce0;margin:6px 0}
+#gd-snack{position:fixed;left:24px;bottom:24px;z-index:70;background:#2d2e30;color:#f1f3f4;font:14px Roboto,Arial,sans-serif;padding:12px 18px;border-radius:4px;box-shadow:0 3px 5px -1px rgba(0,0,0,.2),0 6px 10px rgba(0,0,0,.14);opacity:0;pointer-events:none;transition:opacity .2s;max-width:80vw}
+#gd-snack.on{opacity:1}
+@media(max-width:700px){#gd-bar #gd-title{max-width:30vw}#gd-bar .gd-share span{display:none}#gd-bar .gd-share{padding:0 12px}}
+@media print{#gd-bar,#gd-menu,#gd-snack{display:none !important}}
+</style>
+
+<style id="gdocs-css2">
+/* =====================================================================
+   Google Docs theme v2 — matches the real Docs window: header, toolbar,
+   "Document tabs" panel, right app rail, grey Homepage "page".
+   ===================================================================== */
+.hm-page{display:contents}
+.gd-back,.gd-th,#gd-rail{display:none}
+body[data-theme="gdocs"]{--hpw:276px}
+body[data-theme="gdocs"] #main{padding-right:56px}
+body[data-theme="gdocs"].gd-bar-on #gd-rail{display:flex;position:fixed;right:0;top:58px;bottom:0;width:56px;flex-direction:column;align-items:center;padding-top:4px;background:#f9fbfd;z-index:51}
+#gd-rail button{width:40px;height:40px;border:0;background:transparent;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-bottom:16px;padding:0}
+#gd-rail button:hover{background:rgba(68,71,70,.08)}
+#gd-rail svg{width:24px;height:24px}
+#gd-rail hr{width:32px;border:0;border-top:1px solid #c7c7c7;margin:-6px 0 23px}
+#gd-rail .gd-plus svg{fill:#444746}
+
+/* header */
+#gd-bar .gd-r1{height:58px;padding:9px 20px 0 20px}
+#gd-bar .gd-logo{width:40px;height:40px;margin-top:-2px;margin-right:6px}
+#gd-bar .gd-logo svg{width:28px;height:38px}
+#gd-bar #gd-title{font-size:18px;line-height:26px;max-width:42vw}
+#gd-bar .gd-tr{height:28px;gap:2px}
+#gd-bar .gd-tr .gd-ib{width:32px;height:32px}
+#gd-bar .gd-saved{font:400 12px "Google Sans",Roboto,Arial,sans-serif;color:#444746;margin-left:2px;white-space:nowrap}
+#gd-bar .gd-menus{height:24px;margin-top:2px;margin-left:-2px}
+#gd-bar .gd-m{font-size:14px;padding:2px 8px}
+#gd-bar .gd-right{height:44px;gap:6px;margin-top:-4px}
+#gd-bar .gd-kami{display:inline-flex;align-items:center;gap:4px;font:700 16px "Google Sans",Roboto,Arial,sans-serif;color:#1f1f1f;cursor:pointer;margin-right:14px;letter-spacing:.2px}
+#gd-bar .gd-kami svg{width:11px;height:11px;fill:#444746;margin-top:-6px}
+#gd-bar .gd-share{height:40px;padding:0 0 0 16px;gap:8px;font-size:14px;overflow:hidden}
+#gd-bar .gd-share svg{width:20px;height:20px}
+#gd-bar .gd-share .gd-caret{display:inline-flex;align-items:center;justify-content:center;width:34px;height:40px;margin-left:6px;border-left:1px solid rgba(0,29,53,.25)}
+#gd-bar .gd-share .gd-caret svg{width:20px;height:20px}
+#gd-bar .gd-av{width:34px;height:34px;margin-left:8px;border:0}
+/* toolbar */
+#gd-bar .gd-tbwrap{height:54px;padding:4px 72px 0 16px}
+#gd-bar .gd-tb{height:40px;background:#edf2fa;border-radius:20px;gap:0;padding:0 10px 0 14px}
+#gd-bar .gd-tb .gd-ib{width:32px;height:32px;border-radius:4px}
+#gd-bar .gd-tb .gd-ib.gd-on{background:#d3e3fd}
+#gd-bar .gd-tb .gd-mini{width:16px;margin-left:-4px;margin-right:2px}
+#gd-bar .gd-tb .gd-mini svg{width:16px;height:16px}
+#gd-bar .gd-sep{height:20px;margin:0 7px}
+#gd-bar .gd-dd{height:32px}
+#gd-bar .gd-dd.gd-font span{display:inline-block;width:62px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left}
+#gd-bar .gd-fs .num{margin:0 3px;height:24px;line-height:24px;min-width:34px;border-radius:4px}
+#gd-bar .gd-edit{height:32px;padding:0 4px 0 8px;border-radius:4px}
+#gd-bar .gd-edit:hover{background:rgba(68,71,70,.08)}
+
+/* Document tabs panel (the old top bar, on the left) */
+html body[data-theme="gdocs"][data-hp="left"] #hdr{padding:0 12px 12px 16px !important;gap:0 !important;background:#f9fbfd !important;border:0 !important;overflow-y:auto}
+body[data-theme="gdocs"] .gd-back{order:-10;display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;color:#444746;text-decoration:none;flex:none}
+body[data-theme="gdocs"] .gd-back:hover{background:rgba(68,71,70,.08)}
+body[data-theme="gdocs"] .gd-back svg,body[data-theme="gdocs"] .gd-th svg{width:20px;height:20px;fill:currentColor}
+body[data-theme="gdocs"] .gd-th{order:-9;display:flex;align-items:center;justify-content:space-between;height:28px;margin:20px 0 6px 12px;font:500 14px "Google Sans",Roboto,Arial,sans-serif;color:#1f1f1f}
+body[data-theme="gdocs"] .gd-th .gd-ib{width:28px;height:28px;border:0;border-radius:50%;background:transparent;color:#444746;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+body[data-theme="gdocs"] .gd-th .gd-ib:hover{background:rgba(68,71,70,.08)}
+html body[data-theme="gdocs"][data-hp="left"] #hdr-set{order:60;align-self:flex-start !important;margin:10px 0 0 12px !important;opacity:.7}
+html body[data-theme="gdocs"][data-hp="left"] #status{order:61;text-align:left !important;color:#80868b;font-size:12px;margin:4px 0 0 14px !important}
+html body[data-theme="gdocs"][data-hp="left"] #chtabs{background:transparent !important;box-shadow:none !important;padding:0 !important;gap:0 !important;border-radius:0 !important;border:0 !important}
+html body[data-theme="gdocs"][data-hp="left"] #chtabs button{display:flex !important;align-items:center;gap:12px;height:40px;padding:0 14px !important;border-radius:20px !important;background:transparent !important;color:#1f1f1f !important;font:400 14px "Google Sans",Roboto,Arial,sans-serif !important;box-shadow:none !important;border:0 !important;white-space:nowrap}
+html body[data-theme="gdocs"][data-hp="left"] #chtabs button:hover{background:#e9eef6 !important}
+html body[data-theme="gdocs"][data-hp="left"] #chtabs button.on{background-color:#d3e3fd !important;color:#0842a0 !important;font-weight:500 !important;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23444746'%3E%3Cpath d='M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z'/%3E%3C/svg%3E") !important;background-repeat:no-repeat !important;background-position:right 8px center !important;background-size:20px !important}
+html body[data-theme="gdocs"] #chtabs button .tabimg{display:none !important}
+/* emoji + Docs-style names for the built-in tabs */
+html body[data-theme="gdocs"] #chtabs button:is([data-ch=home],[data-ch=main],[data-ch=gal],[data-ch=polls],[data-ch=shame],[data-ch=draw],[data-ch=tier],[data-ch=games],[data-ch=media]){font-size:0 !important}
+html body[data-theme="gdocs"] #chtabs button:is([data-ch=home],[data-ch=main],[data-ch=gal],[data-ch=polls],[data-ch=shame],[data-ch=draw],[data-ch=tier],[data-ch=games],[data-ch=media]) *{display:none !important}
+html body[data-theme="gdocs"] #chtabs button:is([data-ch=home],[data-ch=main],[data-ch=gal],[data-ch=polls],[data-ch=shame],[data-ch=draw],[data-ch=tier],[data-ch=games],[data-ch=media])::before{font-size:18px;line-height:1;width:22px;text-align:center;font-family:"Noto Color Emoji","Apple Color Emoji","Segoe UI Emoji",sans-serif}
+html body[data-theme="gdocs"] #chtabs button:is([data-ch=home],[data-ch=main],[data-ch=gal],[data-ch=polls],[data-ch=shame],[data-ch=draw],[data-ch=tier],[data-ch=games],[data-ch=media])::after{font-size:14px;font-family:"Google Sans",Roboto,Arial,sans-serif}
+#chtabs button[data-ch=home]::before{content:"🏠"} #chtabs button[data-ch=home]::after{content:"Homepage"}
+#chtabs button[data-ch=main]::before{content:"💬"} #chtabs button[data-ch=main]::after{content:"Chat Room"}
+#chtabs button[data-ch=games]::before{content:"🎮"} #chtabs button[data-ch=games]::after{content:"Games"}
+#chtabs button[data-ch=media]::before{content:"🎥"} #chtabs button[data-ch=media]::after{content:"Media"}
+#chtabs button[data-ch=draw]::before{content:"🎨"} #chtabs button[data-ch=draw]::after{content:"Drawing Board"}
+#chtabs button[data-ch=polls]::before{content:"📊"} #chtabs button[data-ch=polls]::after{content:"Polls tab"}
+#chtabs button[data-ch=gal]::before{content:"📸"} #chtabs button[data-ch=gal]::after{content:"Image Gallery"}
+#chtabs button[data-ch=shame]::before{content:"🚨"} #chtabs button[data-ch=shame]::after{content:"Hall of Shame"}
+#chtabs button[data-ch=tier]::before{content:"🏆"} #chtabs button[data-ch=tier]::after{content:"Tier Lists"}
+#chtabs button[data-ch=home]{order:-1}
+
+/* Homepage = the grey doc page */
+body[data-theme="gdocs"] #home{background:#f9fbfd;color:#111;font-family:"Architects Daughter","Itim","Comic Sans MS",cursive;justify-content:flex-start;overflow:hidden auto}
+body[data-theme="gdocs"] #home *{font-family:inherit}
+body[data-theme="gdocs"] .hm-page{display:block;position:relative;width:min(816px,100%);flex:1 0 auto;min-height:100%;overflow:hidden;background:#d2d2d2 url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 816 483%22 preserveAspectRatio=%22none%22%3E%3Cpath fill=%22%239b9b9b%22 d=%22M0,0 L100,0 C173,173 320,220 427,223 C587,227 700,300 816,427 L816,483 L0,483Z%22/%3E%3Crect x=%2260%22 y=%22318%22 width=%22230%22 height=%22200%22 rx=%2246%22 transform=%22rotate%28-14 60 318%29%22 fill=%22%23a2a2a2%22/%3E%3Cpath fill=%22%23d8d8d8%22 d=%22M88.0 247.0L89.8 249.4L91.2 251.8L91.9 254.3L91.8 256.8L90.8 259.1L89.1 261.3L86.9 263.2L84.5 264.9L82.3 266.6L80.4 268.2L79.0 270.0L78.4 272.1L78.3 274.5L78.7 277.1L79.2 280.0L79.5 282.9L79.5 285.8L78.9 288.3L77.5 290.4L75.5 291.9L73.0 292.9L70.1 293.5L67.2 293.8L64.4 294.1L61.9 294.6L59.9 295.5L58.3 296.9L57.0 298.9L56.0 301.4L55.0 304.2L53.8 306.9L52.4 309.3L50.6 311.2L48.4 312.3L45.9 312.7L43.2 312.3L40.4 311.3L37.7 310.1L35.2 309.0L32.8 308.2L30.6 307.9L28.5 308.4L26.4 309.5L24.2 311.1L22.0 313.0L19.6 314.8L17.2 316.2L14.7 316.9L12.2 316.8L9.9 315.8L7.7 314.1L5.8 311.9L4.1 309.5L2.4 307.3L0.8 305.4L-1.0 304.0L-3.1 303.4L-5.5 303.3L-8.1 303.7L-11.0 304.2L-13.9 304.5L-16.8 304.5L-19.3 303.9L-21.4 302.5L-22.9 300.5L-23.9 298.0L-24.5 295.1L-24.8 292.2L-25.1 289.4L-25.6 286.9L-26.5 284.9L-27.9 283.3L-29.9 282.0L-32.4 281.0L-35.2 280.0L-37.9 278.8L-40.3 277.4L-42.2 275.6L-43.3 273.4L-43.7 270.9L-43.3 268.2L-42.3 265.4L-41.1 262.7L-40.0 260.2L-39.2 257.8L-38.9 255.6L-39.4 253.5L-40.5 251.4L-42.1 249.2L-44.0 247.0L-45.8 244.6L-47.2 242.2L-47.9 239.7L-47.8 237.2L-46.8 234.9L-45.1 232.7L-42.9 230.8L-40.5 229.1L-38.3 227.4L-36.4 225.8L-35.0 224.0L-34.4 221.9L-34.3 219.5L-34.7 216.9L-35.2 214.0L-35.5 211.1L-35.5 208.2L-34.9 205.7L-33.5 203.6L-31.5 202.1L-29.0 201.1L-26.1 200.5L-23.2 200.2L-20.4 199.9L-17.9 199.4L-15.9 198.5L-14.3 197.1L-13.0 195.1L-12.0 192.6L-11.0 189.8L-9.8 187.1L-8.4 184.7L-6.6 182.8L-4.4 181.7L-1.9 181.3L0.8 181.7L3.6 182.7L6.3 183.9L8.8 185.0L11.2 185.8L13.4 186.1L15.5 185.6L17.6 184.5L19.8 182.9L22.0 181.0L24.4 179.2L26.8 177.8L29.3 177.1L31.8 177.2L34.1 178.2L36.3 179.9L38.2 182.1L39.9 184.5L41.6 186.7L43.2 188.6L45.0 190.0L47.1 190.6L49.5 190.7L52.1 190.3L55.0 189.8L57.9 189.5L60.8 189.5L63.3 190.1L65.4 191.5L66.9 193.5L67.9 196.0L68.5 198.9L68.8 201.8L69.1 204.6L69.6 207.1L70.5 209.1L71.9 210.7L73.9 212.0L76.4 213.0L79.2 214.0L81.9 215.2L84.3 216.6L86.2 218.4L87.3 220.6L87.7 223.1L87.3 225.8L86.3 228.6L85.1 231.3L84.0 233.8L83.2 236.2L82.9 238.4L83.4 240.5L84.5 242.6L86.1 244.8L88.0 247.0Z%22/%3E%3Ccircle cx=%22250%22 cy=%22250%22 r=%2243%22 fill=%22%23d2d2d2%22/%3E%3Cpolygon points=%22112,108 184,92 168,166%22 fill=%22%23595959%22 stroke=%22%23595959%22 stroke-width=%2230%22 stroke-linejoin=%22round%22/%3E%3C/svg%3E") 0 0/100% 100% no-repeat;box-shadow:0 0 0 1px #c7c7c7}
+body[data-theme="gdocs"] .hm-page::before,body[data-theme="gdocs"] .hm-page::after{content:"";position:absolute;top:2px;width:32px;height:42px;background:url(assets/mascot_logo.png) center/contain no-repeat;filter:grayscale(1) contrast(1.2);z-index:2}
+body[data-theme="gdocs"] .hm-page::before{left:2px}
+body[data-theme="gdocs"] .hm-page::after{right:2px}
+body[data-theme="gdocs"] #home .hm-deco{display:none}
+body[data-theme="gdocs"] #home .hm-wrap{padding:0 0 40px;max-width:816px;width:100%}
+body[data-theme="gdocs"] #home .hm-top{width:291px;max-width:80%;height:48px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;padding:0;border-radius:0 0 24px 24px;background:linear-gradient(#d0d0d0,#9c9c9c);color:#111;font-size:18px;letter-spacing:.3px;box-shadow:0 3px 8px rgba(0,0,0,.18)}
+body[data-theme="gdocs"] #home .hm-mascot{width:100px;margin:24px 0 9px;filter:grayscale(1) contrast(1.15)}
+body[data-theme="gdocs"] #home .hm-banner{width:373px;max-width:92%;height:50px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;padding:0;border-radius:8px;background:linear-gradient(#7d7d7d,#565656);color:#fff;font-size:34px;letter-spacing:.3px;box-shadow:0 3px 6px rgba(0,0,0,.3);white-space:nowrap}
+body[data-theme="gdocs"] #home .hm-grid{max-width:480px;gap:8px 0;margin-top:23px}
+body[data-theme="gdocs"] #home .hm-cell{width:96px}
+body[data-theme="gdocs"] #home .hm-it{font-size:11px;gap:5px;color:#111;line-height:1.15}
+body[data-theme="gdocs"] #home .hm-ic{width:64px;height:64px;box-shadow:0 4px 8px rgba(0,0,0,.35)}
+body[data-theme="gdocs"] #home .hm-ic.emo{font-size:30px}
+@media(max-width:700px){
+  body[data-theme="gdocs"]{--hpw:0px}
+  body[data-theme="gdocs"] #main{padding-right:0}
+  body[data-theme="gdocs"].gd-bar-on #gd-rail{display:none}
+  #gd-bar .gd-saved,#gd-bar .gd-kami{display:none}
+  body[data-theme="gdocs"] #home .hm-banner{font-size:22px;height:42px}
+  body[data-theme="gdocs"] #home .hm-grid{max-width:320px}
+  body[data-theme="gdocs"] #home .hm-cell{width:80px}
+}
+</style>
+<div id="gd-bar" aria-label="Google Docs bar">
+  <div class="gd-r1">
+    <div class="gd-logo"><svg viewBox="0 0 28 38"><path fill="#4285f4" d="M3 0h14l11 11v24a3 3 0 0 1-3 3H3a3 3 0 0 1-3-3V3a3 3 0 0 1 3-3z"/><path fill="#a1c2fa" d="M17 0l11 11H20a3 3 0 0 1-3-3z"/><path fill="#fff" d="M6 19h16v2.4H6zm0 5h16v2.4H6zm0 5h10.5v2.4H6z"/></svg></div>
+    <div class="gd-mid">
+      <div class="gd-tr"><span id="gd-title" contenteditable="true" spellcheck="false">Los Purebreds 3.0</span>
+        <button class="gd-ib" data-gd="verified" title="Document verification"><svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm7 10c0 4.52-2.98 8.69-7 9.93C7.98 19.69 5 15.52 5 11V6.3l7-3.11 7 3.11V11zm-11.59.59L6 13l4 4 8-8-1.41-1.42L10 14.17z"/></svg></button>
+        <button class="gd-ib" data-gd="star" title="Star"><svg viewBox="0 0 24 24"><path d="M22 9.24l-7.19-.62L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27 18.18 21l-1.63-7.03L22 9.24zM12 15.4l-3.76 2.27 1-4.28-3.32-2.88 4.38-.38L12 6.1l1.71 4.04 4.38.38-3.32 2.88 1 4.28L12 15.4z"/></svg></button>
+        <button class="gd-ib" data-gd="move" title="Add shortcut to Drive"><svg viewBox="0 0 24 24"><path d="M19 4H5c-1.11 0-2 .9-2 2v12c0 1.1.89 2 2 2h4v-2H5V8h14v10h-4v2h4c1.1 0 2-.9 2-2V6c0-1.1-.89-2-2-2zm-7 6l-4 4h3v6h2v-6h3l-4-4z"/></svg></button>
+        <button class="gd-ib" data-gd="saved" title="Saved to Drive"><svg viewBox="0 0 24 24"><path d="M19.35 10.04A7.49 7.49 0 0012 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 000 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM10 17l-3.5-3.5 1.41-1.41L10 14.17 15.59 8.58 17 10l-7 7z"/></svg></button><span class="gd-saved">Saved to Drive</span>
+      </div>
+      <div class="gd-menus" id="gd-menus"></div>
+    </div>
+    <div class="gd-right">
+      <a class="gd-kami" data-gd="kami" title="Kami"><svg viewBox="0 0 24 24"><path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg><span>kami</span></a>
+      <button class="gd-ib" data-gd="history" title="Last edit was seconds ago" style="width:40px;height:40px"><svg viewBox="0 0 24 24"><path d="M13 3a9 9 0 00-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0013 21a9 9 0 000-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg></button>
+      <button class="gd-ib" data-gd="comments" title="Open comment history" style="width:40px;height:40px"><svg viewBox="0 0 24 24"><path d="M21 6h-2v9H6v2c0 .55.45 1 1 1h11l4 4V7c0-.55-.45-1-1-1zm-4 6V3c0-.55-.45-1-1-1H3c-.55 0-1 .45-1 1v14l4-4h10c.55 0 1-.45 1-1z"/></svg></button>
+      <button class="gd-share" data-gd="share"><svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg><span>Share</span><i class="gd-caret"><svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg></i></button>
+      <div class="gd-av" id="gd-av">U</div>
+    </div>
+  </div>
+  <div class="gd-tbwrap"><div class="gd-tb" id="gd-tb"></div></div>
+</div>
+<div id="gd-menu"></div>
+<div id="gd-snack"></div>
+<script>
+/* Google Docs theme: left panel + Docs top bar (can be turned off in Settings) */
+(function(){
+  var B=document.body, K_BAR="pb_gd_bar", K_POS="pb_hdr_pos";
+  var $=function(id){return document.getElementById(id);};
+  var bar=$("gd-bar"), menu=$("gd-menu"), snack=$("gd-snack"), st;
+  var P={
+    search:"M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z",
+    undo:"M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z",
+    redo:"M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z",
+    print:"M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z",
+    link:"M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z",
+    comment:"M21.99 4c0-1.1-.89-2-1.99-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4-.01-18zM17 14H7v-2h10v2zm0-3H7V9h10v2zm0-3H7V6h10v2z",
+    image:"M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z",
+    emoji:"M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z",
+    down:"M7 10l5 5 5-5z", pencil:"M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34a.9959.9959 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z",
+    up:"M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z",
+    left:"M15 15H3v2h12v-2zm0-8H3v2h12V7zM3 13h18v-2H3v2zm0 8h18v-2H3v2zM3 3v2h18V3H3z",
+    list:"M4 10.5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5zm0-6c-.83 0-1.5.67-1.5 1.5S3.17 7.5 4 7.5 5.5 6.83 5.5 6 4.83 4.5 4 4.5zm0 12c-.83 0-1.5.68-1.5 1.5s.68 1.5 1.5 1.5 1.5-.68 1.5-1.5-.67-1.5-1.5-1.5zM7 19h14v-2H7v2zm0-6h14v-2H7v2zm0-8v2h14V5H7z",
+    spell:"M12.45 16h2.09L9.43 3H7.57L2.46 16h2.09l1.12-3h5.64l1.14 3zm-6.02-5L8.5 5.48 10.57 11H6.43zm15.16.59l-8.09 8.09L9.83 16l-1.41 1.41 5.09 5.09L23 13l-1.41-1.41z",
+    paint:"M18 4V3c0-.55-.45-1-1-1H5c-.55 0-1 .45-1 1v4c0 .55.45 1 1 1h12c.55 0 1-.45 1-1V6h1v4H9v11c0 .55.45 1 1 1h2c.55 0 1-.45 1-1v-9h8V4h-3z",
+    hl:"M6 14l3 3v5h6v-5l3-3V9H6zm5-12h2v3h-2zM3.5 5.88l1.41-1.41 2.12 2.12L5.62 8zm13.46.71l2.12-2.12 1.41 1.41L18.38 8z",
+    lsp:"M6 7h2.5L5 3.5 1.5 7H4v10H1.5L5 20.5 8.5 17H6V7zm4-2v2h12V5H10zm0 14h12v-2H10v2zm0-6h12v-2H10v2z",
+    check:"M22 7h-9v2h9V7zm0 8h-9v2h9v-2zM5.54 11L2 7.46l1.41-1.41 2.12 2.12 4.24-4.24 1.41 1.41L5.54 11zm0 8L2 15.46l1.41-1.41 2.12 2.12 4.24-4.24 1.41 1.41L5.54 19z",
+    num:"M2 17h2v.5H3v1h1v.5H2v1h3v-4H2v1zm1-9h1V4H2v1h1v3zm-1 3h1.8L2 13.1v.9h3v-1H3.2L5 10.9V10H2v1zm5-6v2h14V5H7zm0 14h14v-2H7v2zm0-6h14v-2H7v2z",
+    more:"M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z",
+    back:"M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z",
+    add:"M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z",
+    clear:"M3.27 5L2 6.27l6.97 6.97L6.5 19h3l1.57-3.66L16.73 21 18 19.73 3.27 5zM6 5v.18L8.82 8h2.4l-.72 1.68 2.1 2.1L14.21 8H20V5H6z"
+  };
+  var svg=function(k){return '<svg viewBox="0 0 24 24"><path d="'+P[k]+'"/></svg>';};
+  function snk(t){ snack.textContent=t; snack.classList.add("on"); clearTimeout(st); st=setTimeout(function(){snack.classList.remove("on");},2600); }
+  function inTheme(){ return B.dataset.theme==="gdocs"; }
+  function barOn(){ try{ return localStorage.getItem(K_BAR)!=="0"; }catch(e){ return true; } }
+
+  /* ----- real actions ----- */
+  function chatText(){
+    var out=[]; document.querySelectorAll("#box .msg").forEach(function(m){
+      var l=m.querySelector(".lbl"), b=m.querySelector(".bubble"); if(!b) return;
+      var who=l?l.textContent.trim():"", t=b.textContent.trim(); if(t) out.push((who?who+": ":"")+t);
+    }); return out.join("\n");
+  }
+  function download(){ var t=chatText(); if(!t){ snk("Nothing to download yet"); return; }
+    var a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([t],{type:"text/plain"})); a.download=(($("gd-title").textContent||"chat").trim()||"chat")+".txt"; document.body.appendChild(a); a.click(); a.remove(); snk("Downloaded as .txt"); }
+  function copyLink(){ try{ navigator.clipboard.writeText(location.href).then(function(){ snk("Link copied"); },function(){ snk("Couldn't copy the link"); }); }catch(e){ snk("Couldn't copy the link"); } }
+  function zoom(z){ B.style.setProperty("--gdz",z); snk("Zoom "+Math.round(z*100)+"%"); var zs=$("gd-zoom"); if(zs) zs.firstChild.textContent=Math.round(z*100)+"%"; }
+  var fs=11;
+  function size(d){ fs=Math.max(8,Math.min(36,(d===0?11:fs+d))); B.style.setProperty("--gdfs",fs+"pt"); var n=$("gd-fsn"); if(n) n.textContent=fs; }
+  function click(sel){ var e=document.querySelector(sel); if(e) e.click(); else snk("Not available here"); }
+  function toggleBar(){ try{ localStorage.setItem(K_BAR,barOn()?"0":"1"); }catch(e){} sync(); var c=$("gdbar"); if(c) c.checked=barOn(); }
+  function words(){ var t=chatText(); var w=t?t.split(/\s+/).filter(Boolean).length:0; snk(w+" words · "+t.length+" characters"); }
+  var MENUS={
+    File:[["Share","",copyLink],["Download as .txt","",download],"-",["Print","Ctrl+P",function(){window.print();}]],
+    Edit:[["Undo","Ctrl+Z",function(){document.execCommand("undo");}],["Redo","Ctrl+Y",function(){document.execCommand("redo");}],"-",["Select all","Ctrl+A",function(){document.execCommand("selectAll");}],["Copy","Ctrl+C",function(){document.execCommand("copy");}]],
+    View:[["Zoom 75%","",function(){zoom(.75);}],["Zoom 100%","",function(){zoom(1);}],["Zoom 125%","",function(){zoom(1.25);}],["Zoom 150%","",function(){zoom(1.5);}],"-",["Full screen","",function(){ var d=document.documentElement; if(document.fullscreenElement) document.exitFullscreen(); else if(d.requestFullscreen) d.requestFullscreen(); }],["Hide the Docs top bar","",toggleBar]],
+    Insert:[["Image","",function(){click("label.plus");}],["Emoji","",function(){click("#emo-btn");}],["GIF","",function(){click("#gif-btn");}]],
+    Format:[["Increase text size","",function(){size(1);}],["Decrease text size","",function(){size(-1);}],["Reset text size","",function(){size(0);}]],
+    Tools:[["Word count","Ctrl+Shift+C",words],"-",["Settings","",function(){ try{ setStg(true); }catch(e){ snk("Open Settings from the gear"); } }]],
+    Extensions:[["No add-ons installed","",null]],
+    Help:[["Keyboard shortcuts","Ctrl+/",function(){snk("Ctrl+Enter sends · Esc closes menus · Ctrl+P prints");}],["Docs Help","",function(){snk("This is just a Docs-style theme 😄");}]],
+    Accessibility:[["Screen reader support","",null],["Settings","",function(){ try{ setStg(true); }catch(e){ snk("Open Settings from the gear"); } }]]
+  };
+  var menus=$("gd-menus"); Object.keys(MENUS).forEach(function(n){ var b=document.createElement("button"); b.className="gd-m"; b.type="button"; b.textContent=n; b.onclick=function(e){ e.stopPropagation(); openMenu(b,n); }; menus.appendChild(b); });
+  function closeMenu(){ menu.classList.remove("on"); document.querySelectorAll("#gd-bar .gd-m.open").forEach(function(x){x.classList.remove("open");}); }
+  function openMenu(btn,name){
+    var was=btn.classList.contains("open"); closeMenu(); if(was) return;
+    menu.innerHTML=""; MENUS[name].forEach(function(it){
+      if(it==="-"){ menu.appendChild(document.createElement("hr")); return; }
+      var b=document.createElement("button"); b.type="button"; b.innerHTML="<span></span><small></small>"; b.firstChild.textContent=it[0]; b.lastChild.textContent=it[1];
+      if(!it[2]) b.disabled=true; else b.onclick=function(){ closeMenu(); it[2](); };
+      menu.appendChild(b);
+    });
+    var r=btn.getBoundingClientRect(); menu.style.left=Math.max(4,Math.min(r.left,innerWidth-250))+"px"; menu.style.top=r.bottom+2+"px"; menu.classList.add("on"); btn.classList.add("open");
+  }
+  document.addEventListener("click",function(e){ if(!e.target.closest||!e.target.closest("#gd-menu")) closeMenu(); });
+  document.addEventListener("keydown",function(e){ if(e.key==="Escape") closeMenu(); });
+
+  /* ----- toolbar ----- */
+  var tb=$("gd-tb");
+  function ib(icon,title,fn){ var b=document.createElement("button"); b.type="button"; b.className="gd-ib"; b.title=title; b.innerHTML=svg(icon); b.onclick=fn||function(){snk(title);}; tb.appendChild(b); return b; }
+  function ibd(icon,title,fn){ var b=ib(icon,title,fn); var m=document.createElement("button"); m.type="button"; m.className="gd-ib gd-mini"; m.title=title; m.innerHTML=svg("down"); m.onclick=fn||function(){snk(title);}; tb.appendChild(m); return b; }
+  function sep(){ var s=document.createElement("span"); s.className="gd-sep"; tb.appendChild(s); }
+  function dd(label,title,fn,id){ var b=document.createElement("button"); b.type="button"; b.className="gd-dd"; b.title=title; b.innerHTML="<span>"+label+"</span>"+svg("down"); if(id) b.id=id; b.onclick=fn||function(){}; tb.appendChild(b); return b; }
+  function txt(ch,title,st,on){ var b=document.createElement("button"); b.type="button"; b.className="gd-ib gd-fmt"+(on?" gd-on":""); b.title=title; b.textContent=ch; if(st) b.style.cssText=st; b.onclick=function(){ b.classList.toggle("gd-on"); }; tb.appendChild(b); return b; }
+  ib("search","Search the menus (Alt+/)",function(){snk("Search the menus: coming soon");}); ib("undo","Undo (Ctrl+Z)",function(){document.execCommand("undo");}); ib("redo","Redo (Ctrl+Y)",function(){document.execCommand("redo");}); ib("spell","Spelling and grammar check (Ctrl+Alt+X)"); ib("paint","Paint format");
+  sep();
+  var z=dd("100%","Zoom",function(e){ e.stopPropagation(); MENUS.__z=[["50%","",function(){zoom(.5);}],["75%","",function(){zoom(.75);}],["100%","",function(){zoom(1);}],["125%","",function(){zoom(1.25);}],["150%","",function(){zoom(1.5);}],["200%","",function(){zoom(2);}]]; openMenu(z,"__z"); },"gd-zoom");
+  sep();
+  dd("Normal text","Styles",function(){snk("Styles: Normal text");});
+  sep();
+  dd("Architects Daughter","Font",function(){snk("Font: Architects Daughter");}).classList.add("gd-font");
+  sep();
+  var fsw=document.createElement("span"); fsw.className="gd-fs"; fsw.innerHTML='<button class="gd-ib" title="Decrease font size" type="button" style="font:700 18px Arial">&minus;</button><span class="num" id="gd-fsn">11</span><button class="gd-ib" title="Increase font size" type="button" style="font:700 18px Arial">+</button>';
+  fsw.children[0].onclick=function(){size(-1);}; fsw.children[2].onclick=function(){size(1);}; tb.appendChild(fsw);
+  sep();
+  txt("B","Bold (Ctrl+B)",null,true); txt("I","Italic (Ctrl+I)","font:italic 700 15px Georgia,serif"); txt("U","Underline (Ctrl+U)","text-decoration:underline;font:700 15px Arial"); txt("A","Text color","border-bottom:3px solid #000;border-radius:0;height:22px;line-height:18px;align-self:center;width:24px;margin:0 4px"); ib("hl","Highlight color");
+  sep();
+  ib("link","Insert link (Ctrl+K)",function(){snk("Links are pasted as text in chat");}); ib("comment","Add a comment (Ctrl+Alt+M)",function(){ var i=$("inp"); if(i) i.focus(); }); ib("image","Insert image",function(){click("label.plus");});
+  sep();
+  ibd("left","Align & indent"); ib("lsp","Line & paragraph spacing"); ibd("check","Checklist"); ibd("list","Bulleted list (Ctrl+Shift+8)",function(){snk("Lists aren't used in chat");}); ibd("num","Numbered list (Ctrl+Shift+7)"); ib("more","More");
+  var ed=document.createElement("button"); ed.type="button"; ed.className="gd-edit"; ed.title="Editing mode"; ed.innerHTML=svg("pencil")+svg("down"); ed.onclick=function(){snk("You're editing");}; tb.appendChild(ed);
+  sep();
+  ib("up","Hide the menus (Ctrl+Shift+F)",function(){ toggleBar(); snk("Docs top bar hidden — turn it back on in Settings"); });
+
+  /* right app rail (Calendar, Keep, Tasks, Contacts, +) */
+  var rail=document.createElement("div"); rail.id="gd-rail";
+  rail.innerHTML='<button title="Calendar"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3" fill="#1a73e8"/><rect x="6" y="6" width="12" height="12" rx="1.5" fill="#fff"/><text x="12" y="15.4" font-size="7.5" font-weight="700" text-anchor="middle" fill="#1a73e8" font-family="Arial">31</text></svg></button>'+
+    '<button title="Keep"><svg viewBox="0 0 24 24"><path fill="#fbbc04" d="M12 2a7 7 0 0 0-4 12.7V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.3A7 7 0 0 0 12 2z"/><rect x="9" y="19" width="6" height="2.6" rx="1.2" fill="#fbbc04"/><path fill="#fff" opacity=".8" d="M9.2 8.5a3 3 0 0 1 2.3-2.2v1.3a1.8 1.8 0 0 0-1.2 1.1z"/></svg></button>'+
+    '<button title="Tasks"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5" fill="#1a73e8"/><path d="M7.5 12.3l3 3 6-6.3" stroke="#fff" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button>'+
+    '<button title="Contacts"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#1a73e8"/><circle cx="12" cy="9.6" r="3" fill="#fff"/><path fill="#fff" d="M6.4 17.4c.8-2.4 3-3.4 5.6-3.4s4.8 1 5.6 3.4z"/></svg></button>'+
+    '<hr><button class="gd-plus" title="Get add-ons">'+svg("add")+'</button>';
+  rail.addEventListener("click",function(e){ var b=e.target.closest&&e.target.closest("button"); if(b) snk((b.title||"App")+" isn't available here"); });
+  document.body.appendChild(rail);
+
+  /* "Document tabs" header + back arrow on the left panel */
+  (function(){
+    var hdr=$("hdr"); if(!hdr) return;
+    var gb=document.querySelector(".goback"), back=document.createElement("a");
+    back.className="gd-back"; back.href=gb?gb.href:"#"; back.rel="noopener"; back.title="Back"; back.innerHTML=svg("back");
+    var th=document.createElement("div"); th.className="gd-th"; th.innerHTML='<span>Document tabs</span><button type="button" class="gd-ib" title="Add tab">'+svg("add")+'</button>';
+    th.querySelector("button").onclick=function(){ snk("Tabs are set up by the owner in Settings"); };
+    hdr.prepend(th); hdr.prepend(back);
+  })();
+  try{ var l=document.createElement("link"); l.rel="stylesheet"; l.href="https://fonts.googleapis.com/css2?family=Architects+Daughter&display=swap"; document.head.appendChild(l); }catch(e){}
+
+  /* top-right buttons */
+  bar.addEventListener("click",function(e){ var b=e.target.closest&&e.target.closest("[data-gd]"); if(!b) return; var a=b.dataset.gd;
+    if(a==="share") copyLink(); else if(a==="star"){ b.style.color=b.style.color?"":"#f9ab00"; snk(b.style.color?"Starred":"Removed star"); }
+    else if(a==="move") snk("Shortcut added to Drive"); else if(a==="kami") snk("Kami isn't available here"); else if(a==="verified") snk("This document is verified"); else if(a==="saved") snk("All changes saved in Drive"); else if(a==="history") snk("Version history: this chat is always the latest version"); else if(a==="comments") snk("No comments yet"); });
+
+  /* ----- state sync ----- */
+  var wasTheme=false;
+  function sync(){
+    var on=inTheme();
+    B.classList.toggle("gd-bar-on", on && barOn());
+    if(on){
+      var av=$("gd-av"); try{ av.textContent=((typeof usr!=="undefined"&&usr)||"U").trim().charAt(0).toUpperCase()||"U"; }catch(e){}
+      if(!wasTheme){ B.dataset.hp="left"; var s=$("hdrpos"); if(s) s.value="left"; setTimeout(function(){window.dispatchEvent(new Event("resize"));},320); }   // the old top bar goes to the left
+      requestAnimationFrame(function(){ var h=bar.offsetHeight; if(h) B.style.setProperty("--gdh",h+"px"); });
+    } else if(wasTheme){
+      var p="top"; try{ p=localStorage.getItem(K_POS)||"top"; }catch(e){}
+      if(["top","left","right","bottom"].indexOf(p)<0) p="top";
+      if(p==="top") B.removeAttribute("data-hp"); else B.dataset.hp=p; var s2=$("hdrpos"); if(s2) s2.value=p;
+      closeMenu();
+    }
+    wasTheme=on;
+  }
+  new MutationObserver(sync).observe(B,{attributes:true,attributeFilter:["data-theme"]});
+  window.addEventListener("resize",function(){ if(inTheme()) sync(); });
+  var chk=$("gdbar"); if(chk){ chk.checked=barOn(); chk.addEventListener("change",function(){ try{ localStorage.setItem(K_BAR,chk.checked?"1":"0"); }catch(e){} sync(); }); }
+  sync();
 })();
 </script>
 </body>
