@@ -14002,6 +14002,7 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
           const raw = String(n.getAttribute("href") || "").trim(), im = raw.match(/^#ct:([A-Za-z0-9_-]{1,40})$/);
           if(im && okId(im[1])){   // link to another tab / subtab
             const a = document.createElement("a"); a.setAttribute("href", "#ct:" + im[1]); a.setAttribute("data-ct", im[1]);
+            { const lc = ((n.getAttribute("style") || "").match(COLOR) || [])[1]; if(lc) a.style.color = lc; }
             dst.appendChild(a); walk(n, a, depth + 1); return;
           }
           const bm = raw.match(/^#tab:(home|main|gal|polls|shame|draw|tier|games)(?::(games|proxy|media|music))?$/);
@@ -14033,6 +14034,13 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
         if(t !== "BR" && t !== "HR") walk(n, e, depth + 1);
       });
     })(doc.body, out, 0);
+    out.querySelectorAll("a").forEach(a => {
+      if(a.style.color) return;
+      let x = a.parentElement, c = "";
+      while(x && x !== out){ if(x.tagName === "SPAN" && x.style.color){ c = x.style.color; break; } x = x.parentElement; }
+      if(!c && a.children.length === 1 && a.children[0].tagName === "SPAN" && a.children[0].style.color && a.textContent === a.children[0].textContent) c = a.children[0].style.color;
+      if(c) a.style.color = c;
+    });
     return out.innerHTML;
   }
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -14309,7 +14317,14 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
     ed.querySelectorAll("a").forEach(a => {                                              // whole link recoloured: colour its underline as well
       if(!range.intersectsNode(a)) return;
       const tn = []; const w = document.createTreeWalker(a, NodeFilter.SHOW_TEXT); let x; while((x = w.nextNode())) if(x.nodeValue.trim()) tn.push(x);
-      if(tn.length && tn.every(t => sameCol(authoredColor(t), want))) a.style.color = color;
+      if(!tn.length) return;
+      if(tn.every(t => nodes.indexOf(t) >= 0)){                                    // the whole link was selected: one colour, on the link
+        a.querySelectorAll("[style*='color'],font").forEach(el => {
+          el.style.removeProperty("color"); el.removeAttribute("color");
+          if(el.tagName === "FONT" || (el.tagName === "SPAN" && !el.getAttribute("style") && !el.attributes.length)){ while(el.firstChild) el.parentNode.insertBefore(el.firstChild, el); el.remove(); }
+        });
+        a.style.color = color;
+      } else if(tn.every(t => sameCol(authoredColor(t), want))) a.style.color = color;
     });
     try{ const f = nodes[0], l = nodes[nodes.length - 1]; if(f && l){ const sl = getSelection(), nr = document.createRange(); nr.setStart(f, 0); nr.setEnd(l, l.length); sl.removeAllRanges(); sl.addRange(nr); } }catch(e){}
   }
