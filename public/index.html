@@ -95,7 +95,7 @@ if(L.getItem("pb_autologin")==="1"&&L.getItem("pb_code")==="lospurebro"&&L.getIt
 (function(){
   "use strict";
   var KEY = "pb_colormode", mode = "auto", realMM = window.matchMedia ? window.matchMedia.bind(window) : null;
-  try{ var sv = localStorage.getItem(KEY); if(sv === "dark" || sv === "light") mode = sv; }catch(e){}
+  try{ localStorage.removeItem(KEY); }catch(e){}   // the Light/Dark/Auto setting was removed: always follow the device
   var SIMPLE = /^\s*\(\s*prefers-color-scheme\s*:\s*(dark|light)\s*\)\s*$/i, FEAT = /\(\s*prefers-color-scheme\s*:\s*(dark|light)\s*\)/i;
   var fakes = [];
   function fire(){ fakes.forEach(function(o){ var ev = {matches:o.matches, media:o.media, type:"change"}; o._ls.slice().forEach(function(f){ try{ f.call(o, ev); }catch(e){} }); if(typeof o.onchange === "function"){ try{ o.onchange(ev); }catch(e){} } }); }
@@ -151,23 +151,10 @@ if(L.getItem("pb_autologin")==="1"&&L.getItem("pb_code")==="lospurebro"&&L.getIt
     return css.replace(/@media([^{]*prefers-color-scheme[^{]*)\{/gi, function(all, pre){ return "@media " + rewrite(pre.trim()) + "{"; });
   }
   window.__pbCM = { css:cssText, mode:function(){ return mode; } };
-  function set(m){
-    mode = m === "dark" || m === "light" ? m : "auto";
-    try{ if(mode === "auto") localStorage.removeItem(KEY); else localStorage.setItem(KEY, mode); }catch(e){}
-    document.documentElement.setAttribute("data-colormode", mode);
-    apply(); paint(); fire();
-    try{ if(typeof renderPreview === "function"){ var f = document.getElementById("pvframe"); if(f && f.srcdoc !== undefined && typeof pvHTML === "function"){ f.srcdoc = pvHTML(); } } }catch(e){}
-    setTimeout(function(){ try{ if(window.__pbThemeGuard) window.__pbThemeGuard(); }catch(e){} }, 400);
-  }
-  function paint(){
-    var seg = document.getElementById("cm-seg"); if(!seg) return;
-    Array.prototype.forEach.call(seg.querySelectorAll("button"), function(b){ var on = b.dataset.m === mode; b.classList.toggle("on", on); b.setAttribute("aria-pressed", on ? "true" : "false"); });
-  }
+
   function init(){
-    var seg = document.getElementById("cm-seg");
-    if(seg) seg.addEventListener("click", function(e){ var b = e.target.closest("button[data-m]"); if(b) set(b.dataset.m); });
     document.documentElement.setAttribute("data-colormode", mode);
-    paint(); if(mode !== "auto") apply();
+    if(mode !== "auto") apply();
     /* styles added later (themes inject some) get the same treatment */
     new MutationObserver(function(list){
       if(mode === "auto" || busy) return;
@@ -836,9 +823,9 @@ html.watch #watch-note.on{display:block}
         <div class="stg-row"><button id="bimgbtn" type="button" class="btn">Choose image</button><button id="bimgrm" type="button" class="btn alt">Remove</button><input type="file" id="bimgfile" accept="image/*" style="display:none"></div>
       </div>
       <div class="stg-card"><h3>🎨 Appearance</h3>
-        <label>Color mode</label>
-        <div class="seg" id="cm-seg" role="group" aria-label="Color mode"><button type="button" id="cm-light" data-m="light">☀️ Light mode</button><button type="button" id="cm-dark" data-m="dark">🌙 Dark mode</button><button type="button" id="cm-auto" data-m="auto">Auto</button></div>
-        <div class="xnote" style="font-size:12px;opacity:.7;line-height:1.4">Switches themes that have both a light and a dark look. Auto follows your device. Themes that only come in one look (like Terminal) stay as they are.</div>
+        <label>Layout</label>
+        <select id="layoutsel"><option value="docs">Google Docs layout</option><option value="lp">Los Purebreds layout (the old layout)</option></select>
+        <div class="xnote" id="layoutnote" style="font-size:12px;opacity:.7;line-height:1.4">Google Docs is the base look. Switch to Los Purebreds to get the old layout back, and pick one of its themes (iMessage, Discord, …).</div>
         <label>Theme</label>
         <select id="theme"><option value="imessage">iMessage</option><option value="ios6">iOS 6</option><option value="discord">Discord</option><option value="whatsapp">WhatsApp</option><option value="tiktok">TikTok</option><option value="roblox">Roblox</option><option value="instagram">Instagram</option><option value="twitter">Twitter</option><option value="material">Android 17 (Material 3 Expressive)</option><option value="kde">KDE Plasma (Breeze)</option><option value="kitkat">Android 4.4 KitKat</option><option value="terminal">Terminal</option><option value="simple">Simple</option><option value="glass">Liquid Glass</option><option value="macos">macOS</option><option value="win95">Windows 95</option><option value="winxp">Windows XP</option><option value="minecraft">Minecraft</option><option value="rule34">34 theme</option><option value="gdocs">Google Docs</option></select>
         <label>Wallpaper &amp; accent color (also tints top bar, message bar &amp; left bar)</label><input type="color" id="wcol" value="#000000">
@@ -941,11 +928,6 @@ const shownKeys = new Set();
 let groups = {};
 function okGid(g){ return typeof g === "string" && /^g[a-z0-9]{3,30}$/.test(g); }
 // a group icon is either one small emoji or a small square JPEG we made ourselves (never anything else)
-function okGIcon(ic){
-  if(typeof ic !== "string" || !ic || ic.length > 4600000) return false;
-  if(ic.startsWith("data:")) return /^data:image\/(jpeg|gif|png|webp);base64,[A-Za-z0-9+\/=]+$/.test(ic);
-  return ic.length <= 24 && /^(?:\p{Extended_Pictographic}|\p{Regional_Indicator}|[\u200d\ufe0f\u{1F3FB}-\u{1F3FF}])+$/u.test(ic);
-}
 const isMember = gid => !!(groups[gid] && groups[gid].m.includes(uid));
 // conversation key: "d:<uid>" for a private chat, "g:<id>" for a group (empty if it isn't ours)
 const isHd = m => !!(m && m.hd && m.to);     // a hidden reply: delivered privately to one person, but shown inline in the main chat
@@ -987,7 +969,16 @@ function detectDevice(){
 const myDevice = detectDevice();
 
 /* ---------- theme ---------- */
+/* Layout: "docs" (Google Docs, the default base) or "lp" (Los Purebreds, the old layout with the iMessage / Discord / … themes) */
+function pbLayout(){ try{ return localStorage.getItem("pb_layout") === "lp" ? "lp" : "docs"; }catch(e){ return "docs"; } }
+function pbLayoutTheme(t){
+  if(pbLayout() === "docs") return "gdocs";
+  if(t === "gdocs" || !THEMES.includes(t)){ let q = ""; try{ q = localStorage.getItem("pb_lp_theme") || ""; }catch(e){} return q && q !== "gdocs" && THEMES.includes(q) ? q : "imessage"; }
+  try{ localStorage.setItem("pb_lp_theme", t); }catch(e){}
+  return t;
+}
 function setTheme(t){
+  t = pbLayoutTheme(t);
   if(!["imessage","ios6","discord","whatsapp","tiktok","roblox","instagram","twitter","material","kde","kitkat","terminal","simple","glass","win95","winxp","minecraft","rule34","gdocs","macos"].includes(t)) t = "gdocs";
   document.body.dataset.theme = t;
   $("theme").value = t; $("g-theme").value = t;
@@ -8056,7 +8047,7 @@ body[data-theme="ios6"] #replybar *,body[data-theme="ios6"] #dmbar *{color:inher
 #sbfr .fr{display:flex;align-items:center;gap:10px;padding:5px 10px;border-radius:8px;font-size:13px;color:var(--bar-text,var(--text))}
 #sbfr .fr.go{cursor:pointer}
 #sbfr .fr:hover{background:var(--row)}
-#sbfr .pav,#frmod .pav,.dmintro .pav{width:26px;height:26px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;background-size:cover;background-position:center;position:relative}
+#sbfr .pav,#frmod .pav{width:26px;height:26px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;background-size:cover;background-position:center;position:relative}
 #sbfr .pav .dot{position:absolute;right:-2px;bottom:-2px;width:9px;height:9px;border-radius:50%;border:2px solid var(--side,#222);background:#6b7280}
 #sbfr .pav .dot.on{background:#30d158}
 #sbfr .mid{flex:1;min-width:0}
@@ -8077,16 +8068,10 @@ body[data-theme="ios6"] #replybar *,body[data-theme="ios6"] #dmbar *{color:inher
 #frlist .row .nm small{display:block;font-size:11px;color:var(--muted)}
 #frlist .row .st{font-size:11px;color:var(--muted)}
 #frlist .row .st.on{color:#30d158}
-#frmod button.b,#frlist button,.dmintro button,.frprof button{border:none;background:var(--row);color:var(--text);border-radius:999px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer}
-#frmod button.b.pri,#frlist button.pri,.dmintro button.pri,.frprof button.pri{background:var(--accent);color:var(--on-accent,#fff)}
+#frmod button.b,#frlist button,.frprof button{border:none;background:var(--row);color:var(--text);border-radius:999px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer}
+#frmod button.b.pri,#frlist button.pri,.frprof button.pri{background:var(--accent);color:var(--on-accent,#fff)}
 #frmod button:disabled{opacity:.55;cursor:default}
 #frmod .empty{padding:14px 6px;text-align:center;font-size:13px;color:var(--muted)}
-.dmintro{align-self:stretch;flex-shrink:0;padding:14px 4px 16px;margin-bottom:6px;border-bottom:1px solid var(--line,rgba(127,127,127,.3));text-align:left;color:inherit}
-.dmintro .big{width:72px;height:72px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:800;color:#fff;background-size:cover;background-position:center;margin-bottom:8px}
-.dmintro h3{margin:0 0 4px;font-size:22px;font-weight:800}
-.dmintro p{margin:0 0 4px;font-size:14px;opacity:.85;line-height:1.4}
-.dmintro .meta{margin:8px 0 2px;display:flex;flex-direction:column;gap:3px;font-size:13px;opacity:.9}
-.dmintro .acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 #frtoast{position:fixed;left:50%;bottom:92px;transform:translateX(-50%) translateY(20px);opacity:0;pointer-events:none;z-index:95;background:#1c1c1e;color:#fff;border:1px solid rgba(255,255,255,.15);border-radius:999px;padding:10px 18px;font-size:14px;font-weight:600;box-shadow:0 8px 28px rgba(0,0,0,.5);transition:opacity .2s,transform .2s;max-width:92vw;text-align:center}
 #frtoast.on{opacity:1;transform:translateX(-50%) translateY(0)}
 .frprof{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
@@ -12810,7 +12795,7 @@ body.in-home #home{display:flex}
   /* ---- go to a tab, then (optionally) press a sub-tab button inside it ---- */
   const norm = x => String(x || "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, "");
   const vis = e => !!(e.offsetParent || e.getClientRects().length);
-  function subButtons(){ return Array.from(document.querySelectorAll(".gm-sub, .md-seg button, .dchip:not(.add)")).filter(vis); }
+  function subButtons(){ return Array.from(document.querySelectorAll(".gm-sub, .dchip:not(.add)")).filter(vis); }
   function openSub(sub, tries){
     const want = norm(sub); if(!want) return;
     const bs = subButtons();
@@ -12995,16 +12980,13 @@ body.in-home #home{display:flex}
 </script>
 <style id="media-css">
 /* ===== Media tab (Netflix-style): movies, shows & websites. Library lives in the cloud, not in this file ===== */
-body.in-media #topbanner{display:none}
 #mdview{display:none;flex:1;min-height:0;flex-direction:column;overflow-y:auto;overflow-x:hidden;background:#0b0b0c;color:#fff;font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;-webkit-overflow-scrolling:touch}
-body.in-media #mdview{display:flex}
 #games.sub-media #mdview{display:flex}
 #games > #mdview{flex:1;min-height:0}
 #games.sub-media > .gm-bar,#games.sub-media > .gm-scroll,#games.sub-media > #proxyview{display:none}
 .md-top.gm-bar{padding:12px 16px;flex-wrap:wrap}
 .md-top .md-plus{height:40px}
 @media(max-width:600px){.gm-bar .gm-title{width:auto;flex:1 1 calc(50% - 10px)}}
-body.in-media #box,body.in-media #typing,body.in-media #replybar,body.in-media #tray,body.in-media #attach{display:none !important}
 .md-top{display:flex;align-items:center;gap:10px;padding:12px 16px;flex:0 0 auto}
 .md-sp{flex:1}
 .md-plus{width:44px;height:30px;border:2px solid #fff;border-radius:6px;background:#2a2a2c;color:#fff;font-size:22px;line-height:1;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0}
@@ -13043,10 +13025,6 @@ body.in-media #box,body.in-media #typing,body.in-media #replybar,body.in-media #
 .md-arrow.l{left:6px}.md-arrow.r{right:6px}
 @media (hover:none){.md-arrow{display:none}}
 .md-foot{height:40px;flex:0 0 auto}
-.md-seg{display:flex;gap:6px;margin-left:6px}
-.md-seg button{border:none;border-radius:999px;padding:6px 14px;background:#2a2a2c;color:#fff;font-size:13px;font-weight:700;cursor:pointer}
-.md-seg button.on{background:#fff;color:#111}
-.md-seg #md-sm.on{background:#1ed760;color:#000}
 #md-music{display:none}
 #mdview.is-music #md-music{display:block}
 #mdview.is-music .md-hero,#mdview.is-music #md-rows{display:none}
@@ -13083,6 +13061,28 @@ body.in-media #box,body.in-media #typing,body.in-media #replybar,body.in-media #
 .md-up{position:relative;display:inline-flex;align-items:center;padding:0 12px;height:38px;border-radius:9px;background:var(--row);border:1px solid var(--line);cursor:pointer;font-size:13px;font-weight:700;white-space:nowrap}
 .md-up input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
 #md-err{min-height:16px;font-size:13px;color:#ff6b61;flex:1}
+/* ----- follows the active theme (light / dark / custom): colours come from the theme variables ----- */
+#mdview{background:var(--bg);color:var(--text)}
+.md-plus{border-color:var(--text);background:var(--row);color:var(--text)}
+.md-plus:hover{background:color-mix(in srgb,var(--text) 14%,var(--row))}
+#md-q{border-color:var(--line);background:var(--input,var(--row));color:var(--text)}
+#md-q::placeholder{color:var(--muted)}
+#md-q:focus{border-color:var(--accent)}
+.md-hero{background:var(--row)}
+.md-hfade{background:linear-gradient(90deg,rgba(0,0,0,.82) 0%,rgba(0,0,0,.35) 45%,rgba(0,0,0,0) 75%),linear-gradient(0deg,color-mix(in srgb,var(--bg) 90%,transparent) 0%,transparent 45%)}
+.md-empty{color:var(--muted)}
+.md-rowtitle{color:var(--text)}
+.md-card{background:var(--row);color:var(--text)}
+.md-card.sel{outline-color:var(--accent)}
+.md-arrow{background:var(--row);color:var(--text);border:1px solid var(--line);box-shadow:0 2px 10px rgba(0,0,0,.25)}
+.mu-panel{background:linear-gradient(180deg,var(--row),color-mix(in srgb,var(--row) 70%,var(--bg)));border-color:var(--line)}
+.mu-title{color:var(--text)}
+.mu-card{background:color-mix(in srgb,var(--text) 6%,var(--row))}
+.mu-card:hover{background:color-mix(in srgb,var(--text) 13%,var(--row))}
+.mu-a{color:var(--text)}
+.mu-art{box-shadow:0 8px 24px rgba(0,0,0,.25)}
+.mu-sub,.mu-empty{color:var(--muted)}
+.mu-edit{background:color-mix(in srgb,var(--bg) 78%,transparent);color:var(--text);border:1px solid var(--line)}
 @media(max-width:600px){.mu-panel{margin:6px 12px 0;padding:12px 12px 20px}.mu-grid{grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:10px}.md-top{padding:10px 12px;flex-wrap:wrap}.md-hero{margin:0 12px;border-radius:18px}.md-rowtitle{margin:18px 12px 6px}.md-row{padding:4px 12px 8px}}
 </style>
 <script id="media-js">
@@ -13158,10 +13158,10 @@ body.in-media #box,body.in-media #typing,body.in-media #replybar,body.in-media #
       himg.hidden = true; $$("md-rt").textContent = "";
       const e = $$("md-empty");
       e.textContent = items.some(i => i.ty !== "music") ? "Nothing matches your search." : (isMod() ? "Nothing here yet. Tap the + button to add a movie, show or website." : "Nothing here yet. Mods can add movies, shows and websites.");
-      hero.style.background = "#161617"; return;
+      hero.style.background = "var(--row)"; return;
     }
     const pic = it.banner || it.poster;
-    if(pic){ himg.onerror = () => { himg.hidden = true; }; himg.src = pic; himg.hidden = false; hero.style.background = "#161617"; }
+    if(pic){ himg.onerror = () => { himg.hidden = true; }; himg.src = pic; himg.hidden = false; hero.style.background = "var(--row)"; }
     else { himg.hidden = true; hero.style.background = "linear-gradient(135deg," + hue(it.name) + ",#141415)"; }
     $$("md-kind").innerHTML = ""; const n = document.createElement("b"); n.textContent = "▮"; $$("md-kind").append(n, KINDS[it.ty] || "");
     $$("md-title").textContent = it.name; $$("md-desc").textContent = it.desc || ""; $$("md-desc").style.display = it.desc ? "" : "none";
@@ -13361,16 +13361,8 @@ body.in-media #box,body.in-media #typing,body.in-media #replybar,body.in-media #
     lastLocalEdit = Date.now(); persist([], [it.id]); closeModal(); renderAll();
   };
 
-  /* ---------- hook into the tab switcher ---------- */
-  const _sc = setChannel;
-  setChannel = function(c){
-    _sc(c);
-    const on = c === "media";
-    document.body.classList.toggle("in-media", on);
-    const r = $$("ch-media"); if(r) r.classList.toggle("active", on);
-    if(on){ renderAll(); try{ if(window.__tbPull) window.__tbPull(); }catch(e){} }
-  };
-  setInterval(() => { if(!document.hidden && document.body.classList.contains("in-media")) refreshMod(); }, 3000);
+  const inMediaNow = () => { const g = document.getElementById("games"); return !!(g && g.classList.contains("sub-media")); };
+  setInterval(() => { if(!document.hidden && inMediaNow()) refreshMod(); }, 3000);
 
   /* ---------- cloud sync hooks (used by the mailbox script) ---------- */
   window.__md = {
@@ -13402,7 +13394,7 @@ body.in-media #box,body.in-media #typing,body.in-media #replybar,body.in-media #
         if(loc) items[i] = nt; else { if(items.length >= MAXITEMS) return; items.push(nt); }
         delete tombs[r.id]; put.push(nt); ch = true;
       });
-      if(ch){ persist(put, del); if(document.body.classList.contains("in-media") || items.length) renderAll(); }
+      if(ch){ persist(put, del); if(inMediaNow() || items.length) renderAll(); }
       return ch;
     }
   };
@@ -14780,36 +14772,10 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
   const K_SENT = "pb_mb_sent", K_SINCE = "pb_mb_since";
   const jget = (k, d) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch(e){ return d; } };
   const jset = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} };
-  /* ---- "Syncing to cloud" indicator in the top bar (can be hidden in Settings; sync itself keeps running) ---- */
-  const K_IND = "pb_cloud_ind";
-  let indOn = true; try { indOn = localStorage.getItem(K_IND) !== "0"; } catch(e){}
-  let busyN = 0, showUntil = 0, indT = 0;
-  const ind = document.createElement("span");
-  ind.id = "cloudsync"; ind.setAttribute("role", "status"); ind.setAttribute("aria-live", "polite"); ind.textContent = "\u2601\ufe0f Syncing to cloud\u2026";
-  const indCss = document.createElement("style");
-  indCss.textContent = "#cloudsync{display:none;align-items:center;gap:4px;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600;white-space:nowrap;color:var(--bar-text,var(--muted));background:color-mix(in srgb,currentColor 12%,transparent);animation:cloudpulse 1.2s ease-in-out infinite}#cloudsync.on{display:inline-flex}@keyframes cloudpulse{50%{opacity:.55}}@media (prefers-reduced-motion:reduce){#cloudsync{animation:none}}";
-  document.head.appendChild(indCss);
-  const stEl = document.getElementById("status"); if(stEl && stEl.parentNode) stEl.after(ind);
-  function paintInd(){
-    clearTimeout(indT);
-    const left = showUntil - Date.now();
-    ind.classList.toggle("on", indOn && (busyN > 0 || left > 0));
-    if(indOn && busyN === 0 && left > 0) indT = setTimeout(paintInd, left + 20);
-  }
-  function beginSync(){                           // returns a function to call when that piece of syncing is done
-    busyN++; showUntil = Math.max(showUntil, Date.now() + 1500); paintInd(); let done = false;
-    return () => { if(done) return; done = true; busyN = Math.max(0, busyN - 1); showUntil = Math.max(showUntil, Date.now() + 1200); paintInd(); };
-  }
-  const flashSync = () => beginSync()();
-  (function addSetting(){
-    const hh = document.getElementById("hh"), card = hh && hh.closest(".stg-card");
-    if(!card || document.getElementById("cloudind")) return;
-    const lab = document.createElement("label"); lab.className = "chk";
-    lab.innerHTML = '<input type="checkbox" id="cloudind">Show \u201cSyncing to cloud\u201d in the top bar';
-    card.insertBefore(lab, card.querySelector(".stg-note"));
-    const cb = lab.querySelector("input"); cb.checked = indOn;
-    cb.addEventListener("change", () => { indOn = cb.checked; try { localStorage.setItem(K_IND, indOn ? "1" : "0"); } catch(e){} paintInd(); });
-  })();
+
+  /* the "Syncing to cloud" badge was removed; these keep the sync code's begin/end calls working */
+  const beginSync = () => () => {};
+  const flashSync = () => {};
 
   let announced = false, warned = false, caught = 0;
   const note = t => { try { if(typeof sys === "function" && inRoom()) sys(t); } catch(e){} };
@@ -18454,7 +18420,6 @@ html body[data-theme="gdocs"] #hmore-menu #hdr-log .dot{top:10px;right:14px}
 
   /* ----- toolbar (works on the chat text; dims in tabs where it makes no sense) ----- */
   var tb=$("gd-tb"), FX={b:0,i:0,u:0}, fmtBtn={};
-  function chatTab(){ try{ return ["main","dm","grp","shame"].indexOf(curCh)>=0; }catch(e){ return true; } }
   function fx(el,s){ el.dataset.s=s||"d"; return el; }   // d = text formatting (chat + other tabs), c = chat only, t = needs the message tray, u = always
   function ib(icon,title,fn){ var b=document.createElement("button"); b.type="button"; b.className="gd-ib"; b.title=title; b.innerHTML=svg(icon); b.onclick=fn||function(){snk(title);}; tb.appendChild(b); return b; }
   function ibd(icon,title,fn,s){ var b=ib(icon,title,fn); var m=document.createElement("button"); m.type="button"; m.className="gd-ib gd-mini"; m.title=title; m.innerHTML=svg("down"); m.onclick=fn||function(){snk(title);}; tb.appendChild(m); fx(b,s); fx(m,s); return b; }
@@ -19245,6 +19210,27 @@ html body[data-theme="gdocs"][data-hp="left"] #chtabs button.gd-dz-into{backgrou
     };
     var t0=document.getElementById("stg-toggle"); if(t0&&t0.parentNode===sb) sb.insertBefore(rb,t0); else sb.appendChild(rb);
   }
+})();
+</script>
+<script id="layout-js">
+(function(){
+  var sel = document.getElementById("layoutsel"), th = document.getElementById("theme"); if(!sel || !th) return;
+  var lab = th.previousElementSibling && th.previousElementSibling.tagName === "LABEL" ? th.previousElementSibling : null;
+  function show(){
+    var lp = pbLayout() === "lp";
+    sel.value = lp ? "lp" : "docs";
+    if(lab){ lab.style.display = lp ? "" : "none"; lab.textContent = "Theme (Los Purebreds layout)"; }
+    th.style.display = lp ? "" : "none";
+    Array.prototype.forEach.call(th.options, function(o){ if(o.value === "gdocs"){ o.disabled = lp; o.hidden = lp; } });
+  }
+  sel.addEventListener("change", function(){
+    try{ localStorage.setItem("pb_layout", sel.value === "lp" ? "lp" : "docs"); }catch(e){}
+    show();
+    try{ setTheme(document.body.dataset.theme || "gdocs"); }catch(e){}
+    try{ if(typeof draft !== "undefined" && draft) draft.theme = document.body.dataset.theme; th.value = document.body.dataset.theme; }catch(e){}
+    show();
+  });
+  show();
 })();
 </script>
 </body>
