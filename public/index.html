@@ -17981,9 +17981,9 @@ body[data-theme="gdocs"] #home .hm-ic.emo{font-size:30px}
 <style id="gdocs-noanim">
 /* Google Docs theme: no animations, except what Docs itself animates (collapsing the tabs panel / the top bar) */
 html:has(body[data-theme="gdocs"]){scroll-behavior:auto !important}
-body[data-theme="gdocs"] *:not(#hdr):not(#hdrwrap):not(#main):not(#hdr-arrow):not(#gd-bar):not(#gd-rail):not(.al-spin):not(.al-card):not(#autoload),
-body[data-theme="gdocs"] *:not(#hdr):not(#hdrwrap):not(#main):not(#hdr-arrow):not(#gd-bar):not(#gd-rail):not(.al-spin):not(.al-card):not(#autoload)::before,
-body[data-theme="gdocs"] *:not(#hdr):not(#hdrwrap):not(#main):not(#hdr-arrow):not(#gd-bar):not(#gd-rail):not(.al-spin):not(.al-card):not(#autoload)::after{animation:none !important;transition:none !important}
+body[data-theme="gdocs"] *:not(#hdr):not(#hdrwrap):not(#main):not(#hdr-arrow):not(#gd-bar):not(#gd-rail):not(.al-spin):not(.al-card):not(#autoload):not(#gd-bar *):not(#gd-menu):not(#gd-menu *):not(#gd-snack):not(#gd-find):not(#gd-find *):not(.gd-rip):not(.gd-rip *),
+body[data-theme="gdocs"] *:not(#hdr):not(#hdrwrap):not(#main):not(#hdr-arrow):not(#gd-bar):not(#gd-rail):not(.al-spin):not(.al-card):not(#autoload):not(#gd-bar *):not(#gd-menu):not(#gd-menu *):not(#gd-snack):not(#gd-find):not(#gd-find *):not(.gd-rip):not(.gd-rip *)::before,
+body[data-theme="gdocs"] *:not(#hdr):not(#hdrwrap):not(#main):not(#hdr-arrow):not(#gd-bar):not(#gd-rail):not(.al-spin):not(.al-card):not(#autoload):not(#gd-bar *):not(#gd-menu):not(#gd-menu *):not(#gd-snack):not(#gd-find):not(#gd-find *):not(.gd-rip):not(.gd-rip *)::after{animation:none !important;transition:none !important}
 body[data-theme="gdocs"] :is(button,.btn,.stg-btn,.row-ch,.plus,#emo-btn,#sendbtn,.hm-it,.hm-cell,.goback,.chip,a,select,input,label):not(#gd-show):not(#hdr-arrow):is(:hover,:active,:focus-visible){transform:none !important}
 /* Docs-style slide for the top bar + right rail (like hiding the menus in Docs) */
 body[data-theme="gdocs"] #gd-bar{display:block;position:fixed;top:0;left:0;right:0;z-index:50;background:#f9fbfd;transform:translateY(-100%);visibility:hidden;transition:transform .2s ease,visibility 0s .2s}
@@ -17996,6 +17996,7 @@ body[data-theme="gdocs"]:not(.gd-bar-on) #main{padding-right:0}
 @media(max-width:700px){body[data-theme="gdocs"] #gd-rail{display:none !important}}
 /* the left tabs panel is completely still: no slide, no spring, no bounce */
 html body[data-theme="gdocs"] :is(#hdr,#hdrwrap,#hdr-arrow,#main,#sb-arrow),html body[data-theme="gdocs"] :is(#hdr,#hdrwrap) :is(*,*::before,*::after),html body[data-theme="gdocs"] :is(#hdr-arrow,#main)::before,html body[data-theme="gdocs"] #hdr-arrow::after{animation:none !important;transition:none !important}
+html body[data-theme="gdocs"] :is(#chtabs button,#hdr .row-ch){transition:background-color .15s linear,color .15s linear !important}
 html body[data-theme="gdocs"] #hdr :is(*):is(:hover,:active,:focus-visible){transform:none !important}
 @media(prefers-reduced-motion:reduce){body[data-theme="gdocs"] #gd-bar,body[data-theme="gdocs"] #gd-rail,body[data-theme="gdocs"]{transition:none !important}}
 </style>
@@ -18160,7 +18161,7 @@ html body[data-theme="gdocs"] #hmore-menu #hdr-log .dot{top:10px;right:14px}
     Accessibility:[["Screen reader support","",null],["Settings","",function(){ try{ setStg(true); }catch(e){ snk("Open Settings from the gear"); } }]]
   };
   var menus=$("gd-menus"); Object.keys(MENUS).forEach(function(n){ var b=document.createElement("button"); b.className="gd-m"; b.type="button"; b.textContent=n; b.onclick=function(e){ e.stopPropagation(); openMenu(b,n); }; menus.appendChild(b); });
-  function closeMenu(){ menu.classList.remove("on"); document.querySelectorAll("#gd-bar .gd-m.open").forEach(function(x){x.classList.remove("open");}); }
+  function closeMenu(){ menu.classList.remove("on"); document.querySelectorAll("#gd-bar .open").forEach(function(x){x.classList.remove("open");}); }
   function openMenu(btn,name){
     var was=btn.classList.contains("open"); closeMenu(); if(was) return;
     menu.innerHTML=""; MENUS[name].forEach(function(it){
@@ -18307,7 +18308,7 @@ html body[data-theme="gdocs"] #hmore-menu #hdr-log .dot{top:10px;right:14px}
   pres.onclick=openOnline; av.onclick=openOnline; av.title="You — click to see who's online";
   function paintPeople(){
     if(!inTheme()) return;
-    try{ var nm=((typeof usr!=="undefined"&&usr)||"U"); paintAv(av,nm); av.textContent=av.classList.contains("has-pfp")?"":nm.trim().charAt(0).toUpperCase(); }catch(e){}
+    try{ var nm=((typeof usr!=="undefined"&&usr)||"U"); paintAv(av,nm); var _t=av.classList.contains("has-pfp")?"":nm.trim().charAt(0).toUpperCase(); if(av.textContent!==_t) av.textContent=_t; }catch(e){}
     var others=[]; try{ others=lastRoster.filter(function(r){ return r.n!==usr; }); }catch(e){}
     var sig=others.map(function(r){ return r.n+(avatars[r.n]?avatars[r.n].length:0); }).join("|");
     if(sig===lastSig) return; lastSig=sig; pres.replaceChildren();
@@ -18367,6 +18368,70 @@ html body[data-theme="gdocs"] #hmore-menu #hdr-log .dot{top:10px;right:14px}
   window.addEventListener("resize",function(){ if(inTheme()) sync(); });
   var chk=$("gdbar"); if(chk){ chk.checked=barOn(); chk.addEventListener("change",function(){ try{ localStorage.setItem(K_BAR,chk.checked?"1":"0"); }catch(e){} sync(); }); }
   sync();
+})();
+</script>
+<style id="gdocs-motion">
+/* Google Docs motion: Material "standard" easing, short durations. The tabs panel itself never slides or bounces. */
+body[data-theme="gdocs"]{--gd-ease:cubic-bezier(.2,0,0,1);--gd-ease-out:cubic-bezier(0,0,.2,1)}
+/* toolbar / top bar: state-layer fades like real Docs buttons */
+#gd-bar .gd-ib,#gd-bar .gd-dd,#gd-bar .gd-edit,#gd-bar .gd-m,#gd-bar .gd-share,#gd-bar .gd-pres,#gd-bar .gd-av,#gd-rail button{transition:background-color .1s linear,box-shadow .15s linear,color .1s linear}
+#gd-bar #gd-title{transition:background-color .12s linear,box-shadow .12s linear;border-radius:4px}
+#gd-bar #gd-title:hover{background:rgba(68,71,70,.06)}
+#gd-bar #gd-title:focus{background:#fff;box-shadow:inset 0 0 0 2px #0b57d0;outline:0}
+/* menus: scale + fade in from the top edge */
+#gd-menu.on{animation:gdMenuIn .15s var(--gd-ease) both;transform-origin:top left}
+@keyframes gdMenuIn{from{opacity:0;transform:scaleY(.9) translateY(-4px)}to{opacity:1;transform:none}}
+#gd-menu button{transition:background-color .08s linear}
+/* snackbar rises from the bottom */
+#gd-snack{transform:translateY(12px);transition:opacity .2s linear,transform .25s var(--gd-ease)}
+#gd-snack.on{transform:none}
+/* find bar drops in */
+#gd-find{animation:gdFindIn .18s var(--gd-ease) both}
+@keyframes gdFindIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}
+/* collaborators popping in */
+#gd-bar .gd-pav{animation:gdPop .22s var(--gd-ease) both}
+@keyframes gdPop{from{opacity:0;transform:scale(.5)}to{opacity:1;transform:none}}
+/* Material ripple (drawn in an overlay so the panel's own DOM is never touched) */
+.gd-rip{position:fixed;z-index:2000;overflow:hidden;pointer-events:none;contain:strict}
+.gd-rip i{position:absolute;border-radius:50%;background:rgba(32,33,36,.16);transform:scale(0);opacity:1;animation:gdRip .5s var(--gd-ease-out) forwards}
+@keyframes gdRip{to{transform:scale(1);opacity:0}}
+@media(prefers-reduced-motion:reduce){#gd-menu.on,#gd-find,#gd-bar .gd-pav,.gd-rip i{animation:none !important}#gd-snack{transition:opacity .2s linear}}
+@media print{.gd-rip{display:none !important}}
+</style>
+<script id="gdocs-motion-js">
+(function(){
+  var B=document.body, RM=window.matchMedia&&matchMedia("(prefers-reduced-motion:reduce)").matches;
+  function inTheme(){ return B.getAttribute("data-theme")==="gdocs"; }
+  /* ripple on press */
+  var SEL="#gd-bar .gd-ib,#gd-bar .gd-dd,#gd-bar .gd-edit,#gd-bar .gd-m,#gd-bar .gd-share,#gd-rail button,#chtabs button,#hdr .row-ch,#gd-menu button:not([disabled]),#gd-find button,#sendbtn,.hm-cell";
+  document.addEventListener("pointerdown",function(e){
+    if(RM||!inTheme()||e.button>0) return;
+    var t=e.target&&e.target.closest&&e.target.closest(SEL); if(!t) return;
+    var r=t.getBoundingClientRect(); if(r.width<4||r.height<4) return;
+    var cs=getComputedStyle(t), d=Math.hypot(Math.max(e.clientX-r.left,r.right-e.clientX),Math.max(e.clientY-r.top,r.bottom-e.clientY))*2;
+    var w=document.createElement("div"); w.className="gd-rip";
+    w.style.cssText="left:"+r.left+"px;top:"+r.top+"px;width:"+r.width+"px;height:"+r.height+"px;border-radius:"+cs.borderRadius;
+    var i=document.createElement("i"); i.style.cssText="width:"+d+"px;height:"+d+"px;left:"+(e.clientX-r.left-d/2)+"px;top:"+(e.clientY-r.top-d/2)+"px";
+    w.appendChild(i); document.body.appendChild(w);
+    setTimeout(function(){ w.remove(); },560);
+  },true);
+  /* switching tabs: the page area fades in quickly (the tabs panel stays put) */
+  function fadeMain(){
+    if(RM||!inTheme()) return;
+    var m=document.getElementById("main"); if(!m||!m.animate) return;
+    try{ m.animate([{opacity:.4},{opacity:1}],{duration:160,easing:"cubic-bezier(.2,0,0,1)"}); }catch(e){}
+  }
+  try{ if(typeof setChannel==="function"){ var _sc=setChannel; setChannel=function(){ var r=_sc.apply(this,arguments); fadeMain(); return r; }; } }catch(e){}
+  /* a new message settles in like text arriving from a collaborator */
+  var box=document.getElementById("box");
+  if(box&&window.MutationObserver&&!RM){
+    new MutationObserver(function(ms){
+      if(!inTheme()) return;
+      var add=[]; ms.forEach(function(m){ Array.prototype.forEach.call(m.addedNodes,function(n){ if(n.nodeType===1&&n.classList.contains("msg")) add.push(n); }); });
+      if(!add.length||add.length>3) return;                 // history loading in bulk is not animated
+      add.forEach(function(n){ try{ n.animate([{opacity:0,transform:"translateY(6px)"},{opacity:1,transform:"none"}],{duration:200,easing:"cubic-bezier(.2,0,0,1)"}); }catch(e){} });
+    }).observe(box,{childList:true});
+  }
 })();
 </script>
 </body>
