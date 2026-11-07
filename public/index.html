@@ -13764,6 +13764,10 @@ button,.row-ch,.gm-card,.hm-it,#chtabs button{touch-action:manipulation}
 body.in-ctab #topbanner{display:none}
 #ctview{display:none;flex:1;min-height:0;flex-direction:column;background:var(--bg);color:var(--text)}
 body.in-ctab #ctview{display:flex}
+#ctview.has-wp .ct-doc{background:color-mix(in srgb,var(--bg) 84%,transparent);border-radius:12px}
+#ctview.has-wp :is(.ct-bar,.ct-subs){text-shadow:0 1px 2px rgba(0,0,0,.35)}
+#ctview.has-wp .ct-who{color:#fff;opacity:.95}
+.ctm-wp{display:flex;flex-direction:column;gap:6px}.ctm-wl{font-size:13px;font-weight:600}
 body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray,body.in-ctab #attach{display:none !important}
 .ct-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:14px 18px 6px}
 .ct-title{display:inline-flex;align-items:center;gap:8px;padding:9px 18px;border-radius:12px;border:1px solid var(--line);background:color-mix(in srgb,var(--accent) 22%,var(--row));font-size:15px;font-weight:700;max-width:100%}
@@ -13855,6 +13859,23 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
   const okIm = x => typeof x === "string" && x.length <= 40000 && /^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+\/=]+$/.test(x);   // custom picture instead of an emoji
   const cleanIm = x => okIm(x) ? x : "";
   const imSig = x => x ? x.length + x.slice(-10) : "";
+  /* wallpaper for a tab or subtab: a small picture (data URL) or a plain colour */
+  const okWp = x => typeof x === "string" && ((x.length <= 120000 && /^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+\/=]+$/.test(x)) || /^#[0-9a-fA-F]{6}$/.test(x));
+  const cleanWp = x => okWp(x) ? x : "";
+  function wpPic(f, cb){
+    const url = URL.createObjectURL(f), im = new Image();
+    im.onload = () => {
+      URL.revokeObjectURL(url);
+      for(const [mw, q] of [[900, .72], [720, .6], [560, .5], [420, .45], [300, .4]]){
+        const k = Math.min(1, mw / (im.width || 1), (mw * 1.4) / (im.height || 1)), w = Math.max(1, Math.round(im.width * k)), h = Math.max(1, Math.round(im.height * k));
+        const c = document.createElement("canvas"); c.width = w; c.height = h; c.getContext("2d").drawImage(im, 0, 0, w, h);
+        const d = c.toDataURL("image/jpeg", q); if(okWp(d)){ cb(d); return; }
+      }
+      cb("");
+    };
+    im.onerror = () => { URL.revokeObjectURL(url); cb(""); };
+    im.src = url;
+  }
   function squarePic(f, cb){                                   // crop to a small square, keep it under the size limit
     if(f.type === "image/gif" || /\.gif$/i.test(f.name || "")){ const r = new FileReader(); r.onload = e => { const d = String(e.target.result); cb(okIm(d) ? d : ""); }; r.readAsDataURL(f); return; }
     const url = URL.createObjectURL(f), im = new Image();
@@ -14065,6 +14086,11 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
     const hic = $$("ct-ic"); hic.replaceChildren();
     if(top.im){ const g = new Image(); g.alt = ""; g.src = top.im; g.style.cssText = "width:24px;height:24px;border-radius:50%;object-fit:cover;display:block"; hic.appendChild(g); } else hic.textContent = top.ic;
     $$("ct-nm").textContent = top.name;
+    { const v = $$("ctview"), w = cleanWp(t.wp) || cleanWp(top.wp);
+      if(v){ v.classList.toggle("has-wp", !!w);
+        if(!w){ v.style.removeProperty("background-image"); v.style.removeProperty("background-color"); }
+        else if(w[0] === "#"){ v.style.backgroundImage = "none"; v.style.backgroundColor = w; }
+        else { v.style.backgroundColor = "transparent"; v.style.backgroundImage = "url(" + w + ")"; v.style.backgroundSize = "cover"; v.style.backgroundPosition = "center"; v.style.backgroundRepeat = "no-repeat"; } } }
     const a = aclOf(top);
     $$("ct-who").textContent = a.m === "all" ? "Anyone can edit" : a.m === "mods" ? "Mods can edit" : a.m === "me" ? "Only " + (top.by || "owners") + " can edit" : "Editors: " + [top.by].concat(a.l).filter(Boolean).join(", ");
     const h = clean(t.html);
@@ -14310,6 +14336,7 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
       '<label>Tab name<input id="ctm-name" type="text" maxlength="24" autocomplete="off" placeholder="e.g. Rules"></label>' +
       '<label>Icon (pick one below, or type / paste any emoji)<input id="ctm-ic" type="text" maxlength="24" autocomplete="off" placeholder="📄"></label>' +
       '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span id="ctm-pv" style="width:36px;height:36px;border-radius:50%;overflow:hidden;display:none;flex:none"></span><button type="button" class="gm-b alt" id="ctm-up">🖼 Use a picture instead</button><button type="button" class="gm-b alt" id="ctm-ux" style="display:none" title="Remove the picture">✕</button><input type="file" id="ctm-file" accept="image/*" hidden></div>' +
+      '<div class="ctm-wp"><span class="ctm-wl">Wallpaper for this page</span><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span id="ctm-wpv" title="Preview"></span><button type="button" class="gm-b alt" id="ctm-wpb">🖼 Choose wallpaper</button><label class="gm-b alt" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer">🎨 Colour<input type="color" id="ctm-wpc" value="#2b2d31" style="width:26px;height:22px;padding:0;border:0;background:none"></label><button type="button" class="gm-b alt" id="ctm-wpx" style="display:none" title="Remove the wallpaper">✕</button><input type="file" id="ctm-wpf" accept="image/*" hidden></div><div class="ctm-note" style="display:block">Subtabs without their own wallpaper use their tab’s wallpaper.</div></div>' +
       '<input id="ctm-eq" type="text" autocomplete="off" placeholder="Search emojis (cat, fire, flag…)">' +
       '<div class="ctm-ecat" id="ctm-ecat"></div>' +
       '<div class="ctm-emo" id="ctm-emo"></div>' +
@@ -14367,6 +14394,16 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
     if(ctmIm){ const g = new Image(); g.alt = ""; g.src = ctmIm; g.style.cssText = "width:100%;height:100%;object-fit:cover;display:block"; pv.appendChild(g); }
     pv.style.display = ctmIm ? "" : "none"; $$("ctm-ux").style.display = ctmIm ? "" : "none";
   }
+  let ctmWp = "";
+  function ctmWpPv(){
+    const v = $$("ctm-wpv");
+    v.style.cssText = "width:54px;height:36px;border-radius:8px;border:1px solid var(--line);flex:none;background:" + (ctmWp ? (ctmWp[0] === "#" ? ctmWp : "url(" + ctmWp + ") center/cover") : "var(--row)");
+    $$("ctm-wpx").style.display = ctmWp ? "" : "none";
+  }
+  $$("ctm-wpb").onclick = () => $$("ctm-wpf").click();
+  $$("ctm-wpx").onclick = () => { ctmWp = ""; ctmWpPv(); };
+  $$("ctm-wpc").oninput = () => { ctmWp = $$("ctm-wpc").value; ctmWpPv(); };
+  $$("ctm-wpf").onchange = () => { const f = $$("ctm-wpf").files && $$("ctm-wpf").files[0]; $$("ctm-wpf").value = ""; if(!f) return; wpPic(f, d => { if(d){ ctmWp = d; ctmWpPv(); $$("ctm-err").textContent = ""; } else $$("ctm-err").textContent = "Couldn’t use that wallpaper — try a smaller or different picture."; }); };
   $$("ctm-up").onclick = () => $$("ctm-file").click();
   $$("ctm-ux").onclick = () => { ctmIm = ""; ctmPv(); };
   $$("ctm-file").onchange = () => { const f = $$("ctm-file").files && $$("ctm-file").files[0]; $$("ctm-file").value = ""; if(!f) return; squarePic(f, d => { if(d){ ctmIm = d; ctmPv(); $$("ctm-err").textContent = ""; } else $$("ctm-err").textContent = "Couldn’t use that picture — try a different one."; }); };
@@ -14374,7 +14411,7 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
     if(t ? !canManage(t) : (parent ? !canEdit(byId(parent)) : !inRoom())) return;
     editId = t ? t.id : null; newParent = t ? (t.p || "") : (parent || ""); delArmed = 0;
     $$("ctm-t").textContent = t ? (t.p ? "Rename subtab" : "Rename tab") : (newParent ? "New subtab" : "New tab");
-    $$("ctm-name").value = t ? t.name : ""; $$("ctm-ic").value = t ? t.ic : ""; ctmIm = t ? cleanIm(t.im) : ""; ctmPv();
+    $$("ctm-name").value = t ? t.name : ""; $$("ctm-ic").value = t ? t.ic : ""; ctmIm = t ? cleanIm(t.im) : ""; ctmPv(); ctmWp = t ? cleanWp(t.wp) : ""; if(ctmWp[0] === "#") $$("ctm-wpc").value = ctmWp; ctmWpPv();
     $$("ctm-del").style.display = (t && canDel(t)) ? "" : "none"; $$("ctm-del").textContent = t && t.p ? "Delete subtab" : "Delete tab"; $$("ctm-err").textContent = "";
     $$("ctm-note").textContent = (t && !canDel(t)) ? "Only " + (t.by || "an owner") + " (who made this" + (t.p ? " subtab’s tab" : " tab") + ") or an owner can delete it. You can still rename and edit it." : "";
     const isTopLevel = t ? !t.p : !parent, ac = aclOf(t);
@@ -14410,14 +14447,14 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
     const acl = cleanAcl({ m: $$("ctm-acl").value, l: $$("ctm-names").value.split(/[,\n]/) });
     if(!name){ $$("ctm-err").textContent = "Give the tab a name."; return; }
     let t = editId && byId(editId);
-    if(t){ t.name = name; t.ic = ic; t.im = ctmIm; if(isTopLevel) t.acl = acl; bump(t); delete tombs[t.id]; }
+    if(t){ t.name = name; t.ic = ic; t.im = ctmIm; t.wp = ctmWp; if(isTopLevel) t.acl = acl; bump(t); delete tombs[t.id]; }
     else {
       if(tabs.length >= MAXALL){ $$("ctm-err").textContent = "Too many tabs already."; return; }
       if(!newParent && !isMod() && !isOwner() && tops().filter(madeByMe).length >= MAXMINE){ $$("ctm-err").textContent = "You can make up to " + MAXMINE + " tabs of your own. Delete one to make another."; return; }
       if(!newParent && tops().length >= MAX){ $$("ctm-err").textContent = "You can have up to " + MAX + " custom tabs."; return; }
       if(newParent && subsOf(newParent).length >= MAXSUB){ $$("ctm-err").textContent = "A tab can have up to " + MAXSUB + " subtabs."; return; }
       const sibs = newParent ? subsOf(newParent) : tops();
-      t = { id: newId(), name, ic, im: ctmIm, html: "", p: newParent, acl: isTopLevel ? acl : { m: "mods", l: [] }, o: sibs.reduce((m, x) => Math.max(m, (x.o || 0) + 1), 0), v: Date.now(), by: (typeof usr === "string" ? usr : "").slice(0, 12) };
+      t = { id: newId(), name, ic, im: ctmIm, wp: ctmWp, html: "", p: newParent, acl: isTopLevel ? acl : { m: "mods", l: [] }, o: sibs.reduce((m, x) => Math.max(m, (x.o || 0) + 1), 0), v: Date.now(), by: (typeof usr === "string" ? usr : "").slice(0, 12) };
       tabs.push(t);
     }
     if(!persist()){ $$("ctm-err").textContent = "This device is out of storage space."; return; }
@@ -14459,7 +14496,7 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
     canPush: () => isMod() || Date.now() - lastLocalEdit < 120000 || tabs.some(t => canEdit(t) || canManage(t)),
     out(){
       const o = [], have = new Set();
-      tabs.forEach(t => { have.add(t.id); o.push({ id: t.id, name: t.name, ic: t.ic, im: cleanIm(t.im), html: t.html || "", p: t.p || "", acl: aclOf(t), o: t.o || 0, by: t.by || "", v: t.v || 1 }); });
+      tabs.forEach(t => { have.add(t.id); o.push({ id: t.id, name: t.name, ic: t.ic, im: cleanIm(t.im), wp: cleanWp(t.wp), html: t.html || "", p: t.p || "", acl: aclOf(t), o: t.o || 0, by: t.by || "", v: t.v || 1 }); });
       Object.keys(tombs).forEach(id => { if(!have.has(id)) o.push({ id, del: 1, v: tombs[id] }); });
       return o;
     },
@@ -14481,7 +14518,7 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
         const p = (r.p === "" || r.p == null) ? "" : (okId(r.p) && r.p !== r.id ? r.p : null); if(p === null) return;
         const name = cleanName(r.name); if(!name) return;
         const html = clean(r.html); if(html.length > MAXHTML + 20000) return;
-        const nt = { id: r.id, name, ic: cleanIc(r.ic), im: cleanIm(r.im), html, p, acl: cleanAcl(r.acl), o: isFinite(+r.o) ? +r.o : 0, by: String(r.by || "").slice(0, 12), v };
+        const nt = { id: r.id, name, ic: cleanIc(r.ic), im: cleanIm(r.im), wp: cleanWp(r.wp), html, p, acl: cleanAcl(r.acl), o: isFinite(+r.o) ? +r.o : 0, by: String(r.by || "").slice(0, 12), v };
         if(loc) tabs[i] = nt; else { if(tabs.length >= MAXALL) return; tabs.push(nt); }
         delete tombs[r.id]; ch = true;
       });
@@ -17954,7 +17991,7 @@ html body[data-theme="gdocs"] #chtabs button[data-ch=home]{order:-1}
 /* Homepage = the grey doc page */
 body[data-theme="gdocs"] #home{background:#f9fbfd;color:#111;font-family:"Architects Daughter","Itim","Comic Sans MS",cursive;justify-content:flex-start;overflow:hidden auto}
 body[data-theme="gdocs"] #home *{font-family:inherit}
-body[data-theme="gdocs"] .hm-page{display:block;position:relative;width:min(816px,100%);flex:1 0 auto;min-height:100%;overflow:hidden;background:#d2d2d2 url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 816 483%22 preserveAspectRatio=%22none%22%3E%3Cpath fill=%22%239b9b9b%22 d=%22M0,0 L100,0 C173,173 320,220 427,223 C587,227 700,300 816,427 L816,483 L0,483Z%22/%3E%3Crect x=%2260%22 y=%22318%22 width=%22230%22 height=%22200%22 rx=%2246%22 transform=%22rotate%28-14 60 318%29%22 fill=%22%23a2a2a2%22/%3E%3Cpath fill=%22%23d8d8d8%22 d=%22M88.0 247.0L89.8 249.4L91.2 251.8L91.9 254.3L91.8 256.8L90.8 259.1L89.1 261.3L86.9 263.2L84.5 264.9L82.3 266.6L80.4 268.2L79.0 270.0L78.4 272.1L78.3 274.5L78.7 277.1L79.2 280.0L79.5 282.9L79.5 285.8L78.9 288.3L77.5 290.4L75.5 291.9L73.0 292.9L70.1 293.5L67.2 293.8L64.4 294.1L61.9 294.6L59.9 295.5L58.3 296.9L57.0 298.9L56.0 301.4L55.0 304.2L53.8 306.9L52.4 309.3L50.6 311.2L48.4 312.3L45.9 312.7L43.2 312.3L40.4 311.3L37.7 310.1L35.2 309.0L32.8 308.2L30.6 307.9L28.5 308.4L26.4 309.5L24.2 311.1L22.0 313.0L19.6 314.8L17.2 316.2L14.7 316.9L12.2 316.8L9.9 315.8L7.7 314.1L5.8 311.9L4.1 309.5L2.4 307.3L0.8 305.4L-1.0 304.0L-3.1 303.4L-5.5 303.3L-8.1 303.7L-11.0 304.2L-13.9 304.5L-16.8 304.5L-19.3 303.9L-21.4 302.5L-22.9 300.5L-23.9 298.0L-24.5 295.1L-24.8 292.2L-25.1 289.4L-25.6 286.9L-26.5 284.9L-27.9 283.3L-29.9 282.0L-32.4 281.0L-35.2 280.0L-37.9 278.8L-40.3 277.4L-42.2 275.6L-43.3 273.4L-43.7 270.9L-43.3 268.2L-42.3 265.4L-41.1 262.7L-40.0 260.2L-39.2 257.8L-38.9 255.6L-39.4 253.5L-40.5 251.4L-42.1 249.2L-44.0 247.0L-45.8 244.6L-47.2 242.2L-47.9 239.7L-47.8 237.2L-46.8 234.9L-45.1 232.7L-42.9 230.8L-40.5 229.1L-38.3 227.4L-36.4 225.8L-35.0 224.0L-34.4 221.9L-34.3 219.5L-34.7 216.9L-35.2 214.0L-35.5 211.1L-35.5 208.2L-34.9 205.7L-33.5 203.6L-31.5 202.1L-29.0 201.1L-26.1 200.5L-23.2 200.2L-20.4 199.9L-17.9 199.4L-15.9 198.5L-14.3 197.1L-13.0 195.1L-12.0 192.6L-11.0 189.8L-9.8 187.1L-8.4 184.7L-6.6 182.8L-4.4 181.7L-1.9 181.3L0.8 181.7L3.6 182.7L6.3 183.9L8.8 185.0L11.2 185.8L13.4 186.1L15.5 185.6L17.6 184.5L19.8 182.9L22.0 181.0L24.4 179.2L26.8 177.8L29.3 177.1L31.8 177.2L34.1 178.2L36.3 179.9L38.2 182.1L39.9 184.5L41.6 186.7L43.2 188.6L45.0 190.0L47.1 190.6L49.5 190.7L52.1 190.3L55.0 189.8L57.9 189.5L60.8 189.5L63.3 190.1L65.4 191.5L66.9 193.5L67.9 196.0L68.5 198.9L68.8 201.8L69.1 204.6L69.6 207.1L70.5 209.1L71.9 210.7L73.9 212.0L76.4 213.0L79.2 214.0L81.9 215.2L84.3 216.6L86.2 218.4L87.3 220.6L87.7 223.1L87.3 225.8L86.3 228.6L85.1 231.3L84.0 233.8L83.2 236.2L82.9 238.4L83.4 240.5L84.5 242.6L86.1 244.8L88.0 247.0Z%22/%3E%3Ccircle cx=%22250%22 cy=%22250%22 r=%2243%22 fill=%22%23d2d2d2%22/%3E%3Cpolygon points=%22112,108 184,92 168,166%22 fill=%22%23595959%22 stroke=%22%23595959%22 stroke-width=%2230%22 stroke-linejoin=%22round%22/%3E%3C/svg%3E") 0 0/100% 100% no-repeat;box-shadow:0 0 0 1px #c7c7c7}
+body[data-theme="gdocs"] .hm-page{display:block;position:relative;width:min(816px,100%);flex:1 0 auto;min-height:100%;overflow:hidden;background:#9b9b9b url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 816 483%22 preserveAspectRatio=%22none%22%3E%3Cpath fill=%22%239b9b9b%22 d=%22M0,0 L100,0 C173,173 320,220 427,223 C587,227 700,300 816,427 L816,483 L0,483Z%22/%3E%3Crect x=%2260%22 y=%22318%22 width=%22230%22 height=%22200%22 rx=%2246%22 transform=%22rotate%28-14 60 318%29%22 fill=%22%23a2a2a2%22/%3E%3Cpath fill=%22%23d8d8d8%22 d=%22M88.0 247.0L89.8 249.4L91.2 251.8L91.9 254.3L91.8 256.8L90.8 259.1L89.1 261.3L86.9 263.2L84.5 264.9L82.3 266.6L80.4 268.2L79.0 270.0L78.4 272.1L78.3 274.5L78.7 277.1L79.2 280.0L79.5 282.9L79.5 285.8L78.9 288.3L77.5 290.4L75.5 291.9L73.0 292.9L70.1 293.5L67.2 293.8L64.4 294.1L61.9 294.6L59.9 295.5L58.3 296.9L57.0 298.9L56.0 301.4L55.0 304.2L53.8 306.9L52.4 309.3L50.6 311.2L48.4 312.3L45.9 312.7L43.2 312.3L40.4 311.3L37.7 310.1L35.2 309.0L32.8 308.2L30.6 307.9L28.5 308.4L26.4 309.5L24.2 311.1L22.0 313.0L19.6 314.8L17.2 316.2L14.7 316.9L12.2 316.8L9.9 315.8L7.7 314.1L5.8 311.9L4.1 309.5L2.4 307.3L0.8 305.4L-1.0 304.0L-3.1 303.4L-5.5 303.3L-8.1 303.7L-11.0 304.2L-13.9 304.5L-16.8 304.5L-19.3 303.9L-21.4 302.5L-22.9 300.5L-23.9 298.0L-24.5 295.1L-24.8 292.2L-25.1 289.4L-25.6 286.9L-26.5 284.9L-27.9 283.3L-29.9 282.0L-32.4 281.0L-35.2 280.0L-37.9 278.8L-40.3 277.4L-42.2 275.6L-43.3 273.4L-43.7 270.9L-43.3 268.2L-42.3 265.4L-41.1 262.7L-40.0 260.2L-39.2 257.8L-38.9 255.6L-39.4 253.5L-40.5 251.4L-42.1 249.2L-44.0 247.0L-45.8 244.6L-47.2 242.2L-47.9 239.7L-47.8 237.2L-46.8 234.9L-45.1 232.7L-42.9 230.8L-40.5 229.1L-38.3 227.4L-36.4 225.8L-35.0 224.0L-34.4 221.9L-34.3 219.5L-34.7 216.9L-35.2 214.0L-35.5 211.1L-35.5 208.2L-34.9 205.7L-33.5 203.6L-31.5 202.1L-29.0 201.1L-26.1 200.5L-23.2 200.2L-20.4 199.9L-17.9 199.4L-15.9 198.5L-14.3 197.1L-13.0 195.1L-12.0 192.6L-11.0 189.8L-9.8 187.1L-8.4 184.7L-6.6 182.8L-4.4 181.7L-1.9 181.3L0.8 181.7L3.6 182.7L6.3 183.9L8.8 185.0L11.2 185.8L13.4 186.1L15.5 185.6L17.6 184.5L19.8 182.9L22.0 181.0L24.4 179.2L26.8 177.8L29.3 177.1L31.8 177.2L34.1 178.2L36.3 179.9L38.2 182.1L39.9 184.5L41.6 186.7L43.2 188.6L45.0 190.0L47.1 190.6L49.5 190.7L52.1 190.3L55.0 189.8L57.9 189.5L60.8 189.5L63.3 190.1L65.4 191.5L66.9 193.5L67.9 196.0L68.5 198.9L68.8 201.8L69.1 204.6L69.6 207.1L70.5 209.1L71.9 210.7L73.9 212.0L76.4 213.0L79.2 214.0L81.9 215.2L84.3 216.6L86.2 218.4L87.3 220.6L87.7 223.1L87.3 225.8L86.3 228.6L85.1 231.3L84.0 233.8L83.2 236.2L82.9 238.4L83.4 240.5L84.5 242.6L86.1 244.8L88.0 247.0Z%22/%3E%3Ccircle cx=%22250%22 cy=%22250%22 r=%2243%22 fill=%22%23d2d2d2%22/%3E%3Cpolygon points=%22112,108 184,92 168,166%22 fill=%22%23595959%22 stroke=%22%23595959%22 stroke-width=%2230%22 stroke-linejoin=%22round%22/%3E%3C/svg%3E") 0 0/100% auto no-repeat;box-shadow:0 0 0 1px #c7c7c7}
 body[data-theme="gdocs"] .hm-page::before,body[data-theme="gdocs"] .hm-page::after{content:"";position:absolute;top:2px;width:32px;height:42px;background:url(assets/mascot_logo.png) center/contain no-repeat;filter:grayscale(1) contrast(1.2);z-index:2}
 body[data-theme="gdocs"] .hm-page::before{left:2px}
 body[data-theme="gdocs"] .hm-page::after{right:2px}
