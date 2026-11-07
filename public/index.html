@@ -3482,8 +3482,21 @@ label.plus.open{transform:rotate(45deg)}
   /* =============== shared registry: protected names, bans, last chat-clear =============== */
   const okCImg=x=>typeof x==="string"&&x.length<=4000000&&/^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+\/=]+$/.test(x);   // custom emoji / sticker pictures
   const okTImg=x=>typeof x==="string"&&x.length<=4600000&&/^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+\/=]+$/.test(x);   // room icons: small png/jpeg/webp pictures only
+  function cleanTT(t){
+    if(!t||typeof t!=="object") return null;
+    const KR=/^[A-Za-z0-9_:.-]{1,48}$/, bad=k=>k==="home"||k==="__proto__"||k==="constructor"||k==="prototype";
+    const o=[], p={};
+    if(Array.isArray(t.o)) t.o.slice(0,80).forEach(k=>{ k=String(k); if(KR.test(k)&&!bad(k)&&!o.includes(k)) o.push(k); });
+    if(t.p&&typeof t.p==="object") Object.keys(t.p).slice(0,80).forEach(k=>{ const v=String(t.p[k]); if(KR.test(k)&&KR.test(v)&&!bad(k)&&!bad(v)&&k!==v) p[k]=v; });
+    Object.keys(p).forEach(k=>{                      // no loops, and never deeper than 4 levels
+      let d=1,c=p[k]; const seen=[k];
+      while(c&&p[c]!==undefined&&d<8){ if(seen.includes(c)){ delete p[k]; return; } seen.push(c); c=p[c]; d++; }
+      if(d>4) delete p[k];
+    });
+    return (o.length||Object.keys(p).length)?{o,p}:null;
+  }
   function cleanReg(r){
-    const o={acc:{},bans:[],mutes:[],mods:[],adms:[],hid:[],tg:{},mto:false,mao:false,tn:{},hm:null,ce:{},cls:0,clr:0,clg:0,clp:0,muteAll:false,v:0}; if(!r||typeof r!=="object") return o;
+    const o={acc:{},bans:[],mutes:[],mods:[],adms:[],hid:[],tg:{},mto:false,mao:false,tn:{},hm:null,tt:null,ce:{},cls:0,clr:0,clg:0,clp:0,muteAll:false,v:0}; if(!r||typeof r!=="object") return o;
     if(r.acc&&typeof r.acc==="object") Object.keys(r.acc).slice(0,500).forEach(k=>{ if(k&&k.length<=12&&k!=="__proto__"&&HEX.test(String(r.acc[k]))) o.acc[k]=r.acc[k]; });
     if(Array.isArray(r.bans)) o.bans=[...new Set(r.bans.map(x=>String(x).slice(0,12).toLowerCase()).filter(Boolean))].slice(0,500);
     if(Array.isArray(r.mutes)) o.mutes=[...new Set(r.mutes.map(x=>String(x).slice(0,12).toLowerCase()).filter(Boolean))].slice(0,500);
@@ -3503,6 +3516,7 @@ label.plus.open{transform:rotate(45deg)}
         }
       });
     }
+    o.tt=cleanTT(r.tt);                              // Google Docs theme: which tabs sit inside other tabs (same for everyone)
     if(Array.isArray(r.hm)){                       // homepage tiles the owners made (null = the built-in default tiles)
       const seen=new Set(), HB=["games","chat","media","draw","shame","polls","gal","tier"]; o.hm=[];
       r.hm.slice(0,24).forEach(x=>{
@@ -3582,7 +3596,7 @@ label.plus.open{transform:rotate(45deg)}
     if(gone.length){ try{ from.send({t:"BLK",i:newId(),ids:gone.slice(0,50),x:first.slice(0,2000)}); }catch(e){} }
     return !d.e.length;
   }
-  const areg=()=>({t:"A",i:newId(),acc:reg.acc,bans:reg.bans,mutes:reg.mutes,mods:reg.mods,adms:adminNames(),hid:reg.hid,tg:reg.tg,mto:reg.mto,mao:reg.mao,tn:reg.tn,hm:reg.hm,ce:reg.ce,cls:reg.cls,clr:reg.clr,clg:reg.clg,clp:reg.clp,muteAll:reg.muteAll,v:reg.v});
+  const areg=()=>({t:"A",i:newId(),acc:reg.acc,bans:reg.bans,mutes:reg.mutes,mods:reg.mods,adms:adminNames(),hid:reg.hid,tg:reg.tg,mto:reg.mto,mao:reg.mao,tn:reg.tn,hm:reg.hm,tt:reg.tt,ce:reg.ce,cls:reg.cls,clr:reg.clr,clg:reg.clg,clp:reg.clp,muteAll:reg.muteAll,v:reg.v});
   function adminNames(){ const a=conns.filter(c=>c.ok2&&c.admin&&c.userName).map(c=>low(c.userName)); if(adminMode&&usr) a.push(low(usr)); return [...new Set(a)]; }
   reg.muteAll=false;
   let myPwH="", adminMode=false, pendW=null;
@@ -4064,6 +4078,7 @@ label.plus.open{transform:rotate(45deg)}
       else if(d.t==="W"){ procW(d,{admin:from.admin||d.k===ADMIN_KEY,name:from.userName,reply:r=>{try{from.send(r);}catch(e){}}}); return; }
       else if(d.t==="M"){ procM(d,{conn:from,reply:r=>{try{from.send(r);}catch(e){}}}); return; }
       else if(d.t==="PS"){ savePrefs(from,d); return; }
+      else if(d.t==="TT"){ const now=Date.now(); if(now-(from.ttAt||0)<400) return; from.ttAt=now; reg.tt=cleanTT(d.tt); commit(); return; }
       else if(d.t==="TG"){ setUserTag(from,d); return; }
       else if(d.t==="TH"){ const l=low(from.userName); if(l&&(from.admin||reg.mods.includes(l))) setHidden(l,!!d.h); return; }
       else if(d.t==="MD"){ procMod(d,{conn:from,reply:r=>{try{from.send(r);}catch(e){}}}); return; }
@@ -4071,7 +4086,7 @@ label.plus.open{transform:rotate(45deg)}
     }
     else {
       if(d.t==="A"){
-        const n=cleanReg(d); if(d.ce===undefined&&reg.ce) n.ce=reg.ce; if(d.hm===undefined&&reg.hm) n.hm=reg.hm;
+        const n=cleanReg(d); if(d.ce===undefined&&reg.ce) n.ce=reg.ce; if(d.hm===undefined&&reg.hm) n.hm=reg.hm; if(d.tt===undefined&&reg.tt) n.tt=reg.tt;
         if(window.revealChat) window.revealChat();       // the host accepted us: now show the chat
         if(reg.v&&n.v&&n.v<reg.v){ console.warn("[reg] ignored an older registry from the host"); return; }   // a host with stale data must not demote mods / drop accounts
         const grew=n.clr>reg.clr||n.clg>reg.clg||n.cls>reg.cls||n.clp>reg.clp; reg=n; saveReg(); if(grew) applyClear(); refreshUI(); return;
@@ -4107,7 +4122,7 @@ label.plus.open{transform:rotate(45deg)}
         return;
       }
     }
-    if(d.t==="AR"||d.t==="A"||d.t==="X"||d.t==="Z"||d.t==="E"||d.t==="WA"||d.t==="W"||d.t==="M"||d.t==="SS"||d.t==="JS"||d.t==="AN"||d.t==="MD"||d.t==="TH"||d.t==="TG"||d.t==="TR"||d.t==="TC"||d.t==="PS"||d.t==="PV"||d.t==="UD") return;
+    if(d.t==="AR"||d.t==="A"||d.t==="X"||d.t==="Z"||d.t==="E"||d.t==="WA"||d.t==="W"||d.t==="M"||d.t==="SS"||d.t==="JS"||d.t==="AN"||d.t==="MD"||d.t==="TH"||d.t==="TG"||d.t==="TR"||d.t==="TC"||d.t==="PS"||d.t==="TT"||d.t==="PV"||d.t==="UD") return;
     _handle(d,from);
   };
 
@@ -4776,6 +4791,7 @@ label.plus.open{transform:rotate(45deg)}
   })();
 
   /* =============== 🏠 homepage icons: owners add / edit / remove them, everyone sees them =============== */
+  window.__pbTT={ get:()=>reg.tt, set:tt=>{ tt=cleanTT(tt); reg.tt=tt; if(isHost){ commit(); } else { saveReg(); try{ send({t:"TT",i:newId(),tt}); }catch(e){} } } };   // tab nesting (Docs theme): the host shares it with everyone
   window.__pbHomeGet=()=>reg.hm;                                   // null = default tiles
   window.__pbHomeSave=hm=>adminDo({a:"home",hm:hm});
   window.__pbHomeRefresh=()=>{ if(window.__pbHomeRender) window.__pbHomeRender(); };
@@ -7200,8 +7216,9 @@ body.tab-dragging,body.tab-dragging *{user-select:none !important;-webkit-user-s
   const rows=()=>DEF.map(rowEl).filter(Boolean);
   const tabs=()=>DEF.map(tabEl).filter(Boolean);
 
+  const gdLeft=()=>document.body.dataset.theme==="gdocs"&&document.body.dataset.hp==="left";   // the Docs left panel has its own (shared) tab layout
   function apply(){
-    if(!order.length) return;
+    if(!order.length||gdLeft()) return;
     const o=full();
     o.forEach((k,i)=>{ const b=tabEl(k); if(b&&b.style.order!==String(i)) b.style.order=String(i); });
     const anchor=document.getElementById("sbroster"); if(!anchor||!anchor.parentNode) return;
@@ -7209,6 +7226,7 @@ body.tab-dragging,body.tab-dragging *{user-select:none !important;-webkit-user-s
     if(present.some((r,i)=>r!==cur[i])) present.forEach(r=>anchor.parentNode.insertBefore(r,anchor));
   }
   function tip(){
+    if(gdLeft()) return;
     tabs().forEach(b=>{ if(!b.title) b.title="Drag to move this tab (only you see the new order)"; });
     rows().forEach(r=>{ if(!r.title) r.title="Drag to move this room (only you see the new order)"; });
   }
@@ -7255,6 +7273,7 @@ body.tab-dragging,body.tab-dragging *{user-select:none !important;-webkit-user-s
   document.addEventListener("pointerdown",e=>{
     if(e.button>0||drag) return;
     const el=e.target.closest&&e.target.closest('#chtabs button[data-ch], .row-ch[id^="ch-"]'); if(!el) return;
+    if(gdLeft()&&!el.classList.contains("row-ch")) return;
     const side=el.classList.contains("row-ch"), key=side?el.id.slice(3):el.dataset.ch; if(!KEYS.includes(key)) return;
     drag={el,side,key,x:e.clientX,y:e.clientY,id:e.pointerId,on:false,touch:e.pointerType==="touch"||e.pointerType==="pen",timer:0};
     if(drag.touch) drag.timer=setTimeout(begin,380);
@@ -18081,6 +18100,10 @@ d-color .15s linear,color .15s linear !important}
 html body[data-theme="gdocs"] #hdr :is(*):is(:hover,:active,:focus-visible){transform:none !important}
 @media(prefers-reduced-motion:reduce){body[data-theme="gdocs"] #gd-bar,body[data-theme="gdocs"] #gd-rail,body[data-theme="gdocs"]{transition:none !important}}
 </style>
+<style id="gdocs-links">
+html body[data-theme="gdocs"] #box .bubble a.lnk,html body[data-theme="gdocs"] #box .bubble a{color:#1155cc !important;text-decoration:underline !important}
+html body[data-theme="gdocs"].gd-dark #box .bubble a.lnk,html body[data-theme="gdocs"].gd-dark #box .bubble a{color:#8ab4f8 !important}
+</style>
 <style id="gdocs-fmt">
 /* toolbar formatting is applied to the chat text (this device only) */
 body[data-theme="gdocs"] #box .bubble,body[data-theme="gdocs"] #box .me .bubble{color:var(--gdc,#000) !important;background:var(--gdhl,transparent) !important;font-family:var(--gdff,Arial,"Helvetica Neue",sans-serif) !important;font-size:calc(var(--gdfs,11pt) * var(--gdsz,1)) !important;line-height:var(--gdlh,1.5) !important;font-weight:var(--gdw,400) !important;font-style:var(--gdi,normal) !important;text-decoration:var(--gdu,none) !important}
@@ -18239,9 +18262,9 @@ html body[data-theme="gdocs"] #hmore-menu #hdr-log .dot{top:10px;right:14px}
     Tools:[["Word count","Ctrl+Shift+C",words]],
     Extensions:[["No add-ons installed","",null]],
     Help:[["Keyboard shortcuts","Ctrl+/",function(){snk("Ctrl+Enter sends · Esc closes menus · Ctrl+P prints");}],["Docs Help","",function(){snk("This is just a Docs-style theme 😄");}]],
-    Settings:[["Screen reader support","",null],["Open settings","",function(){ try{ openSettings(); }catch(e){ snk("Open Settings from the gear"); } }]]
+    Settings:[]
   };
-  var menus=$("gd-menus"); Object.keys(MENUS).forEach(function(n){ var b=document.createElement("button"); b.className="gd-m"; b.type="button"; b.textContent=n; b.onclick=function(e){ e.stopPropagation(); openMenu(b,n); }; menus.appendChild(b); });
+  var menus=$("gd-menus"); Object.keys(MENUS).forEach(function(n){ var b=document.createElement("button"); b.className="gd-m"; b.type="button"; b.textContent=n; b.onclick=function(e){ e.stopPropagation(); if(n==="Settings"){ closeMenu(); try{ openSettings(); }catch(err){ snk("Open Settings from the gear"); } return; } openMenu(b,n); }; menus.appendChild(b); });
   function closeMenu(){ menu.classList.remove("on"); document.querySelectorAll("#gd-bar .open").forEach(function(x){x.classList.remove("open");}); }
   function openMenu(btn,name){
     var was=btn.classList.contains("open"); closeMenu(); if(was) return;
@@ -18629,5 +18652,209 @@ html body.juan-on[data-theme="gdocs"] #juan-apple,html body.juan-on[data-theme="
 html body.juan-on[data-theme="gdocs"] #juan-toast{z-index:99999}
 html body.juan-on[data-theme="gdocs"] #home .hm-mascot{animation:juan-wob 2.4s ease-in-out infinite !important}
 </style>
+<style id="gdocs-subtabs">
+/* Docs theme, left tabs panel: tabs can sit inside other tabs (drag a tab onto the middle of another one) */
+html body[data-theme="gdocs"][data-hp="left"] #chtabs button[data-ch]{position:relative}
+html body[data-theme="gdocs"][data-hp="left"] #chtabs button.gd-sub{padding-left:calc(14px + var(--gd-d,0) * 22px) !important}
+html body[data-theme="gdocs"][data-hp="left"] #chtabs button.gd-subhide{display:none !important}
+html body[data-theme="gdocs"] #chtabs .gd-chev{display:none}
+html body[data-theme="gdocs"][data-hp="left"] #chtabs button.gd-parent .gd-chev{display:flex !important;position:absolute;right:44px;top:50%;width:24px;height:24px;margin-top:-12px;border-radius:50%;align-items:center;justify-content:center;cursor:pointer;padding:0}
+html body[data-theme="gdocs"][data-hp="left"] #chtabs button.gd-parent .gd-chev:hover{background:rgba(68,71,70,.12)}
+html body[data-theme="gdocs"] #chtabs .gd-chev::before{content:"";width:7px;height:7px;border-right:2px solid #444746;border-bottom:2px solid #444746;transform:rotate(45deg) translate(-1px,-1px);box-sizing:border-box}
+html body[data-theme="gdocs"] #chtabs button.gd-collapsed .gd-chev::before{transform:rotate(-45deg)}
+html body[data-theme="gdocs"].gd-dark #chtabs .gd-chev::before{border-color:#c4c7c5}
+html body[data-theme="gdocs"] #chtabs button.gd-dragging{z-index:60;opacity:.92;box-shadow:0 8px 22px rgba(0,0,0,.28) !important;pointer-events:none;background:#fff !important;transition:none !important}
+html body[data-theme="gdocs"][data-hp="left"] #chtabs button.gd-dz-before{box-shadow:inset 0 3px 0 var(--accent,#0b57d0) !important}
+html body[data-theme="gdocs"][data-hp="left"] #chtabs button.gd-dz-after{box-shadow:inset 0 -3px 0 var(--accent,#0b57d0) !important}
+html body[data-theme="gdocs"][data-hp="left"] #chtabs button.gd-dz-into{background:rgba(11,87,208,.16) !important;outline:2px solid var(--accent,#0b57d0);outline-offset:-2px}
+#gd-tt-toast{position:fixed;left:24px;bottom:24px;z-index:99998;display:none;align-items:center;gap:14px;background:#2d2e30;color:#f1f3f4;font:14px Roboto,Arial,sans-serif;padding:10px 12px 10px 18px;border-radius:4px;box-shadow:0 3px 5px -1px rgba(0,0,0,.2),0 6px 10px rgba(0,0,0,.14);max-width:min(440px,calc(100vw - 48px))}
+#gd-tt-toast.on{display:flex}
+#gd-tt-toast button{border:0;background:transparent;color:#8ab4f8;font:500 14px Roboto,Arial,sans-serif;cursor:pointer;padding:6px 8px;border-radius:4px}
+#gd-tt-toast button:hover{background:rgba(138,180,248,.12)}
+</style>
+<script>
+(function(){
+  var B=document.body, CH=document.getElementById("chtabs"); if(!CH) return;
+  var CK="pb_tt_collapsed", collapsed=[];
+  try{ collapsed=JSON.parse(localStorage.getItem(CK)||"[]"); if(!Array.isArray(collapsed)) collapsed=[]; }catch(e){ collapsed=[]; }
+  function saveCollapsed(){ try{ localStorage.setItem(CK,JSON.stringify(collapsed)); }catch(e){} }
+  function active(){ return B.dataset.theme==="gdocs"&&B.dataset.hp==="left"; }
+  function ttGet(){ try{ return (window.__pbTT&&window.__pbTT.get())||null; }catch(e){ return null; } }
+  function btns(){ return [].slice.call(CH.querySelectorAll("button[data-ch]")).filter(function(b){ return b.dataset.ch&&b.dataset.ch!=="home"&&!b.hidden&&b.style.display!=="none"&&!b.classList.contains("ct-plus"); }); }
+
+  /* the tree: keys in order + a parent for each nested tab -> a flat, depth-annotated list */
+  function flatten(keys,o,p){
+    var kids={}, roots=[], flat=[], depth={}, seen={};
+    o.forEach(function(k){ if(p[k]) (kids[p[k]]=kids[p[k]]||[]).push(k); else roots.push(k); });
+    (function walk(list,d){ list.forEach(function(k){ if(seen[k]) return; seen[k]=1; depth[k]=d; flat.push(k); if(kids[k]) walk(kids[k],d+1); }); })(roots,0);
+    o.forEach(function(k){ if(!seen[k]){ seen[k]=1; depth[k]=0; delete p[k]; flat.push(k); } });
+    return {flat:flat,depth:depth,kids:kids,p:p};
+  }
+  function model(){
+    var keys=btns().map(function(b){ return b.dataset.ch; }), tt=ttGet()||{o:[],p:{}};
+    var o=(tt.o||[]).filter(function(k){ return keys.indexOf(k)>-1; });
+    keys.forEach(function(k){ if(o.indexOf(k)<0) o.push(k); });
+    var p={}; Object.keys(tt.p||{}).forEach(function(k){ var v=tt.p[k]; if(keys.indexOf(k)>-1&&keys.indexOf(v)>-1) p[k]=v; });
+    var m=flatten(keys,o,p); m.o=m.flat.slice(); return m;
+  }
+  function subtree(m,k){ var out={}; (function w(x){ (m.kids[x]||[]).forEach(function(c){ out[c]=1; w(c); }); })(k); return out; }
+  function height(m,k){ var h=0; (m.kids[k]||[]).forEach(function(c){ h=Math.max(h,1+height(m,c)); }); return h; }
+
+  function clearBtn(b){
+    b.classList.remove("gd-sub","gd-subhide","gd-parent","gd-collapsed");
+    b.style.removeProperty("--gd-d"); b.style.removeProperty("order");
+    var c=b.querySelector(".gd-chev"); if(c) c.remove();
+  }
+  var lastSig="";
+  function render(){
+    var bs=btns();
+    if(!active()){ if(lastSig!=="off"){ [].slice.call(CH.querySelectorAll("button[data-ch]")).forEach(clearBtn); lastSig="off"; } return; }
+    var m=model(), els={}; bs.forEach(function(b){ els[b.dataset.ch]=b; });
+    var act=null; bs.forEach(function(b){ if(b.classList.contains("on")) act=b.dataset.ch; });
+    var forced={}; for(var a=act; a&&m.p[a]; a=m.p[a]) forced[m.p[a]]=1;      // the open tab's parents stay open so you can see where you are
+    m.flat.forEach(function(k,i){
+      var b=els[k]; if(!b) return;
+      var d=m.depth[k], kidsN=(m.kids[k]||[]).length, isCol=collapsed.indexOf(k)>-1&&!forced[k], hide=false;
+      for(var q=m.p[k]; q; q=m.p[q]){ if(collapsed.indexOf(q)>-1&&!forced[q]) hide=true; }
+      if(b.style.order!==String(i+1)) b.style.setProperty("order",String(i+1));
+      if(b.style.getPropertyValue("--gd-d")!==String(d)) b.style.setProperty("--gd-d",String(d));
+      b.classList.toggle("gd-sub",d>0); b.classList.toggle("gd-subhide",hide);
+      b.classList.toggle("gd-parent",kidsN>0); b.classList.toggle("gd-collapsed",kidsN>0&&isCol);
+      var c=b.querySelector(".gd-chev");
+      if(kidsN>0&&!c){ c=document.createElement("span"); c.className="gd-chev"; c.setAttribute("aria-hidden","true"); b.appendChild(c); }
+      else if(!kidsN&&c) c.remove();
+      var tip="Drag to move this tab, or drop it on another tab to put it inside. Changes for everyone.";
+      if(b.title!==tip) b.title=tip;
+    });
+    lastSig="on";
+  }
+  try{ new MutationObserver(function(){ render(); }).observe(CH,{childList:true}); }catch(e){}
+  try{ new MutationObserver(function(){ render(); }).observe(B,{attributes:true,attributeFilter:["data-theme","data-hp"]}); }catch(e){}
+  setInterval(function(){ if(!document.hidden) render(); },700);
+  render();
+
+  /* expand / collapse (just for you) */
+  window.addEventListener("click",function(e){
+    var c=e.target.closest&&e.target.closest("#chtabs .gd-chev"); if(c&&active()){
+      e.stopPropagation(); e.preventDefault();
+      var k=c.parentNode.dataset.ch, i=collapsed.indexOf(k); if(i>-1) collapsed.splice(i,1); else collapsed.push(k);
+      saveCollapsed(); render(); return;
+    }
+    if(Date.now()<noClick&&e.target.closest&&e.target.closest("#chtabs button")){ e.stopImmediatePropagation(); e.preventDefault(); }
+  },true);
+
+  /* toast with Undo */
+  var toast=document.createElement("div"); toast.id="gd-tt-toast"; toast.innerHTML='<span></span><button type="button">Undo</button>'; document.body.appendChild(toast);
+  var toastT=0, undoTo=null;
+  function say(msg,undo){
+    toast.firstChild.textContent=msg; undoTo=undo||null; toast.lastChild.style.display=undo?"":"none"; toast.classList.add("on");
+    clearTimeout(toastT); toastT=setTimeout(function(){ toast.classList.remove("on"); },6500);
+  }
+  toast.lastChild.onclick=function(){ if(!undoTo) return; var u=undoTo; undoTo=null; toast.classList.remove("on"); try{ window.__pbTT.set(u); }catch(e){} render(); };
+  function label(b){
+    try{ var c=getComputedStyle(b,"::after").content; if(c&&c!=="none"&&c!=="normal"&&c!=='""') return c.replace(/^["']|["']$/g,""); }catch(e){}
+    var t=(b.textContent||"").trim(), mm=/^(\S+)\s+(.+)$/.exec(t); return mm&&!/^[A-Za-z0-9]/.test(mm[1])?mm[2]:(t||b.dataset.ch);
+  }
+
+  /* dragging: mouse = drag; touch = press and hold, then drag */
+  var drag=null, noClick=0;
+  function clearMarks(){ [].slice.call(CH.querySelectorAll(".gd-dz-before,.gd-dz-after,.gd-dz-into")).forEach(function(x){ x.classList.remove("gd-dz-before","gd-dz-after","gd-dz-into"); }); }
+  function begin(){ if(!drag||drag.on) return; drag.on=true; drag.el.classList.add("gd-dragging"); B.classList.add("tab-dragging"); try{ if(navigator.vibrate) navigator.vibrate(12); }catch(e){} }
+  function fits(m,D,depthNew){ return depthNew+height(m,D)<=3; }
+  function calc(e){
+    var m=model(), sub=subtree(m,drag.key), vis=btns().filter(function(b){ return b!==drag.el&&!b.classList.contains("gd-subhide")&&!sub[b.dataset.ch]; });
+    if(!vis.length) return null;
+    vis.sort(function(a,b){ return a.getBoundingClientRect().top-b.getBoundingClientRect().top; });
+    var y=e.clientY, first=vis[0].getBoundingClientRect(), last=vis[vis.length-1].getBoundingClientRect(), tgt=null, hit=null;
+    if(y<first.top){ return {z:"start",el:vis[0],m:m}; }
+    if(y>=last.bottom){ return {z:"end",el:vis[vis.length-1],m:m}; }
+    vis.forEach(function(b){ var r=b.getBoundingClientRect(); if(y>=r.top&&y<r.bottom) hit={b:b,r:r}; });
+    if(!hit) return null;
+    var k=hit.b.dataset.ch, f=(y-hit.r.top)/hit.r.height, z=f<.28?"before":f>.72?"after":"into";
+    if(z==="into"&&!fits(m,drag.key,m.depth[k]+1)) z=f<.5?"before":"after";
+    if(!fits(m,drag.key,z==="into"?m.depth[k]+1:m.depth[k])) return null;
+    return {z:z,key:k,el:hit.b,m:m,sub:sub};
+  }
+  function lastVisibleDescendant(t){
+    var m=t.m, i=m.flat.indexOf(t.key), out=null, depth=m.depth[t.key], els={};
+    btns().forEach(function(b){ els[b.dataset.ch]=b; });
+    for(var j=i+1;j<m.flat.length&&m.depth[m.flat[j]]>depth;j++){ var b=els[m.flat[j]]; if(b&&b!==drag.el&&!b.classList.contains("gd-subhide")) out=b; }
+    return out;
+  }
+  function mark(e){
+    clearMarks(); var t=calc(e); drag.tgt=t; if(!t) return;
+    if(t.z==="start") t.el.classList.add("gd-dz-before");
+    else if(t.z==="end") t.el.classList.add("gd-dz-after");
+    else if(t.z==="after") (lastVisibleDescendant(t)||t.el).classList.add("gd-dz-after");
+    else t.el.classList.add("gd-dz-"+t.z);
+  }
+  function commitMove(D,t){
+    var m=t.m, p={}; Object.keys(m.p).forEach(function(k){ p[k]=m.p[k]; });
+    var o=m.flat.slice(), at=o.indexOf(D); if(at>-1) o.splice(at,1);
+    var T=t.key;
+    if(t.z==="into"){
+      p[D]=T; var li=o.indexOf(T); o.forEach(function(k,i){ if(p[k]===T&&k!==D) li=Math.max(li,i); }); o.splice(li+1,0,D);
+      var ci=collapsed.indexOf(T); if(ci>-1){ collapsed.splice(ci,1); saveCollapsed(); }
+    }else if(t.z==="before"){ if(p[T]) p[D]=p[T]; else delete p[D]; o.splice(o.indexOf(T),0,D); }
+    else if(t.z==="after"){ if(p[T]) p[D]=p[T]; else delete p[D]; o.splice(o.indexOf(T)+1,0,D); }
+    else if(t.z==="end"){ delete p[D]; o.push(D); }
+    else{ delete p[D]; var fr=null; o.forEach(function(k){ if(fr===null&&!p[k]) fr=k; }); if(fr===null) o.push(D); else o.splice(o.indexOf(fr),0,D); }
+    var f=flatten(m.flat,o,p), np={}; Object.keys(f.p).forEach(function(k){ np[k]=f.p[k]; });
+    var next={o:f.flat,p:np}, prev=ttGet(), same=JSON.stringify(next)===JSON.stringify({o:m.flat,p:m.p});
+    if(same) return;
+    var els={}; btns().forEach(function(b){ els[b.dataset.ch]=b; });
+    try{ window.__pbTT.set(next); }catch(e){ return; }
+    render();
+    var name=els[D]?label(els[D]):D, msg;
+    if(t.z==="into") msg="Moved \u201C"+name+"\u201D into \u201C"+(els[T]?label(els[T]):T)+"\u201D for everyone";
+    else if(p[D]) msg="Moved \u201C"+name+"\u201D inside \u201C"+(els[p[D]]?label(els[p[D]]):p[D])+"\u201D for everyone";
+    else msg="Moved \u201C"+name+"\u201D to the top level for everyone";
+    say(msg,prev);
+  }
+  function finish(e,doIt){
+    if(!drag) return; var d=drag; drag=null; clearTimeout(d.timer);
+    if(!d.on) return;
+    d.el.classList.remove("gd-dragging"); d.el.style.transform=""; B.classList.remove("tab-dragging"); clearMarks();
+    noClick=Date.now()+350;
+    if(!doIt) return;
+    drag=d; var t=calc(e); drag=null;
+    if(t) commitMove(d.key,t);
+  }
+  window.addEventListener("pointerdown",function(e){
+    if(!active()||e.button>0||drag) return;
+    var tg=e.target; if(!tg||!tg.closest||tg.closest(".gd-chev")) return;
+    var b=tg.closest("#chtabs button[data-ch]"); if(!b||btns().indexOf(b)<0) return;
+    drag={el:b,key:b.dataset.ch,x:e.clientX,y:e.clientY,id:e.pointerId,on:false,touch:e.pointerType==="touch"||e.pointerType==="pen",timer:0,tgt:null};
+    if(drag.touch) drag.timer=setTimeout(begin,380);
+  },true);
+  window.addEventListener("pointermove",function(e){
+    if(!drag||e.pointerId!==drag.id) return;
+    var dx=e.clientX-drag.x, dy=e.clientY-drag.y;
+    if(!drag.on){
+      if(drag.touch){ if(Math.hypot(dx,dy)>10){ clearTimeout(drag.timer); drag=null; } return; }
+      if(Math.hypot(dx,dy)<7) return; begin();
+    }
+    drag.el.style.transform="translateY("+dy+"px)"; mark(e);
+  },true);
+  window.addEventListener("pointerup",function(e){ if(drag&&e.pointerId===drag.id) finish(e,true); },true);
+  window.addEventListener("pointercancel",function(e){ if(drag&&e.pointerId===drag.id) finish(e,false); },true);
+  document.addEventListener("touchmove",function(e){ if(drag&&drag.on&&e.cancelable) e.preventDefault(); },{passive:false});
+  document.addEventListener("contextmenu",function(e){ if(drag&&drag.on) e.preventDefault(); },true);
+  window.addEventListener("keydown",function(e){ if(e.key==="Escape"&&drag&&drag.on){ finish(e,false); } },true);
+
+  /* settings: a way back to the normal tab order for everyone */
+  var sb=document.querySelector(".stg-sb");
+  if(sb){
+    var rb=document.createElement("button"); rb.type="button"; rb.className="stg-btn"; rb.textContent="\u21D5 Reset subtabs for everyone";
+    rb.title="Take every tab out of the tab it's inside and put them back in the normal order, for everyone";
+    rb.onclick=function(){
+      if(!ttGet()){ say("No tabs are nested right now",null); return; }
+      if(!confirm("Take every tab out of the tab it is inside, for everyone?")) return;
+      var prev=ttGet(); try{ window.__pbTT.set(null); }catch(e){} render(); say("Subtabs reset for everyone",prev);
+    };
+    var t0=document.getElementById("stg-toggle"); if(t0&&t0.parentNode===sb) sb.insertBefore(rb,t0); else sb.appendChild(rb);
+  }
+})();
+</script>
 </body>
 </html>
