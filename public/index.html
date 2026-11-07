@@ -17994,6 +17994,9 @@ body[data-theme="gdocs"]{transition:padding-top .2s ease}
 body[data-theme="gdocs"] #main{padding-right:56px;transition:padding-left .28s ease,padding-right .2s ease}
 body[data-theme="gdocs"]:not(.gd-bar-on) #main{padding-right:0}
 @media(max-width:700px){body[data-theme="gdocs"] #gd-rail{display:none !important}}
+/* the left tabs panel is completely still: no slide, no spring, no bounce */
+html body[data-theme="gdocs"] :is(#hdr,#hdrwrap,#hdr-arrow,#main,#sb-arrow),html body[data-theme="gdocs"] :is(#hdr,#hdrwrap) :is(*,*::before,*::after),html body[data-theme="gdocs"] :is(#hdr-arrow,#main)::before,html body[data-theme="gdocs"] #hdr-arrow::after{animation:none !important;transition:none !important}
+html body[data-theme="gdocs"] #hdr :is(*):is(:hover,:active,:focus-visible){transform:none !important}
 @media(prefers-reduced-motion:reduce){body[data-theme="gdocs"] #gd-bar,body[data-theme="gdocs"] #gd-rail,body[data-theme="gdocs"]{transition:none !important}}
 </style>
 <style id="gdocs-fmt">
