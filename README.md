@@ -14,7 +14,7 @@ public/
     icons/              Home-screen tile icons and top bar tab icons
     jumpscare/          Jumpscare picture and sound
     wallpapers/         Desktop-style theme backgrounds
-src/                  Worker code (server side)
+src/                  Worker code (server side): the chat relay and the cloud storage
 wrangler.jsonc        Cloudflare Workers configuration
 README.md             This file
 ```
@@ -67,6 +67,20 @@ npx wrangler dev
 ```
 
 Then open the address it prints (usually `http://localhost:8787`).
+
+## Cloud storage (how tabs, games and chat history sync)
+
+Custom tabs, the games list, media and the public chat history are stored by the Worker itself (the `Store` Durable Object in `src/worker.js`, address `/db/...`). There is no Firebase any more, so there is no separate service or quota to run out of, and school or phone networks that block Firebase are no longer a problem.
+
+- Pages ask one tiny question ("anything new?") every few seconds and only download when something changed.
+- **First deploy:** `wrangler.jsonc` now has a second migration (`v2`) that creates `Store`. A normal push to `main` or `npx wrangler deploy` applies it.
+- After the first deploy the cloud starts empty. Mod/owner devices re-upload the tabs they have, and the device that hosts the room re-uploads the chat history, so most things come back on their own.
+- **Optional: bring the old Firebase data over.** In the Firebase console, open Realtime Database, go to Data, click the three dots next to `lospurebro` (under `rooms`), choose Export JSON, then run:
+
+  ```bash
+  curl -X PUT https://YOUR-SITE.workers.dev/db/rooms/lospurebro.json --data @lospurebro.json
+  ```
+- Free-plan note: every open page makes a small request every ~8 seconds (about 30 seconds when nothing has changed for a while). A big group that keeps the site open all day can pass Cloudflare's free request limit; the Workers Paid plan removes that worry.
 
 ## Notes
 

@@ -13126,7 +13126,7 @@ body.in-home #home{display:flex}
 
   /* ---------- storage: pictures can be big, so items live in IndexedDB (not localStorage) ---------- */
   const idb = {
-    open(){ return new Promise(res => { try{ const rq = indexedDB.open("pb_media_db", 1); rq.onupgradeneeded = () => rq.result.createObjectStore("items", { keyPath: "id" }); rq.onsuccess = () => res(rq.result); rq.onerror = () => res(null); rq.onblocked = () => res(null); }catch(e){ res(null); } }); },
+    open(){ return new Promise(res => { setTimeout(() => res(null), 3000); try{ const rq = indexedDB.open("pb_media_db", 1); rq.onupgradeneeded = () => rq.result.createObjectStore("items", { keyPath: "id" }); rq.onsuccess = () => res(rq.result); rq.onerror = () => res(null); rq.onblocked = () => res(null); }catch(e){ res(null); } }); },
     all(){ return new Promise(res => { try{ const rq = db.transaction("items").objectStore("items").getAll(); rq.onsuccess = () => res(rq.result || []); rq.onerror = () => res([]); }catch(e){ res([]); } }); },
     put(list){ if(!db || !list.length) return; try{ const st = db.transaction("items", "readwrite").objectStore("items"); list.forEach(x => st.put(x)); }catch(e){} },
     del(ids){ if(!db || !ids.length) return; try{ const st = db.transaction("items", "readwrite").objectStore("items"); ids.forEach(x => st.delete(x)); }catch(e){} }
@@ -14768,12 +14768,16 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
    Public chat only (DMs and group chats stay peer-to-peer). Everything is encrypted with a key derived from the room code
    before it leaves the browser. Paste your Firebase Realtime Database URL below to switch it on. */
 (function(){
-  const DB = "https://los-purebreds-c0ebc-default-rtdb.firebaseio.com";   // e.g. "https://your-project-default-rtdb.firebaseio.com"   (empty = feature off)
+  /* Cloud storage now lives in the Cloudflare worker (src/worker.js, "Store"), same address as the page: no Firebase, no quota.
+     (If this page is opened from somewhere that isn't the worker, it talks to the worker's own address.) */
+  const WORKER = "https://purebred-chat.226739.workers.dev";
+  const onWorker = /^https?:$/.test(location.protocol) && (/\.workers\.dev$/.test(location.hostname) || /^(localhost|127\.0\.0\.1)$/.test(location.hostname));
+  const DB = (onWorker ? location.origin : WORKER) + "/db";
   const MAX_BODY = 500000;            // bigger photos/files are not stored in the mailbox (they still sync peer-to-peer)
   if(!DB || !window.crypto || !crypto.subtle || typeof persist !== "function" || typeof mergeEntry !== "function") return;
 
   const base = DB.replace(/\/+$/, "") + "/rooms/" + encodeURIComponent(ROOM_CODE);
-  const K_SENT = "pb_mb_sent", K_SINCE = "pb_mb_since";
+  const K_SENT = "pb_cf_sent", K_SINCE = "pb_cf_since";
   const jget = (k, d) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch(e){ return d; } };
   const jset = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} };
 
@@ -14805,12 +14809,40 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
     return JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({ name: "AES-GCM", iv: u.subarray(0, 12) }, await getKey(), u.subarray(12))));
   }
 
+  const fx = (u, o) => { const c = new AbortController(); setTimeout(() => { try { c.abort(); } catch(e){} }, 40000); return fetch(u, Object.assign({}, o, { signal: c.signal })); };
+  /* --- "has anything changed?" is one tiny request shared by everything below; real downloads only happen when it says yes --- */
+  const more = { m: false, g: false, t: false };           // true while a big download is still being delivered in pieces
+  const from = (n, s) => more[n] ? s + 1 : Math.max(0, s - 5000);
+  let stp = null, stpAt = 0, stpP = null, calm = 0;
+  function stamp(){
+    if(stp && Date.now() - stpAt < (calm > 60 ? 30000 : 8000)) return Promise.resolve(stp);
+    if(stpP) return stpP;
+    return stpP = (async () => {
+      try {
+        const r = await fx(base + "/stamp.json", { cache: "no-store" });
+        if(!r.ok) return null;
+        const s = (await r.json()) || {};
+        if(stp && stp.m === s.m && stp.g === s.g && stp.t === s.t) calm++; else calm = 0;
+        stp = s; stpAt = Date.now(); return s;
+      } catch(e){ return null; } finally { stpP = null; }
+    })();
+  }
+  async function moved(n, since, reset){
+    if(more[n]) return true;                               // a download is half done: keep going
+    const s = await stamp(); if(!s) return true;            // couldn't ask: do a real download so any problem gets reported
+    const top = +s[n] || 0;
+    if(top < since){ reset(); return true; }                // the cloud was reset or re-imported: start over
+    return top > since;
+  }
+  const wake = () => { calm = 0; stpAt = 0; };
+  document.addEventListener("visibilitychange", () => { if(!document.hidden) wake(); });
+  window.addEventListener("online", wake);
   const keyOf = id => String(id).replace(/[.$#\[\]\/]/g, "_");
   const MAX_D = 690000;   // the database rejects any record whose "d" is 700000+ characters (checked AFTER encryption), and it rejects the whole upload if one record is bad
   /* upload a batch. If the database refuses it, resend the records one by one so one bad record can't hold up everything behind it.
      done = keys that are finished (bad ones included, they are skipped); failed = nothing got through (server / rules / quota problem) */
   async function sendBatch(path, batch){
-    const keys = Object.keys(batch), send = b => fetch(base + path, { method: "PATCH", body: JSON.stringify(b) });
+    const keys = Object.keys(batch), send = b => fx(base + path, { method: "PATCH", body: JSON.stringify(b) });
     const r = await send(batch);
     if(r.ok) return { done: keys, bad: [], failed: false };
     let text = ""; try { text = (await r.text()).replace(/\s+/g, " ").slice(0, 90); } catch(e){}
@@ -14829,8 +14861,9 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
   async function pull(){
     if(busy) return; busy = true; let end = null;
     try {
+      if(!(await moved("m", since, () => { since = 0; jset(K_SINCE, 0); }))){ if(!ready){ ready = true; announce(); schedulePush(); } return; }
       if(!since) end = beginSync();                // first download of the whole history
-      const r = await fetch(base + "/m.json?orderBy=%22up%22&startAt=" + Math.max(0, since - 5000), { cache: "no-store" });
+      const r = await fx(base + "/m.json?orderBy=%22up%22&startAt=" + from("m", since), { cache: "no-store" });
       if(!r.ok){ let t = ""; try { t = (await r.text()).replace(/\s+/g, " ").slice(0, 90); } catch(e){} console.warn("Mailbox read failed:", r.status, t); fail("read error " + r.status + (t ? ": " + t : "")); return; }
       const obj = (await r.json()) || {}, items = []; let maxUp = since;
       for(const w of Object.values(obj)){
@@ -14845,6 +14878,7 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
         if(cur && sigOf(cur) === sigOf(o)) sent[o.i] = sigOf(cur);       // the mailbox already has this exact version
       });
       since = maxUp; jset(K_SINCE, since); jset(K_SENT, sent); ready = true; caught += changed.length;
+      more.m = r.headers.get("x-more") === "1"; if(more.m) setTimeout(pull, 250);
       if(changed.length) flashSync();
       if(changed.length){
         logs.sort((a, b) => (a.ts || 0) - (b.ts || 0)); persist();
@@ -14892,13 +14926,14 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
   setInterval(() => { if(!document.hidden){ announce(); push(); } }, 5000);
 
   /* ---- Games tab: one community list for everyone (add / edit / delete sync, online or offline) ---- */
-  const K_GS = "pb_mb_gsent", K_GSINCE = "pb_mb_gsince";
+  const K_GS = "pb_cf_gsent", K_GSINCE = "pb_cf_gsince";
   let gsent = jget(K_GS, {}), gsince = +jget(K_GSINCE, 0) || 0, gbusy = false, gready = false, gpushing = false, gT = 0;
   const gsig = o => (o.del ? "d" : "") + o.v;
   async function gpull(){
     if(gbusy || !window.__gm) return; gbusy = true;
     try {
-      const r = await fetch(base + "/g.json?orderBy=%22up%22&startAt=" + Math.max(0, gsince - 5000), { cache: "no-store" });
+      if(!(await moved("g", gsince, () => { gsince = 0; jset(K_GSINCE, 0); }))){ if(!gready){ gready = true; gSchedule(); } return; }
+      const r = await fx(base + "/g.json?orderBy=%22up%22&startAt=" + from("g", gsince), { cache: "no-store" });
       if(!r.ok){ console.warn("Mailbox games read failed:", r.status); fail("games read error " + r.status); return; }
       const obj = (await r.json()) || {}, items = []; let maxUp = gsince;
       for(const w of Object.values(obj)){
@@ -14909,6 +14944,7 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
       if(window.__gm.apply(items)) flashSync();
       items.forEach(o => { gsent[o.id] = gsig(o); });
       gsince = maxUp; jset(K_GSINCE, gsince); jset(K_GS, gsent); gready = true;
+      more.g = r.headers.get("x-more") === "1"; if(more.g) setTimeout(gpull, 250);
       gSchedule();
     } catch(e){ console.warn("Mailbox games read error", e); }
     finally { gbusy = false; }
@@ -14941,7 +14977,7 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
       try {
         const end = beginSync();
         try {
-          const r = await fetch(base + "/gc/" + keyOf(id) + ".json", { method: "PUT", body: JSON.stringify({ up: { ".sv": "timestamp" }, d: await enc({ id, v, h: html }) }) });
+          const r = await fx(base + "/gc/" + keyOf(id) + ".json", { method: "PUT", body: JSON.stringify({ up: { ".sv": "timestamp" }, d: await enc({ id, v, h: html }) }) });
           if(r.ok) gcache.set(id + ":" + v, html);
           return r.ok;
         } finally { end(); }
@@ -14949,14 +14985,14 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
     },
     async get(id, cv){
       const k = id + ":" + cv; if(gcache.has(k)) return gcache.get(k);
-      const r = await fetch(base + "/gc/" + keyOf(id) + ".json", { cache: "no-store" });
+      const r = await fx(base + "/gc/" + keyOf(id) + ".json", { cache: "no-store" });
       if(!r.ok) throw new Error("read " + r.status);
       const w = await r.json(); if(!w || typeof w.d !== "string") throw new Error("missing");
       const o = await dec(w.d); if(!o || typeof o.h !== "string") throw new Error("bad");
       if(gcache.size > 6) gcache.delete(gcache.keys().next().value);
       gcache.set(k, o.h); return o.h;
     },
-    del(id){ try { fetch(base + "/gc/" + keyOf(id) + ".json", { method: "DELETE" }).catch(() => {}); } catch(e){} }
+    del(id){ try { fx(base + "/gc/" + keyOf(id) + ".json", { method: "DELETE" }).catch(() => {}); } catch(e){} }
   };
   window.__gmChanged = gSchedule;
   window.__gmPull = gpull;
@@ -14964,19 +15000,19 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
   document.addEventListener("visibilitychange", () => { if(!document.hidden) gpull(); });
   setTimeout(gpull, 700);
   /* ---- Custom tabs: pages made by mods/owners. Everyone downloads them; only mods/owners upload (add / rename / edit / reorder / delete) ---- */
-  const K_TS = "pb_mb_tsent", K_TSINCE = "pb_mb_tsince";
+  const K_TS = "pb_cf_tsent", K_TSINCE = "pb_cf_tsince";
   let tsent = jget(K_TS, {}), tsince = +jget(K_TSINCE, 0) || 0, tbusy = false, tready = false, tpushing = false, tT = 0;
   const tsig = o => (o.del ? "d" : "") + o.v;
-  let tlast = 0;
+  let tlast = 0, tcur = 0; const T0 = Date.now();
   async function tpull(){
-    if(tbusy || !window.__tb || (window.__md && !window.__md.ready) || (tlast && Date.now() - tlast < 3500)) return; tbusy = true; tlast = Date.now();
+    /* the picture database (IndexedDB) can hang on some phones, so wait for it only a few seconds */
+    if(tbusy || !window.__tb || (window.__md && !window.__md.ready && Date.now() - T0 < 6000) || (tlast && Date.now() - tlast < 3500)) return; tbusy = true; tlast = Date.now();
     const full = !!(window.__md && window.__md.needFull);
     try {
-      let r = await fetch(base + "/t.json?orderBy=%22up%22&startAt=" + (full ? 0 : Math.max(0, tsince - 5000)), { cache: "no-store" }), unindexed = false;
-      if(!r.ok){ unindexed = true; r = await fetch(base + "/t.json", { cache: "no-store" }); }   // the "t" index rule isn't published yet: download all and filter here
+      if(!full && !(await moved("t", tsince, () => { tsince = 0; jset(K_TSINCE, 0); }))){ if(!tready){ tready = true; tSchedule(); } return; }
+      const r = await fx(base + "/t.json?orderBy=%22up%22&startAt=" + (full ? (more.t ? tcur + 1 : 0) : from("t", tsince)), { cache: "no-store" });
       if(!r.ok){ console.warn("Mailbox tabs read failed:", r.status); fail("tabs read error " + r.status); tready = true; tSchedule(); return; }   // still let uploads try
       let obj = (await r.json()) || {}; let maxUp = tsince;
-      if(unindexed){ const lo = full ? 0 : Math.max(0, tsince - 5000); obj = Object.fromEntries(Object.entries(obj).filter(([k, w]) => w && +w.up >= lo)); }
       const ws = Object.values(obj).filter(w => w && typeof w.d === "string");
       ws.forEach(w => { if(+w.up > maxUp) maxUp = +w.up; });
       const items = (await Promise.all(ws.map(async w => { try { const o = await dec(w.d); return (o && typeof o.id === "string") ? o : null; } catch(e){ return null; } }))).filter(Boolean);
@@ -14984,9 +15020,11 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
       if(window.__cl && window.__cl.apply(items.filter(o => o.k === "cl"))) chg = true;
       if(window.__md && window.__md.apply(items.filter(o => o.k === "md"))) chg = true;
       if(chg) flashSync();
-      if(full && window.__md) window.__md.fullDone();
+      more.t = r.headers.get("x-more") === "1"; tcur = maxUp;
+      if(full && window.__md && !more.t) window.__md.fullDone();
       items.forEach(o => { tsent[o.id] = tsig(o); });
       tsince = maxUp; jset(K_TSINCE, tsince); jset(K_TS, tsent); tready = true;
+      if(more.t){ tlast = 0; setTimeout(tpull, 250); }
       tSchedule();
     } catch(e){ console.warn("Mailbox tabs read error", e); }
     finally { tbusy = false; }
@@ -15013,11 +15051,25 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
   }
   function tSchedule(){ clearTimeout(tT); tT = setTimeout(tpush, 800); }
   window.__tbChanged = tSchedule;
-  window.__tbPull = tpull;
+  window.__tbPull = () => { stpAt = 0; return tpull(); };   // opening a tab checks for fresh data right away
   setInterval(() => { if(!document.hidden) tpull(); }, 8000);
   document.addEventListener("visibilitychange", () => { if(!document.hidden) tpull(); });
   setTimeout(tpull, 2500);
   window.__mbPull = pull;
+})();
+</script>
+<script id="img-retry">
+/* Built-in icons (home tiles + top bar): if one fails to load (flaky phone connection), try once more, then show an emoji instead of a blank circle. */
+(function(){
+  var EMO = { games:"\ud83c\udfae", chat:"\ud83d\udcac", media:"\ud83c\udfac", draw:"\ud83c\udfa8", shame:"\ud83d\udea8", polls:"\ud83d\udcca", gallery:"\ud83d\udcf7", tier:"\ud83c\udfc6", home:"\ud83c\udfe0" };
+  window.addEventListener("error", function(e){
+    var im = e.target; if(!im || im.tagName !== "IMG") return;
+    var src = im.getAttribute("src") || "", m = src.match(/^assets\/icons\/([a-z]+)\.png/); if(!m) return;
+    if(!im.dataset.retry){ im.dataset.retry = "1"; setTimeout(function(){ im.src = src.split("?")[0] + "?r=" + Date.now(); }, 800); return; }
+    var p = im.parentNode, emo = EMO[m[1]] || "\u2b50"; if(!p) return;
+    if(p.classList && p.classList.contains("hm-ic")){ p.classList.add("emo"); p.textContent = emo; }
+    else im.replaceWith(document.createTextNode(emo + " "));
+  }, true);
 })();
 </script>
 
