@@ -82,6 +82,19 @@ Custom tabs, the games list, media and the public chat history are stored by the
   ```
 - Free-plan note: every open page makes a small request every ~8 seconds (about 30 seconds when nothing has changed for a while). A big group that keeps the site open all day can pass Cloudflare's free request limit; the Workers Paid plan removes that worry.
 
+## Live editing of tabs and subtabs (like Google Docs)
+
+- **Autosave:** while you edit a custom tab or subtab, your changes save by themselves about 1.5 seconds after you stop typing (and at least every ~4 seconds while you keep typing). The footer shows *Editing…* / *✓ Saved*. **Done** just closes the editor (Ctrl+Enter does the same, Ctrl+S saves right now). There is no Cancel any more, because everything is already saved.
+- **Live view:** anyone looking at a page sees other people's changes appear within a few seconds, with a short highlight on the changed paragraphs, a green *✏️ Name is editing…* pill, and a green dot on the tab / subtab being changed.
+- **Two people editing at once:** their changes are merged into your editor as they arrive, without moving your cursor. Edits in different paragraphs, or in different places of the same paragraph, are both kept. Only if you both change the exact same words at the same moment does the cloud version win (you'll see a short note).
+- **How it works:** a page is still one record in the cloud. Each saved version now also stores which version it was built from (`pv`) and who changed it (`eb`), which is what makes the merge possible. The merge code is in the "LIVE EDITING" section of `public/index.html`; the faster polling is in the `mailbox` script (`liveOn`).
+- **Request usage:** while a custom tab is on screen, the page checks for changes every ~2 seconds, slowing to every ~6 seconds after a minute or two of nothing changing. Pages that aren't a custom tab keep the old ~8 second rhythm. On the Workers free plan a big group sitting on custom tabs all day can use a lot of requests; the Workers Paid plan removes that worry.
+- Pages full of pictures sync slower, because the whole page is re-sent when it changes.
+
+## Polls where people type their answer
+
+In **Create a poll**, tick **Let people type their own answer (no choices)**. The poll card then shows a text box instead of buttons, and lists everyone's answers underneath (identical answers are counted together, with who said what). In the Polls tab an answer is final once submitted; in chat polls people can edit their answer until the poll ends. Typed answers are stored with each person's vote, so they sync like normal votes. Older copies of the page that haven't refreshed can't show these polls.
+
 ## Notes
 
 - Keep `index.html` and the `assets/` folder together inside `public/`.

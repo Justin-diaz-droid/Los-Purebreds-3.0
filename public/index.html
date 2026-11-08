@@ -1775,7 +1775,9 @@ function cleanRx(r){
   for(const k of Object.keys(r)){
     if(!okUid(k) || n >= 60) continue;
     const x = r[k]; if(!x || typeof x !== "object") continue;
-    out[k] = { e: [...new Set((Array.isArray(x.e) ? x.e : []).filter(okEmo))].slice(0, 8), v: +x.v || 0 }; n++;
+    out[k] = { e: [...new Set((Array.isArray(x.e) ? x.e : []).filter(okEmo))].slice(0, 8), v: +x.v || 0 };
+    if(typeof x.t === "string"){ const t = x.t.replace(/\s+/g, " ").trim().slice(0, 80); if(t) out[k].t = t; }   // t = a typed answer (polls where people type instead of choosing)
+    n++;
   }
   return n ? out : null;
 }
@@ -1784,6 +1786,7 @@ function cleanPoll(p){
   if(!p || typeof p !== "object") return null;
   const q = String(p.q || "").trim().slice(0, 200);
   const os = (Array.isArray(p.o) ? p.o : []).map(x => String(x || "").trim().slice(0, 80)).filter(Boolean).slice(0, 8);
+  if(p.t){ if(!q) return null; return { q, o: [], t: 1, m: 0, end: Math.max(0, Math.min(Date.now() + 8 * 864e5, +p.end || 0)) }; }   // t = people type their own answer
   if(!q || os.length < 2) return null;
   return { q, o: os, m: p.m ? 1 : 0, end: Math.max(0, Math.min(Date.now() + 8 * 864e5, +p.end || 0)) };
 }
@@ -1838,6 +1841,11 @@ function vetRx(o, from){   // host: a person may only change their own reactions
   if(cur && cur.poll && cur.poll.end && Date.now() > cur.poll.end + 5000) return null;   // poll is closed
   Object.keys(o.rx).forEach(k => {
     const same = cur && cur.rx && cur.rx[k] && (cur.rx[k].v || 0) >= (o.rx[k].v || 0);
+    if(cur && cur.poll && cur.poll.t){                                                              // typed-answer poll: text only, and final on the Polls tab
+      if(k === from.uid && cur.ch === "polls" && cur.rx && cur.rx[k] && cur.rx[k].t){ out[k] = cur.rx[k]; return; }
+      if(k === from.uid || same) out[k] = { e: [], v: o.rx[k].v || 0, ...(o.rx[k].t ? { t: o.rx[k].t } : {}) };
+      return;
+    }
     if(k === from.uid && cur && cur.poll && cur.ch === "polls" && cur.rx && cur.rx[k]){           // poll votes are final: keep what they already voted, only allow adding (multi-answer polls)
       const VTS = ["🔴","🔵","⚫","⚪","🔶","🔷","🔸","🔹"], had = (cur.rx[k].e || []).filter(e => VTS.includes(e));
       if(had.length){ const ne = cur.poll.m ? [...new Set([...had, ...(o.rx[k].e || [])])] : had.slice(); out[k] = { e: ne, v: Math.max(o.rx[k].v || 0, cur.rx[k].v || 0) }; return; }
@@ -3010,6 +3018,11 @@ label.plus.open{transform:rotate(45deg)}
 .pollcard .popt .l{flex:1;min-width:0;word-break:break-word}
 .pollcard .popt .n{white-space:nowrap;font-size:12px;opacity:.8}
 .pollcard .pf{font-size:12px;color:var(--muted);margin-top:4px}
+.pollcard .popt.typed{cursor:default}
+.pollcard .ptrow{display:flex;gap:6px;margin-bottom:10px}
+.pollcard .ptin{flex:1;min-width:0;padding:10px 12px;border-radius:12px;border:1.5px solid var(--line);background:var(--input,transparent);color:inherit;font-size:14px;outline:none}
+.pollcard .ptin:focus{border-color:var(--accent)}
+.pollcard .ptgo{border:none;border-radius:12px;padding:0 16px;font-size:14px;font-weight:700;cursor:pointer;background:var(--accent);color:var(--on-accent,#fff)}
 /* poll maker */
 #pollmod{position:fixed;inset:0;z-index:70;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;padding:16px}
 #pollmod.open{display:flex;animation:fadeIn .15s ease-out}
@@ -3076,7 +3089,9 @@ label.plus.open{transform:rotate(45deg)}
   }
   window.renderPoll = function(l, w){
     const card = w.querySelector(".pollcard"); if(!card || !l.poll) return;
-    const p = l.poll, by = p.o.map(() => []);
+    const p = l.poll;
+    if(p.t){ renderTypedPoll(l, card); return; }
+    const by = p.o.map(() => []);
     Object.keys(l.rx || {}).forEach(u => ((l.rx[u] || {}).e || []).forEach(em => { const k = VT.indexOf(em); if(k >= 0 && k < by.length) by[k].push(u); }));
     const voters = new Set(); by.forEach(a => a.forEach(u => voters.add(u)));
     const total = voters.size, ended = !!p.end && Date.now() >= p.end;
@@ -3102,6 +3117,60 @@ label.plus.open{transform:rotate(45deg)}
     const ft = document.createElement("div"); ft.className = "pf"; ft.textContent = total + (total === 1 ? " vote" : " votes") + (ended ? " · Poll closed" : voters.has(uid) && l.ch === "polls" ? " · ✓ You voted, it can't be changed" : "");
     card.replaceChildren(q, sub, ...opts, ft);
   };
+  /* polls where people type their own answer: the card shows a text box, and below it everyone's answers (same answers are counted together) */
+  function renderTypedPoll(l, card){
+    const p = l.poll, ended = !!p.end && Date.now() >= p.end, final = l.ch === "polls";
+    const groups = new Map();
+    Object.keys(l.rx || {}).forEach(u => { const t = (l.rx[u] || {}).t; if(!t) return; const key = t.toLowerCase(); if(!groups.has(key)) groups.set(key, { text: t, users: [] }); groups.get(key).users.push(u); });
+    const list = [...groups.values()].sort((a, b) => b.users.length - a.users.length), total = list.reduce((n, g) => n + g.users.length, 0);
+    const mine = ((l.rx || {})[uid] || {}).t || "";
+    const old = card.querySelector(".ptin"), keep = old && document.activeElement === old ? { v: old.value, a: old.selectionStart, b: old.selectionEnd } : null;   // don't wipe what someone is typing when the card refreshes
+    const q = document.createElement("div"); q.className = "pq"; q.textContent = "📊 " + p.q;
+    const sub = document.createElement("div"); sub.className = "ps";
+    sub.textContent = "Type your answer" + (final ? " · Answers are final" : "") + (p.end ? " · " + endText(p.end) : "");
+    const kids = [q, sub];
+    if(!ended && !(final && mine)){
+      const row = document.createElement("div"); row.className = "ptrow";
+      const inp = document.createElement("input"); inp.type = "text"; inp.className = "ptin"; inp.maxLength = 80; inp.placeholder = "Type your answer…"; inp.value = keep ? keep.v : mine;
+      const go = document.createElement("button"); go.type = "button"; go.className = "ptgo"; go.textContent = mine ? "Update" : "Submit";
+      const send = () => voteText(l.i, inp.value);
+      go.onclick = ev => { ev.stopPropagation(); send(); };
+      inp.onkeydown = ev => { if(ev.key === "Enter"){ ev.preventDefault(); ev.stopPropagation(); send(); } };
+      inp.onclick = ev => ev.stopPropagation();
+      row.append(inp, go); kids.push(row);
+    }
+    list.forEach(g => {
+      const pct = total ? Math.round(g.users.length / total * 100) : 0, isMine = g.users.includes(uid);
+      const b = document.createElement("div"); b.className = "popt typed" + (isMine ? " mine" : "");
+      const f = document.createElement("div"); f.className = "fill"; f.style.width = pct + "%";
+      const lb = document.createElement("span"); lb.className = "l"; lb.textContent = (isMine ? "✓ " : "") + g.text;
+      const n = document.createElement("span"); n.className = "n"; n.textContent = g.users.length + " · " + pct + "%";
+      b.append(f, lb, n);
+      const gw = document.createElement("div"); gw.className = "popt-g"; gw.appendChild(b);
+      const pv = document.createElement("div"); pv.className = "pv";
+      pv.textContent = g.users.map(u => u === uid ? "You" : (typeof rxNames === "function" ? rxNames([u]) : u)).join(", "); gw.appendChild(pv);
+      kids.push(gw);
+    });
+    const ft = document.createElement("div"); ft.className = "pf";
+    ft.textContent = total + (total === 1 ? " answer" : " answers") + (ended ? " · Poll closed" : mine && final ? " · ✓ You answered, it can't be changed" : "");
+    kids.push(ft);
+    card.replaceChildren(...kids);
+    if(keep){ const ni = card.querySelector(".ptin"); if(ni){ ni.focus(); try{ ni.setSelectionRange(keep.a, keep.b); }catch(e){} } }
+  }
+  function voteText(id, text){
+    const l = logs.find(x => x.i === id); if(!l || !l.poll || !l.poll.t || l.del) return;
+    if(l.poll.end && Date.now() >= l.poll.end){ sys("This poll has ended."); return; }
+    if(window.__pbMuted && window.__pbMuted(usr)){ sys("You're muted by an owner."); return; }
+    const t = String(text || "").replace(/\s+/g, " ").trim().slice(0, 80);
+    if(!t){ sys("Type an answer first."); return; }
+    const mine = (l.rx && l.rx[uid]) || { e: [], v: 0 };
+    if(l.ch === "polls"){
+      if(mine.t){ sys("You already answered this poll. You can't change your answer anymore."); return; }
+      if(!confirm("Submit “" + t + "”?\nYou won't be able to change or remove your answer afterwards.")) return;
+    } else if(mine.t === t) return;
+    l.rx = l.rx || {}; l.rx[uid] = { e: [], v: Math.max(Date.now(), (mine.v || 0) + 1), t };
+    persist(); renderRx(l); sendEntry(l);
+  }
   function vote(id, k){
     const l = logs.find(x => x.i === id); if(!l || !l.poll || l.del) return;
     if(l.poll.end && Date.now() >= l.poll.end){ sys("This poll has ended."); return; }
@@ -3168,13 +3237,14 @@ label.plus.open{transform:rotate(45deg)}
 
   /* ---------- poll maker ---------- */
   const pm = document.createElement("div"); pm.id = "pollmod";
-  pm.innerHTML = '<div class="pc"><h3>📊 Create a poll</h3><label>Question</label><input type="text" id="pq" maxlength="200" placeholder="What do you want to ask?"><label>Answers</label><div id="popts" style="display:flex;flex-direction:column;gap:6px"></div><button type="button" class="addopt" id="paddopt">+ Add answer</button><label class="chk"><input type="checkbox" id="pmulti"> Allow multiple answers</label><label>Duration</label><select id="pdur"><option value="3600000">1 hour</option><option value="86400000" selected>24 hours</option><option value="259200000">3 days</option><option value="604800000">1 week</option><option value="0">No end</option></select><div class="perr" id="perr"></div><div class="row"><button type="button" class="pcancel" id="pcancel">Cancel</button><button type="button" class="ppost" id="ppost">Post poll</button></div></div>';
+  pm.innerHTML = '<div class="pc"><h3>📊 Create a poll</h3><label>Question</label><input type="text" id="pq" maxlength="200" placeholder="What do you want to ask?"><label class="chk"><input type="checkbox" id="ptyped"> Let people type their own answer (no choices)</label><div id="pchoice" style="display:flex;flex-direction:column;gap:10px"><label>Answers</label><div id="popts" style="display:flex;flex-direction:column;gap:6px"></div><button type="button" class="addopt" id="paddopt">+ Add answer</button><label class="chk"><input type="checkbox" id="pmulti"> Allow multiple answers</label></div><label>Duration</label><select id="pdur"><option value="3600000">1 hour</option><option value="86400000" selected>24 hours</option><option value="259200000">3 days</option><option value="604800000">1 week</option><option value="0">No end</option></select><div class="perr" id="perr"></div><div class="row"><button type="button" class="pcancel" id="pcancel">Cancel</button><button type="button" class="ppost" id="ppost">Post poll</button></div></div>';
   document.body.appendChild(pm);
   const optBox = $$("popts");
+  $$("ptyped").onchange = () => { $$("pchoice").style.display = $$("ptyped").checked ? "none" : "flex"; };
   function addOpt(v){ if(optBox.children.length >= 8) return; const i = document.createElement("input"); i.type = "text"; i.maxLength = 80; i.placeholder = "Answer " + (optBox.children.length + 1); i.value = v || ""; optBox.appendChild(i); }
   $$("paddopt").onclick = () => { addOpt(); $$("paddopt").style.display = optBox.children.length >= 8 ? "none" : ""; optBox.lastChild.focus(); };
   function openPoll(){
-    $$("pq").value = ""; $$("pmulti").checked = false; $$("pdur").value = "86400000"; $$("perr").textContent = "";
+    $$("pq").value = ""; $$("pmulti").checked = false; $$("ptyped").checked = false; $$("pchoice").style.display = "flex"; $$("pdur").value = "86400000"; $$("perr").textContent = "";
     optBox.replaceChildren(); addOpt(); addOpt(); $$("paddopt").style.display = ""; pm.classList.add("open"); $$("pq").focus();
   }
   const closePoll = () => pm.classList.remove("open");
@@ -3184,6 +3254,7 @@ label.plus.open{transform:rotate(45deg)}
     const q = $$("pq").value.trim(), os = [...optBox.querySelectorAll("input")].map(i => i.value.trim()).filter(Boolean);
     const uniq = [...new Set(os.map(o => o.toLowerCase()))];
     if(!q){ $$("perr").textContent = "Type a question."; return; }
+    if($$("ptyped").checked){ const d = +$$("pdur").value; closePoll(); postMsg(q, 0, 0, { poll: { q, o: [], t: 1, m: 0, end: d ? Date.now() + d : 0 } }); return; }
     if(os.length < 2 || uniq.length < os.length){ $$("perr").textContent = os.length < 2 ? "Add at least 2 answers." : "Answers must be different."; return; }
     const dur = +$$("pdur").value;
     closePoll(); postMsg(q, 0, 0, { poll: { q, o: os, m: $$("pmulti").checked ? 1 : 0, end: dur ? Date.now() + dur : 0 } });
@@ -13844,6 +13915,14 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
 .ct-subs button.sub-add{opacity:.85;border-style:dashed}
 .ct-subs button[hidden],.ct-mod button[hidden]{display:none}
 .ct-who{font-size:12px;color:var(--muted);align-self:center}
+.ct-live{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:650;padding:3px 10px;border-radius:999px;align-self:center;background:color-mix(in srgb,#34c759 22%,var(--row));border:1px solid color-mix(in srgb,#34c759 50%,var(--line))}
+.ct-live[hidden]{display:none}
+.ct-live::before{content:"";width:7px;height:7px;border-radius:50%;background:#34c759;animation:ctpulse 1.1s ease-in-out infinite}
+@keyframes ctpulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.7)}}
+.ct-stat{font-size:12px;color:var(--muted);white-space:nowrap}
+.ct-flash{animation:ctflash 1.6s ease-out}
+@keyframes ctflash{0%{background:color-mix(in srgb,var(--accent) 38%,transparent)}100%{background:transparent}}
+#chtabs button.live::after,.ct-subs button.live::after{content:"";display:inline-block;width:7px;height:7px;margin-left:6px;border-radius:50%;background:#34c759;vertical-align:middle;animation:ctpulse 1.1s ease-in-out infinite}
 #ct-modal select{padding:11px 13px;border-radius:11px;border:1px solid var(--line);background:var(--input,var(--row));color:var(--text);font-size:15px;font-weight:400;outline:none}
 .ctm-note{font-size:12px;color:var(--muted);min-height:0}
 .ctm-note:empty{display:none}
@@ -13964,7 +14043,7 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
   const ACLM = ["mods", "me", "list", "all"];
   const cleanAcl = a => { const m = a && ACLM.includes(a.m) ? a.m : "mods"; const l = (a && Array.isArray(a.l) ? a.l : []).map(x => cleanName(x).slice(0, 12)).filter(Boolean).filter((x, i, arr) => arr.findIndex(y => y.toLowerCase() === x.toLowerCase()) === i).slice(0, 20); return { m, l: m === "list" ? l : [] }; };
   const newId = () => "t" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-  const bump = t => { t.v = Math.max(Date.now(), (t.v || 0) + 1); };
+  const bump = t => { t.v = Math.max(Date.now(), (t.v || 0) + 1); t.eb = ""; };   // eb = who last changed the page's text (set by the live editor, see commit())
 
   /* ---------- safe HTML: anything that comes from the cloud or a paste goes through this whitelist ---------- */
   const OKTAG = /^(P|BR|B|STRONG|I|EM|U|S|STRIKE|DEL|H1|H2|H3|UL|OL|LI|A|BLOCKQUOTE|HR|CODE|PRE|DIV|IMG|TABLE|THEAD|TBODY|TR|TD|TH)$/;
@@ -14131,7 +14210,7 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
   /* ---------- the page view ---------- */
   const view = document.createElement("div"); view.id = "ctview";
   view.innerHTML =
-    '<div class="ct-bar"><div class="ct-title"><b id="ct-ic"></b><span id="ct-nm"></span></div><span class="ct-who" id="ct-who"></span><span class="gm-spacer"></span>' +
+    '<div class="ct-bar"><div class="ct-title"><b id="ct-ic"></b><span id="ct-nm"></span></div><span class="ct-who" id="ct-who"></span><span class="ct-live" id="ct-live" hidden></span><span class="gm-spacer"></span>' +
       '<div class="ct-mod" id="ct-modbar">' +
         '<button type="button" class="gm-b alt" id="ct-left" title="Move this tab left">◀</button>' +
         '<button type="button" class="gm-b alt" id="ct-right" title="Move this tab right">▶</button>' +
@@ -14141,11 +14220,14 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
     '<div class="ct-subs" id="ct-subs"></div>' +
     '<div class="ct-scroll"><div class="ct-doc" id="ct-doc"></div>' +
       '<div id="ct-editwrap"><div class="ct-tb" id="ct-tb"></div><div class="ct-ed" id="ct-ed" contenteditable="true" spellcheck="true"></div>' +
-      '<div class="ct-efoot"><div id="ct-err" role="alert"></div><button type="button" class="gm-b alt" id="ct-cancel">Cancel</button><button type="button" class="gm-b pri" id="ct-save">Save</button></div></div>' +
+      '<div class="ct-efoot"><span class="ct-stat" id="ct-stat" aria-live="polite"></span><div id="ct-err" role="alert"></div><button type="button" class="gm-b pri" id="ct-save" title="Close the editor (your changes are already saved)">Done</button></div></div>' +
     '</div>';
   $$("box").after(view);
   const doc = $$("ct-doc"), ed = $$("ct-ed"), errEl = $$("ct-err");
-  let curId = "", curSub = "", editing = false, baseV = 0, warned = false, subSig = "";
+  let curId = "", curSub = "", editing = false, subSig = "";
+  /* live editing state */
+  let liveId = "", knownV = 0, savedHtml = "", lastRemoteHtml = "", hist = new Map(), saveT = 0, firstDirty = 0, composing = false, patching = false, statT = 0, docKey = "", docBlocks = null;
+  const liveBy = {};   // page id -> { by, at }: someone else changed this page a moment ago
   const cur = () => { const sb = curSub && byId(curSub); return (sb && sb.p === curId) ? sb : byId(curId); };   // the page being shown (a subtab, or the tab's own page)
   function renderSubs(force){
     const box = $$("ct-subs"), t = byId(curId);
@@ -14156,7 +14238,8 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
     const chip = (label, id, im) => {
       const b = document.createElement("button"); b.type = "button"; b.classList.toggle("on", curSub === id);
       if(im){ const g = new Image(); g.alt = ""; g.src = im; g.style.cssText = "width:18px;height:18px;border-radius:50%;object-fit:cover;vertical-align:-4px;margin-right:6px"; b.append(g, document.createTextNode(label)); } else b.textContent = label;
-      b.onclick = () => { if(editing){ errEl.textContent = "Save or cancel your edit before switching pages."; return; } curSub = id; renderSubs(true); renderPage(); };
+      b.dataset.sid = id || curId;
+      b.onclick = () => { if(editing){ if(autosave() === false) return; stopEdit(); } curSub = id; renderSubs(true); renderPage(); };
       return b;
     };
     const kids = [];
@@ -14177,29 +14260,283 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
         else { v.style.backgroundColor = "transparent"; v.style.backgroundImage = "url(" + w + ")"; v.style.backgroundSize = "cover"; v.style.backgroundPosition = "center"; v.style.backgroundRepeat = "no-repeat"; } } }
     const a = aclOf(top);
     $$("ct-who").textContent = a.m === "all" ? "Anyone can edit" : a.m === "mods" ? "Mods can edit" : a.m === "me" ? "Only " + (top.by || "owners") + " can edit" : "Editors: " + [top.by].concat(a.l).filter(Boolean).join(", ");
-    const h = clean(t.html);
-    if(h.replace(/<[^>]*>/g, "").trim() || /<img|<hr|<table/i.test(h)) doc.innerHTML = h;
-    else doc.innerHTML = '<div class="ct-empty">This page is empty.' + (canEdit(t) ? "<br>Tap “✎ Edit page” to add something." : "") + "</div>";
-    scheduleAdj();
+    const h = nz(t.html), pk = top.id + "/" + t.id;
+    if(h.replace(/<[^>]*>/g, "").trim() || /<img|<hr|<table/i.test(h)){
+      const nb = splitBlocks(h);
+      if(docKey === pk && docBlocks && doc.childNodes.length === docBlocks.length) patchDom(doc, docBlocks, nb, true);   // same page, new text: only touch what changed (live view)
+      else doc.innerHTML = h;
+      docBlocks = doc.childNodes.length === nb.length ? nb : null; docKey = pk;
+    }
+    else { doc.innerHTML = '<div class="ct-empty">This page is empty.' + (canEdit(t) ? "<br>Tap “✎ Edit page” to add something." : "") + "</div>"; docBlocks = null; docKey = ""; }
+    scheduleAdj(); renderPresence();
   }
-  function stopEdit(){ editing = false; $$("ct-editwrap").classList.remove("on"); doc.style.display = ""; $$("ct-edit").style.display = ""; errEl.textContent = ""; }
+  /* =====================================================================================================
+     LIVE EDITING (like Google Docs)
+       - what you type is saved by itself every few seconds (no Save button) and shared with everyone;
+       - while you edit, other people's changes to the same page are merged into your editor as they arrive,
+         without moving your cursor (it works paragraph by paragraph, and inside a paragraph when you're
+         typing in different places);
+       - people just looking at the page see the changes appear live.
+     A page is still one record in the cloud (newest version wins), so every version also remembers which
+     version it was built from (pv). That is what lets two people's edits be combined instead of one
+     overwriting the other.
+     ===================================================================================================== */
+  const nz = h => clean(clean(h));      // "cleaned twice" = a stable form, so two browsers always agree on whether a page changed
+  const blockOf = n => { if(n.nodeType === 1) return n.outerHTML; const w = document.createElement("div"); w.appendChild(n.cloneNode(true)); return w.innerHTML; };
+  const splitBlocks = html => { const tp = document.createElement("template"); tp.innerHTML = html; return Array.from(tp.content.childNodes).map(blockOf); };   // the page as a list of top-level pieces (paragraphs, lists, pictures…)
+  const meTag = () => String(typeof usr === "string" ? usr : "").slice(0, 12);
+  const sameList = (a, b) => a.length === b.length && a.every((x, i) => x === b[i]);
+
+  /* which pieces are the same in two lists: [[indexInA, indexInB], …] in order */
+  function lcsPairs(a, b){
+    const n = a.length, m = b.length; let s = 0;
+    while(s < n && s < m && a[s] === b[s]) s++;
+    let e = 0; while(e < n - s && e < m - s && a[n - 1 - e] === b[m - 1 - e]) e++;
+    const out = []; for(let i = 0; i < s; i++) out.push([i, i]);
+    const N = n - s - e, M = m - s - e;
+    if(N > 0 && M > 0 && N * M <= 1500000){
+      const w = M + 1, L = new Uint16Array((N + 1) * w);
+      for(let i = N - 1; i >= 0; i--) for(let j = M - 1; j >= 0; j--) L[i * w + j] = a[s + i] === b[s + j] ? L[(i + 1) * w + j + 1] + 1 : Math.max(L[(i + 1) * w + j], L[i * w + j + 1]);
+      let i = 0, j = 0;
+      while(i < N && j < M){
+        if(a[s + i] === b[s + j]){ out.push([s + i, s + j]); i++; j++; }
+        else if(L[(i + 1) * w + j] >= L[i * w + j + 1]) i++; else j++;
+      }
+    }
+    for(let k = 0; k < e; k++) out.push([n - e + k, m - e + k]);
+    return out;
+  }
+  /* caret helpers: a position as "this many characters into the box", so it can be put back after the box is rebuilt */
+  const offIn = (root, node, off) => { const r = document.createRange(); r.selectNodeContents(root); r.setEnd(node, off); return r.toString().length; };
+  function caretAt(root, off){
+    const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT); let n, left = off, last = null;
+    while((n = w.nextNode())){ last = n; if(left <= n.nodeValue.length) return [n, left]; left -= n.nodeValue.length; }
+    return last ? [last, last.nodeValue.length] : [root, 0];
+  }
+  function flashEl(n){ n.classList.add("ct-flash"); const off = () => n.classList.remove("ct-flash"); n.addEventListener("animationend", off, { once: true }); setTimeout(off, 2200); }
+  /* change a box from the pieces it shows (liveB) to the pieces it should show (tgtB), touching only the pieces that differ,
+     so the cursor, scroll position and pictures that didn't change are left alone */
+  function patchDom(box, liveB, tgtB, flash){
+    const kids = Array.from(box.childNodes), pairs = lcsPairs(liveB, tgtB), keep = new Set(pairs.map(p => p[0]));
+    let rem = null;
+    try{   // the caret sits in a piece that is about to be replaced: remember where in it
+      const sl = getSelection();
+      if(sl.rangeCount && box.contains(sl.anchorNode)){
+        const ai = kids.findIndex(k => k === sl.anchorNode || k.contains(sl.anchorNode));
+        if(ai >= 0 && !keep.has(ai)){ let prev = null; for(let i = ai - 1; i >= 0; i--) if(keep.has(i)){ prev = kids[i]; break; } rem = { prev, off: offIn(kids[ai], sl.anchorNode, sl.anchorOffset) }; }
+      }
+    }catch(e){}
+    kids.forEach((k, i) => { if(!keep.has(i)) k.remove(); });
+    const at = new Map(pairs.map(p => [p[1], kids[p[0]]])), made = new Set(); let ref = null;
+    for(let j = tgtB.length - 1; j >= 0; j--){
+      if(at.has(j)){ ref = at.get(j); continue; }
+      const tp = document.createElement("template"); tp.innerHTML = tgtB[j];
+      const ns = Array.from(tp.content.childNodes);
+      ns.forEach(n => { box.insertBefore(n, ref); made.add(n); if(flash && n.nodeType === 1) flashEl(n); });
+      if(ns.length) ref = ns[0];
+    }
+    if(rem){ try{
+      const cand = rem.prev ? rem.prev.nextSibling : box.firstChild;
+      if(cand && made.has(cand)){ const [n, o] = caretAt(cand, rem.off), r = document.createRange(); r.setStart(n, o); r.collapse(true); const sl = getSelection(); sl.removeAllRanges(); sl.addRange(r); }
+    }catch(e){} }
+  }
+  function fullReplace(html){   // fallback when the editor's pieces can't be matched one by one
+    let a = null, f = null;
+    try{ const sl = getSelection(); if(sl.rangeCount && ed.contains(sl.anchorNode) && ed.contains(sl.focusNode)){ a = offIn(ed, sl.anchorNode, sl.anchorOffset); f = offIn(ed, sl.focusNode, sl.focusOffset); } }catch(e){}
+    ed.innerHTML = html;
+    if(a != null){ try{ const x = caretAt(ed, a), y = caretAt(ed, f); getSelection().setBaseAndExtent(x[0], x[1], y[0], y[1]); }catch(e){} }
+  }
+  function edBlocks(){
+    ed.normalize();
+    const html = nz(ed.innerHTML), blocks = splitBlocks(html), kids = ed.childNodes;
+    let ok = kids.length === blocks.length;
+    for(let i = 0; ok && i < kids.length; i++){
+      const k = kids[i], b = blocks[i];
+      if(k.nodeType === 1){ const L = k.tagName.length; if(b.charAt(0) !== "<" || b.slice(1, L + 1).toLowerCase() !== k.tagName.toLowerCase() || !/[\s>\/]/.test(b.charAt(L + 1))) ok = false; }
+      else if(k.nodeType !== 3 || b.charAt(0) === "<") ok = false;
+    }
+    return { html, blocks, ok };
+  }
+
+  /* ----- combining two people's edits ----- */
+  const VOIDT = /^(br|hr|img)$/i;
+  function balanced(f){   // a piece of html with every tag opened and closed inside it (so it can be cut out and moved safely)
+    const st = [], re = /<(\/?)([a-z][a-z0-9]*)\b[^>]*>/gi; let m;
+    while((m = re.exec(f))){ const tag = m[2].toLowerCase(); if(VOIDT.test(tag)) continue; if(m[1]){ if(st.pop() !== tag) return false; } else st.push(tag); }
+    const rest = f.replace(re, ""); return st.length === 0 && rest.indexOf("<") < 0 && rest.indexOf(">") < 0;
+  }
+  function leftSafe(a, p){   // move a cut point left until it isn't inside a tag or an &entity;
+    for(let g = 0; g < 4; g++){
+      const lt = a.lastIndexOf("<", p - 1), gt = a.lastIndexOf(">", p - 1);
+      if(p > 0 && lt > gt){ p = lt; continue; }
+      const am = a.lastIndexOf("&", p - 1), sc = a.lastIndexOf(";", p - 1);
+      if(p > 0 && am > sc && p - am <= 10){ p = am; continue; }
+      break;
+    }
+    return p;
+  }
+  function rightSafe(a, e){
+    for(let g = 0; g < 4; g++){
+      const lt = a.lastIndexOf("<", e - 1), gt = a.lastIndexOf(">", e - 1);
+      if(e > 0 && lt > gt){ const k = a.indexOf(">", e); e = k < 0 ? a.length : k + 1; continue; }
+      const am = a.lastIndexOf("&", e - 1), sc = a.lastIndexOf(";", e - 1);
+      if(e > 0 && am > sc && e - am <= 10){ const k = a.indexOf(";", e); if(k >= 0 && k - am <= 10){ e = k + 1; continue; } }
+      break;
+    }
+    return e;
+  }
+  function diffRange(a, b){   // the one stretch of a that b replaced: { s, e, rep }
+    const n = a.length, m = b.length, lim = Math.min(n, m); let p = 0, q = 0;
+    while(p < lim && a.charCodeAt(p) === b.charCodeAt(p)) p++;
+    while(q < lim - p && a.charCodeAt(n - 1 - q) === b.charCodeAt(m - 1 - q)) q++;
+    p = leftSafe(a, p); const e = rightSafe(a, n - q); q = n - e;
+    return { s: p, e, rep: b.slice(p, m - q) };
+  }
+  /* base = the text before; mine / theirs = two edits of it. Works when the two edits are in different places. null = they overlap */
+  function mergeText(base, mine, theirs){
+    const A = diffRange(base, mine), B = diffRange(base, theirs);
+    if(!balanced(base.slice(A.s, A.e)) || !balanced(A.rep) || !balanced(base.slice(B.s, B.e)) || !balanced(B.rep)) return null;
+    const before = (x, y) => x.e < y.s || (x.e === y.s && !(x.s === x.e && y.s === y.e));   // x ends before y starts
+    if(before(A, B)) return base.slice(0, A.s) + A.rep + base.slice(A.e, B.s) + B.rep + base.slice(B.e);
+    if(before(B, A)) return base.slice(0, B.s) + B.rep + base.slice(B.e, A.s) + A.rep + base.slice(A.e);
+    return null;
+  }
+  function hunksOf(base, side, who){   // what `side` changed compared to `base`: replace base[s..e) with rep
+    const out = []; let i = 0, j = 0;
+    lcsPairs(base, side).concat([[base.length, side.length]]).forEach(p => { if(p[0] > i || p[1] > j) out.push({ s: i, e: p[0], rep: side.slice(j, p[1]), who }); i = p[0] + 1; j = p[1] + 1; });
+    return out;
+  }
+  /* three-way merge of page pieces. base = common ancestor, mine = my editor, theirs = the newest cloud version.
+     Where both of us changed the very same spot in a way that can't be combined, the cloud version wins (so everybody ends up with the same page). */
+  function merge3(base, mine, theirs){
+    let conflicts = 0;
+    const all = hunksOf(base, mine, 0).concat(hunksOf(base, theirs, 1)).sort((x, y) => (x.s - y.s) || ((x.e - x.s) - (y.e - y.s)) || (x.who - y.who));
+    const groups = []; let g = null;
+    all.forEach(h => {
+      if(g && (h.s < g.e || (h.s === g.s && g.s === g.e && h.e === h.s))){ g.items.push(h); g.e = Math.max(g.e, h.e); }
+      else groups.push(g = { s: h.s, e: h.e, items: [h] });
+    });
+    const mergeSeg = (B0, M, T) => {
+      if(B0.length && M.length === B0.length && T.length === B0.length){   // same number of pieces: typing in the same paragraph(s)
+        const r = []; let ok = true;
+        for(let i = 0; i < B0.length && ok; i++){
+          const b = B0[i], m = M[i], t = T[i];
+          if(m === t || t === b) r.push(m); else if(m === b) r.push(t);
+          else { const x = mergeText(b, m, t); if(x == null) ok = false; else r.push(x); }
+        }
+        if(ok) return r;
+      }
+      const x = mergeText(B0.join(""), M.join(""), T.join(""));
+      if(x != null) return splitBlocks(nz(x));
+      if(!B0.length) return T.concat(M);        // both added something new in the same spot: keep both
+      conflicts++; return T;
+    };
+    const out = []; let pos = 0;
+    groups.forEach(gr => {
+      for(let i = pos; i < gr.s; i++) out.push(base[i]);
+      pos = gr.e;
+      const seg = who => { let r = [], p = gr.s; gr.items.filter(h => h.who === who).forEach(h => { r = r.concat(base.slice(p, h.s), h.rep); p = h.e; }); return r.concat(base.slice(p, gr.e)); };
+      const B0 = base.slice(gr.s, gr.e), M = seg(0), T = seg(1);
+      const hasM = gr.items.some(h => h.who === 0), hasT = gr.items.some(h => h.who === 1);
+      const res = !hasM ? T : !hasT ? M : sameList(M, T) ? M : sameList(M, B0) ? T : sameList(T, B0) ? M : mergeSeg(B0, M, T);
+      res.forEach(x => out.push(x));
+    });
+    for(let i = pos; i < base.length; i++) out.push(base[i]);
+    return { out, conflicts };
+  }
+
+  /* ----- saving and merging ----- */
+  const remember = (v, h) => { hist.set(v, h); while(hist.size > 12) hist.delete(hist.keys().next().value); };   // pages as they were at recent versions (the "common ancestor" for merging)
+  function setStatus(txt, hold){
+    const el = $$("ct-stat"); if(!el) return; el.textContent = txt; clearTimeout(statT);
+    if(hold) statT = setTimeout(() => { if(editing) el.textContent = "✓ Saved"; }, hold);
+  }
+  function commit(t, html){   // write my editor's text into the page record; it gets sent to everyone by the cloud sync
+    const o = { html: t.html, pv: t.pv, v: t.v, eb: t.eb };
+    t.pv = t.v || 0; t.html = html; bump(t); t.eb = meTag();
+    if(!persist()){ Object.assign(t, o); return false; }
+    remember(t.v, html); knownV = t.v; savedHtml = html;
+    try{ if(window.__tbBoost) window.__tbBoost(); }catch(e){}
+    return true;
+  }
+  function autosave(){
+    clearTimeout(saveT); firstDirty = 0;
+    if(!editing) return true;
+    const t = cur(); if(!t || t.id !== liveId) return true;
+    if(!canEdit(t)){ errEl.textContent = "You don’t have permission to edit this tab."; return false; }
+    if(composing){ saveT = setTimeout(autosave, 500); return true; }
+    const html = nz(ed.innerHTML);
+    if(html === savedHtml){ setStatus("✓ Saved"); return true; }
+    if(html.length > MAXHTML){ errEl.textContent = "This page is too big (" + Math.round(html.length / 1000) + " KB, max " + Math.round(MAXHTML / 1000) + " KB). Remove or shrink some pictures."; setStatus("Not saved"); return false; }
+    if(!commit(t, html)){ errEl.textContent = "This device is out of storage space. Use smaller pictures."; setStatus("Not saved"); return false; }
+    errEl.textContent = ""; setStatus("✓ Saved"); return true;
+  }
+  function markDirty(){   // something changed in the editor: save soon (after a short pause, and at the latest every ~4 seconds while typing)
+    if(!editing) return;
+    const now = Date.now(); if(!firstDirty) firstDirty = now;
+    clearTimeout(saveT); saveT = setTimeout(autosave, Math.max(0, Math.min(1500, firstDirty + 4000 - now)));
+    try{ if(window.__tbBoost) window.__tbBoost(); }catch(e){}
+  }
+  /* a newer version of the page I'm editing arrived from the cloud: fold it into my editor, then save the combined page */
+  function liveMerge(){
+    const t = cur(); if(!editing || !t || t.id !== liveId || t.v === knownV) return;
+    if(composing){ setTimeout(liveMerge, 400); return; }
+    const theirs = nz(t.html), E = edBlocks(), mine = E.html;
+    const anc = hist.has(t.pv) ? hist.get(t.pv) : lastRemoteHtml;      // the version they built theirs from, if I know it
+    remember(t.v, theirs); lastRemoteHtml = theirs; knownV = t.v;
+    let merged, conflicts = 0;
+    if(mine === theirs) merged = mine;
+    else if(mine === anc) merged = theirs;                               // I hadn't changed anything: just take theirs
+    else if(theirs === anc) merged = mine;                               // they only changed something else (name, picture…)
+    else { const r = merge3(splitBlocks(anc), E.blocks, splitBlocks(theirs)); merged = nz(r.out.join("")); conflicts = r.conflicts; }
+    if(merged !== mine){
+      patching = true;
+      try{ if(E.ok) patchDom(ed, E.blocks, splitBlocks(merged), true); else fullReplace(merged); }
+      finally{ mo.takeRecords(); patching = false; }
+      scheduleAdj();
+    }
+    savedHtml = theirs;
+    if(merged !== theirs){ if(!commit(t, merged)){ errEl.textContent = "This device is out of storage space. Use smaller pictures."; } }
+    if(conflicts) setStatus("Someone changed the same spot at the same time — their version was kept.", 6000);
+    renderPresence();
+  }
+  const mo = new MutationObserver(recs => {
+    if(patching || !editing) return;
+    if(recs.some(r => r.type !== "attributes" || !(r.attributeName === "style" && r.target.nodeType === 1 && r.target.hasAttribute("data-adj") && r.target.tagName !== "IMG"))) markDirty();   // (colour fix-ups the page makes by itself don't count)
+  });
+  mo.observe(ed, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ["style", "src", "href", "alt", "color", "width", "height"] });
+  ed.addEventListener("input", () => { if(editing) setStatus("Editing…"); markDirty(); });
+  ed.addEventListener("compositionstart", () => { composing = true; });
+  ed.addEventListener("compositionend", () => { composing = false; markDirty(); });
+  document.addEventListener("visibilitychange", () => { if(document.hidden && editing) autosave(); });
+  window.addEventListener("pagehide", () => { if(editing) autosave(); });
+
+  /* who is changing this page right now (shown as a green dot) */
+  const isLive = id => { const r = liveBy[id]; return !!r && Date.now() - r.at < 12000; };
+  function renderPresence(){
+    const box = $$("ct-live"), t = cur();
+    if(box){ const r = t && isLive(t.id) ? liveBy[t.id] : null; box.hidden = !r; if(r) box.textContent = (editing ? "Also editing: " : "✏️ ") + r.by + (editing ? "" : " is editing…"); }
+    $$("ct-subs").querySelectorAll("button[data-sid]").forEach(b => b.classList.toggle("live", isLive(b.dataset.sid)));
+    strip.querySelectorAll("button[data-ctid]").forEach(b => { const id = b.dataset.ctid; b.classList.toggle("live", isLive(id) || subsOf(id).some(s => isLive(s.id))); });
+  }
+  setInterval(renderPresence, 1000);
+
+  function stopEdit(){
+    editing = false; liveId = ""; clearTimeout(saveT); firstDirty = 0; composing = false; hist = new Map();
+    $$("ct-editwrap").classList.remove("on"); doc.style.display = ""; $$("ct-edit").style.display = ""; errEl.textContent = ""; setStatus("");
+  }
   function startEdit(){
     const t = cur(); if(!t || !canEdit(t)) return;
-    editing = true; baseV = t.v || 0; warned = false; ed.innerHTML = clean(t.html); errEl.textContent = ""; scheduleAdj();
+    const h = nz(t.html);
+    editing = true; liveId = t.id; hist = new Map(); remember(t.v || 0, h); lastRemoteHtml = savedHtml = h; knownV = t.v || 0;
+    patching = true; ed.innerHTML = h; mo.takeRecords(); patching = false;
+    errEl.textContent = ""; setStatus("✓ Saved"); scheduleAdj();
     doc.style.display = "none"; $$("ct-edit").style.display = "none"; $$("ct-editwrap").classList.add("on");
+    try{ if(window.__tbBoost) window.__tbBoost(); if(window.__tbPull) window.__tbPull(); }catch(e){}   // look for newer changes right away
     setTimeout(() => ed.focus(), 30);
   }
-  function saveEdit(){
-    const t = cur(); if(!t) return;
-    if(!canEdit(t)){ errEl.textContent = "You don’t have permission to edit this tab."; return; }
-    const html = clean(ed.innerHTML);
-    if(html.length > MAXHTML){ errEl.textContent = "This page is too big (" + Math.round(html.length / 1000) + " KB, max " + Math.round(MAXHTML / 1000) + " KB). Remove or shrink some pictures."; return; }
-    if((t.v || 0) !== baseV && !warned){ warned = true; errEl.textContent = "Another mod changed this page while you were editing. Press Save again to replace their version."; return; }
-    const old = t.html; t.html = html; bump(t);
-    if(!persist()){ t.html = old; errEl.textContent = "This device is out of storage space. Use smaller pictures."; return; }
-    stopEdit(); renderPage();
-  }
-  $$("ct-edit").onclick = startEdit; $$("ct-save").onclick = saveEdit; $$("ct-cancel").onclick = () => { stopEdit(); renderPage(); };
+  function finishEdit(){ if(autosave() === false) return; stopEdit(); renderPage(); }
+  $$("ct-edit").onclick = startEdit; $$("ct-save").onclick = finishEdit;
   function move(dir){
     const it = cur(); if(!it || !canManage(it)) return;
     const l = it.p ? subsOf(it.p) : tops(), i = l.findIndex(t => t.id === it.id), j = i + dir;
@@ -14411,7 +14748,7 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
       ed.focus(); if(saved){ const sl = getSelection(); sl.removeAllRanges(); sl.addRange(saved); }
       try{ document.execCommand("styleWithCSS", false, true); document.execCommand("foreColor", false, ci.value); document.execCommand("styleWithCSS", false, false); }catch(e){}
       try{ const sl = getSelection(); if(sl.rangeCount) forceColor(sl.getRangeAt(0), ci.value); }catch(e){}
-      scheduleAdj(); grab();   // the edit rebuilt the nodes: remember where the selection is now, so the next colour change still hits the same text
+      scheduleAdj(); grab(); markDirty();   // the edit rebuilt the nodes: remember where the selection is now, so the next colour change still hits the same text
     };
     ci.oninput = paint; ci.onchange = paint;
     tb.appendChild(lab);
@@ -14554,7 +14891,10 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
     const h = cd.getData("text/html"), t = cd.getData("text/plain");
     cmd("insertHTML", h ? clean(h) : esc(t).replace(/\r?\n/g, "<br>"));
   });
-  ed.addEventListener("keydown", e => { if((e.ctrlKey || e.metaKey) && e.key === "Enter"){ e.preventDefault(); saveEdit(); } });
+  ed.addEventListener("keydown", e => {
+    if((e.ctrlKey || e.metaKey) && e.key === "Enter"){ e.preventDefault(); finishEdit(); }
+    else if((e.ctrlKey || e.metaKey) && (e.key === "s" || e.key === "S")){ e.preventDefault(); autosave(); }
+  });
 
   /* ---------- new / rename / delete window ---------- */
   const modal = document.createElement("div"); modal.id = "ct-modal";
@@ -14711,7 +15051,7 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
     if(id && !byId(id)){ c = "main"; }
     _sc(c);
     const t = id && byId(id);
-    if(editing && (!t || t.id !== curId)) stopEdit();
+    if(editing && (!t || t.id !== curId)){ autosave(); stopEdit(); }
     document.body.classList.toggle("in-ctab", !!t);
     const prevId = curId; curId = t ? t.id : ""; if(curId !== prevId) curSub = "";
     buildTabs(); renderSubs(true);
@@ -14723,7 +15063,7 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
     canPush: () => isMod() || Date.now() - lastLocalEdit < 120000 || tabs.some(t => canEdit(t) || canManage(t)),
     out(){
       const o = [], have = new Set();
-      tabs.forEach(t => { have.add(t.id); o.push({ id: t.id, name: t.name, ic: t.ic, im: cleanIm(t.im), wp: cleanWp(t.wp), html: t.html || "", p: t.p || "", acl: aclOf(t), o: t.o || 0, by: t.by || "", v: t.v || 1 }); });
+      tabs.forEach(t => { have.add(t.id); o.push({ id: t.id, name: t.name, ic: t.ic, im: cleanIm(t.im), wp: cleanWp(t.wp), html: t.html || "", p: t.p || "", acl: aclOf(t), o: t.o || 0, by: t.by || "", v: t.v || 1, pv: t.pv || 0, eb: t.eb || "" }); });
       Object.keys(tombs).forEach(id => { if(!have.has(id)) o.push({ id, del: 1, v: tombs[id] }); });
       return o;
     },
@@ -14745,14 +15085,16 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
         const p = (r.p === "" || r.p == null) ? "" : (okId(r.p) && r.p !== r.id ? r.p : null); if(p === null) return;
         const name = cleanName(r.name); if(!name) return;
         const html = clean(r.html); if(html.length > MAXHTML + 20000) return;
-        const nt = { id: r.id, name, ic: cleanIc(r.ic), im: cleanIm(r.im), wp: cleanWp(r.wp), html, p, acl: cleanAcl(r.acl), o: isFinite(+r.o) ? +r.o : 0, by: String(r.by || "").slice(0, 12), v };
+        const nt = { id: r.id, name, ic: cleanIc(r.ic), im: cleanIm(r.im), wp: cleanWp(r.wp), html, p, acl: cleanAcl(r.acl), o: isFinite(+r.o) ? +r.o : 0, by: String(r.by || "").slice(0, 12), v, pv: isFinite(+r.pv) ? +r.pv : 0, eb: String(r.eb || "").slice(0, 12) };
+        const fresh = loc && v > (loc.v || 0) && nt.eb && nt.eb.trim().toLowerCase() !== meName() && Date.now() - v < 20000;   // somebody else changed it just now
         if(loc) tabs[i] = nt; else { if(tabs.length >= MAXALL) return; tabs.push(nt); }
+        if(fresh) liveBy[r.id] = { by: nt.eb, at: Date.now() };
         delete tombs[r.id]; ch = true;
       });
       if(ch){
         persist(); buildTabs();
         if(curId && !byId(curId)){ if(editing) stopEdit(); setChannel("main"); }
-        else { renderSubs(true); if(!editing) renderPage(); }
+        else { renderSubs(true); if(editing) liveMerge(); else renderPage(); renderPresence(); }
       }
       return ch;
     }
@@ -14813,9 +15155,14 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
   /* --- "has anything changed?" is one tiny request shared by everything below; real downloads only happen when it says yes --- */
   const more = { m: false, g: false, t: false };           // true while a big download is still being delivered in pieces
   const from = (n, s) => more[n] ? s + 1 : Math.max(0, s - 5000);
+  /* live mode: while a custom tab page is on screen, check for changes every ~2 seconds (so you see other people's edits as they type).
+     If nothing has changed for a minute or two it slows down to every ~6 seconds, and speeds up again the moment anything happens. */
+  const liveOn = () => !document.hidden && document.body.classList.contains("in-ctab");
+  let liveQuiet = 0, liveSkip = 0;
+  window.__tbBoost = () => { liveQuiet = 0; };
   let stp = null, stpAt = 0, stpP = null, calm = 0;
   function stamp(){
-    if(stp && Date.now() - stpAt < (calm > 60 ? 30000 : 8000)) return Promise.resolve(stp);
+    if(stp && Date.now() - stpAt < (liveOn() ? 1500 : (calm > 60 ? 30000 : 8000))) return Promise.resolve(stp);
     if(stpP) return stpP;
     return stpP = (async () => {
       try {
@@ -15006,10 +15353,11 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
   let tlast = 0, tcur = 0; const T0 = Date.now();
   async function tpull(){
     /* the picture database (IndexedDB) can hang on some phones, so wait for it only a few seconds */
-    if(tbusy || !window.__tb || (window.__md && !window.__md.ready && Date.now() - T0 < 6000) || (tlast && Date.now() - tlast < 3500)) return; tbusy = true; tlast = Date.now();
+    if(tbusy || !window.__tb || (window.__md && !window.__md.ready && Date.now() - T0 < 6000) || (tlast && Date.now() - tlast < (liveOn() ? 1200 : 3500))) return; tbusy = true; tlast = Date.now();
     const full = !!(window.__md && window.__md.needFull);
     try {
-      if(!full && !(await moved("t", tsince, () => { tsince = 0; jset(K_TSINCE, 0); }))){ if(!tready){ tready = true; tSchedule(); } return; }
+      if(!full && !(await moved("t", tsince, () => { tsince = 0; jset(K_TSINCE, 0); }))){ liveQuiet++; if(!tready){ tready = true; tSchedule(); } return; }
+      liveQuiet = 0;
       const r = await fx(base + "/t.json?orderBy=%22up%22&startAt=" + (full ? (more.t ? tcur + 1 : 0) : from("t", tsince)), { cache: "no-store" });
       if(!r.ok){ console.warn("Mailbox tabs read failed:", r.status); fail("tabs read error " + r.status); tready = true; tSchedule(); return; }   // still let uploads try
       let obj = (await r.json()) || {}; let maxUp = tsince;
@@ -15053,6 +15401,7 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
   window.__tbChanged = tSchedule;
   window.__tbPull = () => { stpAt = 0; return tpull(); };   // opening a tab checks for fresh data right away
   setInterval(() => { if(!document.hidden) tpull(); }, 8000);
+  setInterval(() => { if(!liveOn()) return; if(liveQuiet > 40 && (++liveSkip % 3)) return; tpull(); }, 2000);   // live mode (see liveOn)
   document.addEventListener("visibilitychange", () => { if(!document.hidden) tpull(); });
   setTimeout(tpull, 2500);
   window.__mbPull = pull;
