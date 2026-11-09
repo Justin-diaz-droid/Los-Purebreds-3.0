@@ -896,6 +896,14 @@ html.watch #watch-note.on{display:block}
     <div id="emo-sug"></div>
     <div class="pill"><input type="text" id="inp" placeholder="Message" disabled><button id="sendbtn" type="button" title="Send" aria-label="Send"><svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button></div>
     <div id="galnote">📷 Image Gallery is photos only — tap + to post one.</div>
+    <div id="galsz" role="group" aria-label="Photo size">
+      <span class="gz-l">Size</span>
+      <button type="button" data-w="120" title="Small">S</button><button type="button" data-w="200" title="Medium">M</button><button type="button" data-w="300" title="Large">L</button><button type="button" data-w="480" title="Extra large">XL</button>
+      <input type="range" id="galrng" min="80" max="640" step="10" value="300" aria-label="Photo size">
+      <span class="gz-v" id="galpx">300px</span>
+      <button type="button" id="galsq" title="Crop every photo to a square, or show it in its own shape">▦ Squares</button>
+      <button type="button" id="galrs" title="Back to the default size">Reset</button>
+    </div>
   </div>
 </div>
 
@@ -1536,6 +1544,25 @@ function paintTo(el, name, a){
   if(a){ el.style.background = 'url("' + a + '") center/cover'; el.textContent = ""; }
   else { el.style.background = colorFor(name); el.textContent = (name[0] || "?").toUpperCase(); }
 }
+/* Docs layout: the picked theme is a colour skin and Docs has its own dark mode. Both live in generated <style> tags and body classes
+   of the real page, which the preview's one-off copy of the styles never saw, so the preview stayed plain white whatever you picked. */
+function syncDocsLook(doc, body, d){
+  const head = doc.head || doc.documentElement;
+  const sty = id => { let e = doc.getElementById(id); if(!e){ e = doc.createElement("style"); e.id = id; head.appendChild(e); } return e; };
+  let skin = "", dark = false;
+  if(pbLayout() === "docs"){
+    skin = (d.theme && d.theme !== "gdocs" && THEMES.includes(d.theme)) ? d.theme : "";
+    try{ dark = !!(window.gdDark && window.gdDark.get()); }catch(e){}
+  }
+  let skinCss = "";
+  if(skin && window.__gdSkinCSS){ try{ skinCss = window.__gdSkinCSS(skin); }catch(e){} }
+  sty("pv-skin").textContent = skinCss;
+  let darkCss = ""; try{ const g = document.getElementById("gdocs-dark-gen"); if(dark){ if(g && !g.textContent && window.gdDark) window.gdDark.apply(true); darkCss = g ? g.textContent : ""; } }catch(e){}
+  sty("pv-dark").textContent = darkCss;
+  body.classList.toggle("gd-skin", !!skinCss);
+  body.classList.toggle("gd-dark", dark && !skinCss);
+  if(skinCss) body.dataset.skin = skin; else delete body.dataset.skin;
+}
 function drawPreview(){
   if(!draft) return;
   const doc = $("pvframe").contentDocument;
@@ -1545,6 +1572,7 @@ function drawPreview(){
   doc.documentElement.className = document.documentElement.className;
   doc.documentElement.style.cssText = document.documentElement.style.cssText;
   body.dataset.theme = theme; body.classList.toggle("hide-hdr", d.hideHdr); body.classList.toggle("hide-sb", d.hideSb);
+  syncDocsLook(doc, body, d);
   const myName = d.name || usr;
   doc.getElementById("chname").textContent = CHNAME[theme];
   doc.getElementById("inp").placeholder = PH[theme];
@@ -1769,11 +1797,13 @@ function handle(d, from){
 }
 
 const okEmo = x => typeof x === "string" && x.length <= 20 && /\p{Extended_Pictographic}|\p{Regional_Indicator}/u.test(x) && !/[A-Za-z0-9<>&"'\s]/.test(x);
+const ANON_RE = /^~[0-9a-f]{16}$/;          // an anonymous voter: a random per-poll token made on the voter's own device, never a user id
+const anonCast = new Map();                  // host, memory only (never saved or sent): poll id -> senders that already cast an anonymous vote, so nobody can stuff the box
 function cleanRx(r){
   if(!r || typeof r !== "object") return null;
   const out = {}; let n = 0;
   for(const k of Object.keys(r)){
-    if(!okUid(k) || n >= 60) continue;
+    if(!(okUid(k) || ANON_RE.test(k)) || n >= 60) continue;
     const x = r[k]; if(!x || typeof x !== "object") continue;
     out[k] = { e: [...new Set((Array.isArray(x.e) ? x.e : []).filter(okEmo))].slice(0, 8), v: +x.v || 0 };
     if(typeof x.t === "string"){ const t = x.t.replace(/\s+/g, " ").trim().slice(0, 80); if(t) out[k].t = t; }   // t = a typed answer (polls where people type instead of choosing)
@@ -1786,9 +1816,9 @@ function cleanPoll(p){
   if(!p || typeof p !== "object") return null;
   const q = String(p.q || "").trim().slice(0, 200);
   const os = (Array.isArray(p.o) ? p.o : []).map(x => String(x || "").trim().slice(0, 80)).filter(Boolean).slice(0, 8);
-  if(p.t){ if(!q) return null; return { q, o: [], t: 1, m: 0, end: Math.max(0, Math.min(Date.now() + 8 * 864e5, +p.end || 0)) }; }   // t = people type their own answer
+  if(p.t){ if(!q) return null; return { q, o: [], t: 1, m: 0, ...(p.an ? { an: 1 } : {}), end: Math.max(0, Math.min(Date.now() + 8 * 864e5, +p.end || 0)) }; }   // t = people type their own answer
   if(!q || os.length < 2) return null;
-  return { q, o: os, m: p.m ? 1 : 0, end: Math.max(0, Math.min(Date.now() + 8 * 864e5, +p.end || 0)) };
+  return { q, o: os, m: p.m ? 1 : 0, ...(p.an ? { an: 1 } : {}), end: Math.max(0, Math.min(Date.now() + 8 * 864e5, +p.end || 0)) };
 }
 const GIF_RE = /^https:\/\/(?:media\d*\.tenor\.com|c\.tenor\.com|media\d*\.giphy\.com|i\.giphy\.com|i\.imgur\.com|(?:[a-z0-9-]+\.)?klipy\.(?:com|co))\/[A-Za-z0-9_\-.\/%~]{1,170}\.gif$/;   // GIF messages carry a KLIPY (or older Tenor) link, not image data
 function cleanEntry(e){
@@ -1824,7 +1854,9 @@ function cleanEntry(e){
     if(e.r.fw) o.r.fw = String(e.r.fw).slice(0, 20);
   }
   if(o.to){ if(e.hd && o.r) o.hd = 1; else return null; }     // 1-on-1 DMs are gone: a message to one person must be a hidden reply
-  const rx = cleanRx(e.rx); if(rx) o.rx = rx;
+  let rx = cleanRx(e.rx);
+  if(rx){ const an = !!(o.poll && o.poll.an); Object.keys(rx).forEach(k => { if(an !== ANON_RE.test(k)) delete rx[k]; }); if(!Object.keys(rx).length) rx = null; }   // anonymous polls hold only anonymous tokens, everything else only real user ids: so a vote in an anonymous poll can never carry an identifier
+  if(rx) o.rx = rx;
   return o;
 }
 /* reactions are stored per person ({uid: {e:[emoji], v:time}}) and merged person by person, so two people
@@ -1839,18 +1871,29 @@ const rxv = l => l && l.rx ? Math.max(0, ...Object.values(l.rx).map(x => x.v || 
 function vetRx(o, from){   // host: a person may only change their own reactions
   const cur = logs.find(l => l.i === o.i), out = {};
   if(cur && cur.poll && cur.poll.end && Date.now() > cur.poll.end + 5000) return null;   // poll is closed
+  const anon = !!((cur && cur.poll) ? cur.poll.an : (o.poll && o.poll.an)), claimed = {};
+  /* "is this key the sender's own?": a user id must be the sender's. In an anonymous poll the key is a secret token, so
+     holding it is the proof; a NEW token is accepted once per sender (remembered in memory only, and never next to the token) */
+  const own = k => {
+    if(!anon) return k === from.uid;
+    if(!ANON_RE.test(k)) return false;
+    if(cur && cur.rx && cur.rx[k]) return true;
+    if(k in claimed) return claimed[k];
+    const set = anonCast.get(o.i) || new Set(); if(!from.uid || set.has(from.uid)) return (claimed[k] = false);
+    set.add(from.uid); anonCast.set(o.i, set); return (claimed[k] = true);
+  };
   Object.keys(o.rx).forEach(k => {
     const same = cur && cur.rx && cur.rx[k] && (cur.rx[k].v || 0) >= (o.rx[k].v || 0);
     if(cur && cur.poll && cur.poll.t){                                                              // typed-answer poll: text only, and final on the Polls tab
-      if(k === from.uid && cur.ch === "polls" && cur.rx && cur.rx[k] && cur.rx[k].t){ out[k] = cur.rx[k]; return; }
-      if(k === from.uid || same) out[k] = { e: [], v: o.rx[k].v || 0, ...(o.rx[k].t ? { t: o.rx[k].t } : {}) };
+      if(own(k) && cur.ch === "polls" && cur.rx && cur.rx[k] && cur.rx[k].t){ out[k] = cur.rx[k]; return; }
+      if(own(k) || same) out[k] = { e: [], v: o.rx[k].v || 0, ...(o.rx[k].t ? { t: o.rx[k].t } : {}) };
       return;
     }
-    if(k === from.uid && cur && cur.poll && cur.ch === "polls" && cur.rx && cur.rx[k]){           // poll votes are final: keep what they already voted, only allow adding (multi-answer polls)
+    if(own(k) && cur && cur.poll && cur.ch === "polls" && cur.rx && cur.rx[k]){           // poll votes are final: keep what they already voted, only allow adding (multi-answer polls)
       const VTS = ["🔴","🔵","⚫","⚪","🔶","🔷","🔸","🔹"], had = (cur.rx[k].e || []).filter(e => VTS.includes(e));
       if(had.length){ const ne = cur.poll.m ? [...new Set([...had, ...(o.rx[k].e || [])])] : had.slice(); out[k] = { e: ne, v: Math.max(o.rx[k].v || 0, cur.rx[k].v || 0) }; return; }
     }
-    if(k === from.uid || same) out[k] = o.rx[k];
+    if(own(k) || same) out[k] = o.rx[k];
   });
   return Object.keys(out).length ? out : null;
 }
@@ -3081,6 +3124,22 @@ label.plus.open{transform:rotate(45deg)}
     c.append(i, mm, b); return c;
   };
 
+  /* ---------- anonymous voting: the voter is a random token made on this device for this poll (not the user id) ---------- */
+  let anonSecret = "";
+  function anonKey(){
+    if(anonSecret) return anonSecret;
+    try{ anonSecret = localStorage.getItem("pb_anon_key") || ""; }catch(e){}
+    if(!/^[0-9a-f]{32}$/.test(anonSecret)){
+      const a = new Uint8Array(16); (window.crypto || window.msCrypto).getRandomValues(a);
+      anonSecret = Array.from(a, x => x.toString(16).padStart(2, "0")).join("");
+      try{ localStorage.setItem("pb_anon_key", anonSecret); }catch(e){}
+    }
+    return anonSecret;
+  }
+  const h32 = (str, seed) => { let h = seed >>> 0; for(let i = 0; i < str.length; i++){ h = Math.imul(h ^ str.charCodeAt(i), 2654435761); h ^= h >>> 15; h = Math.imul(h, 2246822519); h ^= h >>> 13; } return (h >>> 0).toString(16).padStart(8, "0"); };
+  const anonTok = pollId => { const s = anonKey() + "|" + pollId; return "~" + h32(s, 0x9e3779b9) + h32(s + "#", 0x85ebca6b); };
+  const whoKey = l => l.poll && l.poll.an ? anonTok(l.i) : uid;   // the key this device votes under
+
   /* ---------- poll card ---------- */
   function endText(end){
     const ms = end - Date.now(); if(ms <= 0) return "Final results";
@@ -3089,7 +3148,7 @@ label.plus.open{transform:rotate(45deg)}
   }
   window.renderPoll = function(l, w){
     const card = w.querySelector(".pollcard"); if(!card || !l.poll) return;
-    const p = l.poll;
+    const p = l.poll, me = whoKey(l);
     if(p.t){ renderTypedPoll(l, card); return; }
     const by = p.o.map(() => []);
     Object.keys(l.rx || {}).forEach(u => ((l.rx[u] || {}).e || []).forEach(em => { const k = VT.indexOf(em); if(k >= 0 && k < by.length) by[k].push(u); }));
@@ -3097,37 +3156,37 @@ label.plus.open{transform:rotate(45deg)}
     const total = voters.size, ended = !!p.end && Date.now() >= p.end;
     const q = document.createElement("div"); q.className = "pq"; q.textContent = "📊 " + p.q;
     const sub = document.createElement("div"); sub.className = "ps";
-    sub.textContent = (p.m ? "Select one or more" : "Select one") + (l.ch === "polls" ? " · Votes are final" : "") + (p.end ? " · " + endText(p.end) : "");
+    sub.textContent = (p.m ? "Select one or more" : "Select one") + (l.ch === "polls" ? " · Votes are final" : "") + (p.an ? " · 🕶️ Anonymous" : "") + (p.end ? " · " + endText(p.end) : "");
     const opts = p.o.map((t, k) => {
-      const b = document.createElement("button"); b.type = "button"; b.className = "popt" + (by[k].includes(uid) ? " mine" : ""); b.disabled = ended;
+      const b = document.createElement("button"); b.type = "button"; b.className = "popt" + (by[k].includes(me) ? " mine" : ""); b.disabled = ended;
       const pct = total ? Math.round(by[k].length / total * 100) : 0;
       const f = document.createElement("div"); f.className = "fill"; f.style.width = pct + "%";
-      const lb = document.createElement("span"); lb.className = "l"; lb.textContent = (by[k].includes(uid) ? "✓ " : "") + t;
+      const lb = document.createElement("span"); lb.className = "l"; lb.textContent = (by[k].includes(me) ? "✓ " : "") + t;
       const n = document.createElement("span"); n.className = "n"; n.textContent = by[k].length + " · " + pct + "%";
-      b.title = by[k].length ? by[k].map(u => (typeof rxNames === "function" ? rxNames([u]) : u)).join(", ") : "No votes yet";
+      b.title = p.an ? (by[k].length + (by[k].length === 1 ? " vote" : " votes")) : by[k].length ? by[k].map(u => (typeof rxNames === "function" ? rxNames([u]) : u)).join(", ") : "No votes yet";
       b.append(f, lb, n); b.onclick = ev => { ev.stopPropagation(); vote(l.i, k); };
       const g = document.createElement("div"); g.className = "popt-g"; g.appendChild(b);
-      if(by[k].length){
+      if(by[k].length && !p.an){
         const pv = document.createElement("div"); pv.className = "pv";
         pv.textContent = by[k].map(u => u === uid ? "You" : (typeof rxNames === "function" ? rxNames([u]) : u)).join(", ");
         g.appendChild(pv);
       }
       return g;
     });
-    const ft = document.createElement("div"); ft.className = "pf"; ft.textContent = total + (total === 1 ? " vote" : " votes") + (ended ? " · Poll closed" : voters.has(uid) && l.ch === "polls" ? " · ✓ You voted, it can't be changed" : "");
+    const ft = document.createElement("div"); ft.className = "pf"; ft.textContent = total + (total === 1 ? " vote" : " votes") + (ended ? " · Poll closed" : voters.has(me) && l.ch === "polls" ? " · ✓ You voted, it can't be changed" : "");
     card.replaceChildren(q, sub, ...opts, ft);
   };
   /* polls where people type their own answer: the card shows a text box, and below it everyone's answers (same answers are counted together) */
   function renderTypedPoll(l, card){
-    const p = l.poll, ended = !!p.end && Date.now() >= p.end, final = l.ch === "polls";
+    const p = l.poll, me = whoKey(l), ended = !!p.end && Date.now() >= p.end, final = l.ch === "polls";
     const groups = new Map();
     Object.keys(l.rx || {}).forEach(u => { const t = (l.rx[u] || {}).t; if(!t) return; const key = t.toLowerCase(); if(!groups.has(key)) groups.set(key, { text: t, users: [] }); groups.get(key).users.push(u); });
     const list = [...groups.values()].sort((a, b) => b.users.length - a.users.length), total = list.reduce((n, g) => n + g.users.length, 0);
-    const mine = ((l.rx || {})[uid] || {}).t || "";
+    const mine = ((l.rx || {})[me] || {}).t || "";
     const old = card.querySelector(".ptin"), keep = old && document.activeElement === old ? { v: old.value, a: old.selectionStart, b: old.selectionEnd } : null;   // don't wipe what someone is typing when the card refreshes
     const q = document.createElement("div"); q.className = "pq"; q.textContent = "📊 " + p.q;
     const sub = document.createElement("div"); sub.className = "ps";
-    sub.textContent = "Type your answer" + (final ? " · Answers are final" : "") + (p.end ? " · " + endText(p.end) : "");
+    sub.textContent = "Type your answer" + (final ? " · Answers are final" : "") + (p.an ? " · 🕶️ Anonymous" : "") + (p.end ? " · " + endText(p.end) : "");
     const kids = [q, sub];
     if(!ended && !(final && mine)){
       const row = document.createElement("div"); row.className = "ptrow";
@@ -3140,15 +3199,15 @@ label.plus.open{transform:rotate(45deg)}
       row.append(inp, go); kids.push(row);
     }
     list.forEach(g => {
-      const pct = total ? Math.round(g.users.length / total * 100) : 0, isMine = g.users.includes(uid);
+      const pct = total ? Math.round(g.users.length / total * 100) : 0, isMine = g.users.includes(me);
       const b = document.createElement("div"); b.className = "popt typed" + (isMine ? " mine" : "");
       const f = document.createElement("div"); f.className = "fill"; f.style.width = pct + "%";
       const lb = document.createElement("span"); lb.className = "l"; lb.textContent = (isMine ? "✓ " : "") + g.text;
       const n = document.createElement("span"); n.className = "n"; n.textContent = g.users.length + " · " + pct + "%";
       b.append(f, lb, n);
       const gw = document.createElement("div"); gw.className = "popt-g"; gw.appendChild(b);
-      const pv = document.createElement("div"); pv.className = "pv";
-      pv.textContent = g.users.map(u => u === uid ? "You" : (typeof rxNames === "function" ? rxNames([u]) : u)).join(", "); gw.appendChild(pv);
+      if(!p.an){ const pv = document.createElement("div"); pv.className = "pv";
+        pv.textContent = g.users.map(u => u === uid ? "You" : (typeof rxNames === "function" ? rxNames([u]) : u)).join(", "); gw.appendChild(pv); }
       kids.push(gw);
     });
     const ft = document.createElement("div"); ft.className = "pf";
@@ -3163,26 +3222,26 @@ label.plus.open{transform:rotate(45deg)}
     if(window.__pbMuted && window.__pbMuted(usr)){ sys("You're muted by an owner."); return; }
     const t = String(text || "").replace(/\s+/g, " ").trim().slice(0, 80);
     if(!t){ sys("Type an answer first."); return; }
-    const mine = (l.rx && l.rx[uid]) || { e: [], v: 0 };
+    const me = whoKey(l), mine = (l.rx && l.rx[me]) || { e: [], v: 0 };
     if(l.ch === "polls"){
       if(mine.t){ sys("You already answered this poll. You can't change your answer anymore."); return; }
       if(!confirm("Submit “" + t + "”?\nYou won't be able to change or remove your answer afterwards.")) return;
     } else if(mine.t === t) return;
-    l.rx = l.rx || {}; l.rx[uid] = { e: [], v: Math.max(Date.now(), (mine.v || 0) + 1), t };
+    l.rx = l.rx || {}; l.rx[me] = { e: [], v: Math.max(Date.now(), (mine.v || 0) + 1), t };
     persist(); renderRx(l); sendEntry(l);
   }
   function vote(id, k){
     const l = logs.find(x => x.i === id); if(!l || !l.poll || l.del) return;
     if(l.poll.end && Date.now() >= l.poll.end){ sys("This poll has ended."); return; }
     if(window.__pbMuted && window.__pbMuted(usr)){ sys("You're muted by an owner."); return; }
-    const mine = (l.rx && l.rx[uid]) || { e: [], v: 0 }, set = new Set(mine.e.filter(e => VT.includes(e))), tok = VT[k];
+    const me = whoKey(l), mine = (l.rx && l.rx[me]) || { e: [], v: 0 }, set = new Set(mine.e.filter(e => VT.includes(e))), tok = VT[k];
     if(l.ch === "polls"){                               // Polls tab only: votes are final
       if(set.has(tok)){ sys("Votes are final: you can't take back a vote you've already made."); return; }
       if(set.size && !l.poll.m){ sys("You already voted on this poll. You can't change your vote anymore."); return; }
       if(!confirm("Vote for “" + l.poll.o[k] + "”?\nYou won't be able to change or remove your vote afterwards.")) return;
       set.add(tok);
     } else if(set.has(tok)) set.delete(tok); else { if(!l.poll.m) set.clear(); set.add(tok); }
-    l.rx = l.rx || {}; l.rx[uid] = { e: [...set], v: Math.max(Date.now(), (mine.v || 0) + 1) };
+    l.rx = l.rx || {}; l.rx[me] = { e: [...set], v: Math.max(Date.now(), (mine.v || 0) + 1) };
     persist(); renderRx(l); sendEntry(l);
   }
   setInterval(() => { logs.forEach(l => { if(l.poll && l.poll.end && !l.del) renderRx(l); }); }, 20000);   // countdown / auto-close
@@ -3237,14 +3296,14 @@ label.plus.open{transform:rotate(45deg)}
 
   /* ---------- poll maker ---------- */
   const pm = document.createElement("div"); pm.id = "pollmod";
-  pm.innerHTML = '<div class="pc"><h3>📊 Create a poll</h3><label>Question</label><input type="text" id="pq" maxlength="200" placeholder="What do you want to ask?"><label class="chk"><input type="checkbox" id="ptyped"> Let people type their own answer (no choices)</label><div id="pchoice" style="display:flex;flex-direction:column;gap:10px"><label>Answers</label><div id="popts" style="display:flex;flex-direction:column;gap:6px"></div><button type="button" class="addopt" id="paddopt">+ Add answer</button><label class="chk"><input type="checkbox" id="pmulti"> Allow multiple answers</label></div><label>Duration</label><select id="pdur"><option value="3600000">1 hour</option><option value="86400000" selected>24 hours</option><option value="259200000">3 days</option><option value="604800000">1 week</option><option value="0">No end</option></select><div class="perr" id="perr"></div><div class="row"><button type="button" class="pcancel" id="pcancel">Cancel</button><button type="button" class="ppost" id="ppost">Post poll</button></div></div>';
+  pm.innerHTML = '<div class="pc"><h3>📊 Create a poll</h3><label>Question</label><input type="text" id="pq" maxlength="200" placeholder="What do you want to ask?"><label class="chk"><input type="checkbox" id="ptyped"> Let people type their own answer (no choices)</label><label class="chk"><input type="checkbox" id="pan"> 🕶️ Anonymous voting (nobody can see who voted for what)</label><div id="pchoice" style="display:flex;flex-direction:column;gap:10px"><label>Answers</label><div id="popts" style="display:flex;flex-direction:column;gap:6px"></div><button type="button" class="addopt" id="paddopt">+ Add answer</button><label class="chk"><input type="checkbox" id="pmulti"> Allow multiple answers</label></div><label>Duration</label><select id="pdur"><option value="3600000">1 hour</option><option value="86400000" selected>24 hours</option><option value="259200000">3 days</option><option value="604800000">1 week</option><option value="0">No end</option></select><div class="perr" id="perr"></div><div class="row"><button type="button" class="pcancel" id="pcancel">Cancel</button><button type="button" class="ppost" id="ppost">Post poll</button></div></div>';
   document.body.appendChild(pm);
   const optBox = $$("popts");
   $$("ptyped").onchange = () => { $$("pchoice").style.display = $$("ptyped").checked ? "none" : "flex"; };
   function addOpt(v){ if(optBox.children.length >= 8) return; const i = document.createElement("input"); i.type = "text"; i.maxLength = 80; i.placeholder = "Answer " + (optBox.children.length + 1); i.value = v || ""; optBox.appendChild(i); }
   $$("paddopt").onclick = () => { addOpt(); $$("paddopt").style.display = optBox.children.length >= 8 ? "none" : ""; optBox.lastChild.focus(); };
   function openPoll(){
-    $$("pq").value = ""; $$("pmulti").checked = false; $$("ptyped").checked = false; $$("pchoice").style.display = "flex"; $$("pdur").value = "86400000"; $$("perr").textContent = "";
+    $$("pq").value = ""; $$("pmulti").checked = false; $$("ptyped").checked = false; $$("pan").checked = false; $$("pchoice").style.display = "flex"; $$("pdur").value = "86400000"; $$("perr").textContent = "";
     optBox.replaceChildren(); addOpt(); addOpt(); $$("paddopt").style.display = ""; pm.classList.add("open"); $$("pq").focus();
   }
   const closePoll = () => pm.classList.remove("open");
@@ -3254,10 +3313,10 @@ label.plus.open{transform:rotate(45deg)}
     const q = $$("pq").value.trim(), os = [...optBox.querySelectorAll("input")].map(i => i.value.trim()).filter(Boolean);
     const uniq = [...new Set(os.map(o => o.toLowerCase()))];
     if(!q){ $$("perr").textContent = "Type a question."; return; }
-    if($$("ptyped").checked){ const d = +$$("pdur").value; closePoll(); postMsg(q, 0, 0, { poll: { q, o: [], t: 1, m: 0, end: d ? Date.now() + d : 0 } }); return; }
+    if($$("ptyped").checked){ const d = +$$("pdur").value; closePoll(); postMsg(q, 0, 0, { poll: { q, o: [], t: 1, m: 0, ...($$("pan").checked ? { an: 1 } : {}), end: d ? Date.now() + d : 0 } }); return; }
     if(os.length < 2 || uniq.length < os.length){ $$("perr").textContent = os.length < 2 ? "Add at least 2 answers." : "Answers must be different."; return; }
     const dur = +$$("pdur").value;
-    closePoll(); postMsg(q, 0, 0, { poll: { q, o: os, m: $$("pmulti").checked ? 1 : 0, end: dur ? Date.now() + dur : 0 } });
+    closePoll(); postMsg(q, 0, 0, { poll: { q, o: os, m: $$("pmulti").checked ? 1 : 0, ...($$("pan").checked ? { an: 1 } : {}), end: dur ? Date.now() + dur : 0 } });
   };
 
   /* ---------- file picker ---------- */
@@ -3302,19 +3361,28 @@ label.plus.open{transform:rotate(45deg)}
     let stream = null, facing = "environment", blob = null, first = true;
     const stop = () => { if(stream){ stream.getTracks().forEach(t => t.stop()); stream = null; } };
     const esc = e => { if(e.key === "Escape") close(); };
-    const close = () => { stop(); ov.remove(); document.removeEventListener("keydown", esc); };
+    let tok = 0, closed = false;
+    const close = () => { closed = true; stop(); ov.remove(); document.removeEventListener("keydown", esc); };
     document.addEventListener("keydown", esc);
     function start(){
-      stop(); msg.textContent = "";
+      stop(); msg.textContent = ""; const my = ++tok; try{ vid.srcObject = null; }catch(e){}
       const v = { width: { ideal: 1920 }, height: { ideal: 1080 } };
       const saved = first && window.PBM ? window.PBM.video().deviceId : null;          // the camera picked in Settings > Accessibility
       if(saved) v.deviceId = saved; else v.facingMode = { ideal: facing };
       first = false;
-      md.getUserMedia({ video: v }).then(st => {
-        stream = st; vid.srcObject = st;
+      const live = () => !closed && my === tok;
+      const open = (window.PBM && window.PBM.openCam) ? window.PBM.openCam(v, vid, live)
+        : md.getUserMedia({ video: v }).then(st => { vid.srcObject = st; try{ vid.muted = true; vid.play(); }catch(e){} return st; });
+      open.then(st => {
+        if(!live()){ st.getTracks().forEach(t => t.stop()); return; }
+        stream = st;
         const fm = st.getVideoTracks()[0].getSettings().facingMode; if(fm) facing = fm;
         vid.classList.toggle("mir", facing === "user");
-      }).catch(() => { close(); shot.click(); });
+      }).catch(err => {
+        if(!live() || (err && err.message === "cancelled")) return;
+        shot.setAttribute("capture", facing === "user" ? "user" : "environment");   // fall back to the phone's picker on the camera that was asked for
+        close(); shot.click();
+      });
     }
     function review(on){ q(".cm-snap").hidden = q(".cm-flip").hidden = on; q(".cm-retake").hidden = q(".cm-use").hidden = !on; }
     q(".cm-x").onclick = close;
@@ -10450,6 +10518,7 @@ html body #stg.sx{background:var(--sx-bg);color:var(--sx-text);padding:env(safe-
         if(c.id === "stg-cursor") return "appearance";   // appearance, layout and customization share one page
         if(c.id === "stg-anim") return "anim";
         if(c.id === "stg-exp") return "exp";
+        if(c.dataset.pbcat) return c.dataset.pbcat;     // a card can name its own page (e.g. Frame rate lives in Appearance & Layout)
         if(c.dataset.a11y) return "access";
         if(/read receipts|password|role tag|custom tag|account/i.test(t)) return "account";
         if(/profile/i.test(t)) return "profile";
@@ -12000,15 +12069,76 @@ function persist(){ try{ localStorage.setItem(KEY,JSON.stringify(S)); }catch(e){
 var root=document.documentElement;
 
 /* ---- used by the call code (mic / camera choices) ---- */
+var FPS_OPTS=[["auto","Auto (let the camera decide)"],["10","10 fps (saves data)"],["12","12 fps"],["15","15 fps"],["20","20 fps"],["24","24 fps (default, cinema)"],["25","25 fps (PAL)"],["30","30 fps (smooth)"],["48","48 fps"],["50","50 fps"],["60","60 fps (very smooth)"],["90","90 fps"],["120","120 fps (needs a high-speed camera)"]];
 window.PBM={
   audio:function(){ var o={echoCancellation:!!S.echo,noiseSuppression:!!S.noise,autoGainControl:!!S.agc}; if(S.mic) o.deviceId={ideal:S.mic}; return o; },
   video:function(){
     var h=+S.res||480, w=h>=720?Math.round(h*16/9):640;
-    var o={width:{ideal:w},height:{ideal:h},frameRate:{ideal:+S.fps||24}};
+    var o={width:{ideal:w},height:{ideal:h}}; if(S.fps!=="auto") o.frameRate={ideal:+S.fps||24};
     if(S.cam) o.deviceId={ideal:S.cam}; else o.facingMode="user";
     return o;
   }
 };
+
+/* ---- opening a camera reliably (front camera: black picture / "couldn't open") ----
+   What went wrong before: the video element was never told to play or to be muted for sure (a muted attribute written through innerHTML is ignored
+   by some phones, so autoplay silently refused = black picture); the first request asked for 1920x1080 + a frame rate, which many front cameras
+   reject; a switch from rear to front started before the rear camera had been released (NotReadableError); a slow earlier request could land after
+   a newer one and leave the preview black with the camera light still on; and any failure fell back to the phone's REAR-camera picker. */
+(function(){
+  function stopS(s){ try{ s && s.getTracks().forEach(function(t){ t.stop(); }); }catch(e){} }
+  function wait(ms){ return new Promise(function(r){ setTimeout(r,ms); }); }
+  function attach(v,st){
+    try{ v.muted=true; v.defaultMuted=true; v.autoplay=true; v.playsInline=true; v.setAttribute("playsinline",""); v.setAttribute("muted",""); }catch(e){}
+    try{ v.srcObject=null; }catch(e){}
+    v.srcObject=st;
+    var pr; try{ pr=v.play(); }catch(e){} if(pr&&pr.catch) pr.catch(function(){});
+  }
+  function frames(v,st,ms){
+    return new Promise(function(res){
+      var t0=Date.now(), tr=st.getVideoTracks()[0];
+      (function chk(){
+        var live=tr&&tr.readyState==="live";
+        if(v.videoWidth>0&&v.readyState>=2&&live&&!tr.muted) return res(true);
+        if(!live) return res(false);
+        if(Date.now()-t0>ms) return res(v.videoWidth>0&&v.readyState>=2&&live);   /* a track that still says muted but shows frames is fine */
+        if(v.paused){ try{ var p=v.play(); if(p&&p.catch) p.catch(function(){}); }catch(e){} }
+        setTimeout(chk,100);
+      })();
+    });
+  }
+  function relaxed(want){
+    var r={}; if(want&&want.deviceId) r.deviceId=want.deviceId;
+    if(want&&want.facingMode){ var f=want.facingMode; r.facingMode={ideal:(typeof f==="string"?f:(f.ideal||f.exact||"user"))}; }
+    return r;
+  }
+  /* want = video constraints, v = the <video> to show it in, live() = false once the caller has moved on (closed / newer request) */
+  window.PBM.openCam=function(want,v,live){
+    var md=navigator.mediaDevices; live=live||function(){return true;};
+    var tries=[want||{}]; var rl=relaxed(want); if(Object.keys(rl).length) tries.push(rl); tries.push(true);
+    var i=0, lastErr=null;
+    function next(){
+      if(!live()) return Promise.reject(new Error("cancelled"));
+      if(i>=tries.length) return Promise.reject(lastErr||new Error("no camera"));
+      var t=tries[i++], last=i>=tries.length;
+      return md.getUserMedia({video:t}).then(function(st){
+        if(!live()){ stopS(st); throw new Error("cancelled"); }
+        attach(v,st);
+        return frames(v,st,last?4000:2500).then(function(ok){
+          if(!live()){ stopS(st); throw new Error("cancelled"); }
+          if(ok||last) return st;                         /* the last try is never second-guessed: better a slow picture than none */
+          stopS(st); try{ v.srcObject=null; }catch(e){} lastErr=new Error("black"); return wait(250).then(next);
+        });
+      },function(err){
+        lastErr=err;
+        if(err&&(err.name==="NotAllowedError"||err.name==="SecurityError")) throw err;    /* permission: retrying can't help */
+        var delay=(err&&(err.name==="NotReadableError"||err.name==="AbortError"))?500:0;   /* the other camera is still being released */
+        return wait(delay).then(next);
+      });
+    }
+    return next();
+  };
+})();
 
 /* ---- colour filters (SVG matrix) ---- */
 var svgNS="http://www.w3.org/2000/svg";
@@ -12112,8 +12242,8 @@ function magnifier(){
   q(".am-fz").onclick=function(){ if(v.paused){ v.play(); this.textContent="⏸ Freeze"; } else { v.pause(); this.textContent="▶ Resume"; } };
   q(".am-t").onclick=function(){ torch=!torch; try{ track.applyConstraints({advanced:[{torch:torch}]}); }catch(e){} };
   var vid={width:{ideal:1920},height:{ideal:1080}}; if(S.cam) vid.deviceId={ideal:S.cam}; else vid.facingMode={ideal:"environment"};
-  navigator.mediaDevices.getUserMedia({video:vid}).then(function(s){
-    stream=s; track=s.getVideoTracks()[0]; v.srcObject=s;
+  window.PBM.openCam(vid,v,function(){ return !!ov.isConnected; }).then(function(s){
+    stream=s; track=s.getVideoTracks()[0];
     var cap=track.getCapabilities?track.getCapabilities():{}; hw=!!cap.zoom; if(cap.torch) q(".am-t").hidden=false; paint();
   }).catch(function(){ msg.textContent="Couldn't open the camera. Check that it is allowed for this site."; });
 }
@@ -12138,12 +12268,12 @@ var cards=[
    rng("cfk","Filter intensity",0,100,5,"%")+rng("tint","Tint hue",0,360,5,"°")+rng("wp","Reduce White Point",0,75,5,"%")),
  card("🏃 Motion",chk("rm","Reduce Motion (stops slides, bounces and other animations)")+chk("noscare","Block jumpscares and flashing screens")),
  card("🖱 Pointer",sel("ptr","Pointer size",[["normal","Normal"],["large","Large"],["xlarge","Extra large"]])+'<label>Pointer color</label><input type="color" data-k="ptrc">'),
+ (function(){ var c=card("🎞 Frame Rate",'<div class="stg-note">How many frames per second your camera sends (calls, camera tests). Higher is smoother but uses more data and battery. If your camera can\'t do the rate you pick, it uses the closest one it supports.</div>'+sel("fps","Camera frame rate",FPS_OPTS)); delete c.dataset.a11y; c.dataset.pbcat="appearance"; c.dataset.fpscard="1"; return c; })(),
  card("🔍 Magnifier",'<div class="stg-note">Use your camera as a magnifying glass: zoom, freeze, brightness, contrast, color filters and the light if your phone has one.</div><div class="stg-row"><button type="button" class="btn" id="a11y-mag-open">Open Magnifier</button></div>'),
  card("🎥 Camera &amp; Microphone",
    '<div class="stg-note" id="a11y-perm">Checking permissions…</div><div class="stg-row"><button type="button" class="btn" id="a11y-allow">Allow camera &amp; microphone</button></div>'+
    '<label>Camera</label><select data-k="cam" id="a11y-cam"><option value="">Default</option></select>'+
    sel("res","Video quality",[["360","360p"],["480","480p (default)"],["720","720p HD"],["1080","1080p Full HD"]])+
-   sel("fps","Frame rate",[["15","15 fps"],["24","24 fps"],["30","30 fps"],["60","60 fps"]])+
    chk("mirror","Mirror my own video (like a selfie)")+
    '<label>Microphone</label><select data-k="mic" id="a11y-mic"><option value="">Default</option></select>'+
    chk("echo","Echo cancellation")+chk("noise","Noise suppression")+chk("agc","Automatic volume (auto gain)")+
@@ -12216,17 +12346,18 @@ function applySink(){
 }
 
 /* tests */
-var camS=null, micS=null, micCtx=null, raf=0;
-function stopCam(){ if(camS){ camS.getTracks().forEach(function(t){t.stop();}); camS=null; } var p=$("a11y-cprev"); p.classList.remove("on"); p.srcObject=null; $("a11y-cinfo").textContent=""; $("a11y-tcam").textContent="Test camera"; }
+var camTok=0, camS=null, micS=null, micCtx=null, raf=0;
+function stopCam(){ camTok++; if(camS){ camS.getTracks().forEach(function(t){t.stop();}); camS=null; } var p=$("a11y-cprev"); p.classList.remove("on"); p.srcObject=null; $("a11y-cinfo").textContent=""; $("a11y-tcam").textContent="Test camera"; }
 function stopMic(){ cancelAnimationFrame(raf); if(micS){ micS.getTracks().forEach(function(t){t.stop();}); micS=null; } if(micCtx){ try{micCtx.close();}catch(e){} micCtx=null; } $("a11y-lvl").style.width="0"; $("a11y-tmic").textContent="Test microphone"; }
 $("a11y-tcam").onclick=function(){
   if(camS){ stopCam(); return; }
   if(!MD){ alert("Needs https."); return; }
-  MD.getUserMedia({video:window.PBM.video()}).then(function(s){
-    camS=s; var p=$("a11y-cprev"); p.srcObject=s; p.classList.add("on"); $("a11y-tcam").textContent="Stop camera test";
+  var ct=++camTok;
+  window.PBM.openCam(window.PBM.video(),$("a11y-cprev"),function(){ return ct===camTok; }).then(function(s){
+    camS=s; var p=$("a11y-cprev"); p.classList.add("on"); $("a11y-tcam").textContent="Stop camera test";
     var st=s.getVideoTracks()[0].getSettings(); $("a11y-cinfo").textContent=(s.getVideoTracks()[0].label||"Camera")+" — "+(st.width||"?")+"×"+(st.height||"?")+" @ "+Math.round(st.frameRate||0)+" fps";
     fillDevices(); perms();
-  }).catch(function(){ $("a11y-cinfo").textContent="Couldn't open that camera. Is it allowed and not used by another app?"; });
+  }).catch(function(e){ if(e&&e.message==="cancelled") return; $("a11y-cinfo").textContent="Couldn't open that camera. Is it allowed and not used by another app?"; });
 };
 $("a11y-tmic").onclick=function(){
   if(micS){ stopMic(); return; }
@@ -13970,6 +14101,10 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
 .ct-tb button,.ct-tb label{border:none;border-radius:8px;background:var(--row);color:var(--text);min-width:32px;height:32px;padding:0 9px;font-size:14px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
 .ct-tb button:hover,.ct-tb label:hover{filter:brightness(1.25)}
 .ct-tb input[type=color]{width:0;height:0;opacity:0;position:absolute;pointer-events:none}
+.ct-tb select{border:none;border-radius:8px;background:var(--row);color:var(--text);height:32px;padding:0 6px;font-size:13px;font-weight:700;cursor:pointer}
+.ct-ed sub,.ct-doc sub{vertical-align:sub;font-size:.75em}.ct-ed sup,.ct-doc sup{vertical-align:super;font-size:.75em}
+.ct-tb .ct-ico-on{outline:2px solid var(--accent)}
+#ct-wc{margin-left:auto}
 .ct-sep{width:1px;background:var(--line);margin:2px 3px}
 .ct-ed{min-height:46vh;padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:var(--input,var(--row));outline:none}
 .ct-ed:focus{border-color:var(--accent)}
@@ -14046,9 +14181,11 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
   const bump = t => { t.v = Math.max(Date.now(), (t.v || 0) + 1); t.eb = ""; };   // eb = who last changed the page's text (set by the live editor, see commit())
 
   /* ---------- safe HTML: anything that comes from the cloud or a paste goes through this whitelist ---------- */
-  const OKTAG = /^(P|BR|B|STRONG|I|EM|U|S|STRIKE|DEL|H1|H2|H3|UL|OL|LI|A|BLOCKQUOTE|HR|CODE|PRE|DIV|IMG|TABLE|THEAD|TBODY|TR|TD|TH)$/;
+  const OKTAG = /^(P|BR|B|STRONG|I|EM|U|S|STRIKE|DEL|H1|H2|H3|UL|OL|LI|A|BLOCKQUOTE|HR|CODE|PRE|DIV|IMG|TABLE|THEAD|TBODY|TR|TD|TH|SUB|SUP)$/;
   const DROP = /^(SCRIPT|STYLE|IFRAME|OBJECT|EMBED|LINK|META|SVG|MATH|FORM|INPUT|TEXTAREA|SELECT|BUTTON|TEMPLATE|NOSCRIPT|AUDIO|VIDEO|CANVAS|HEAD|TITLE|BASE|FRAME|FRAMESET|APPLET)$/;
   const COLOR = /(?:^|;)\s*color\s*:\s*(#[0-9a-f]{3,8}|rgba?\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*(?:,\s*[\d.]+\s*)?\))\s*(?:;|$)/i;
+  const BGCOL = /(?:^|;)\s*background(?:-color)?\s*:\s*(#[0-9a-f]{3,8}|rgba?\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*(?:,\s*[\d.]+\s*)?\))\s*(?:;|$)/i;
+  const FSIZE = /(?:^|;)\s*font-size\s*:\s*(\d{2,3})px\s*(?:;|$)/i;
   const ALIGN = /(?:^|;)\s*text-align\s*:\s*(left|center|right)\s*(?:;|$)/i;
   const IMGOK = /^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+\/=]+$/;
   const hrefOk = h => { h = String(h || "").trim(); return /^(https?:\/\/|mailto:)/i.test(h) && h.length < 800 ? h : ""; };
@@ -14062,11 +14199,16 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
         if(n.nodeType !== 1) return;
         const t = n.tagName;
         if(DROP.test(t)) return;
+        if(t === "MARK"){ const s = document.createElement("span"); s.style.backgroundColor = "#fff176"; s.style.color = "#000"; dst.appendChild(s); walk(n, s, depth + 1); return; }
         if(t === "SPAN" || t === "FONT"){
-          let c = dst; const st = n.getAttribute("style") || "";
+          let c = dst; let st = n.getAttribute("style") || "";
           let col = (st.match(COLOR) || [])[1] || "";
           if(!col && t === "FONT" && /^#[0-9a-f]{3,8}$/i.test(n.getAttribute("color") || "")) col = n.getAttribute("color");
-          if(col){ const s = document.createElement("span"); s.style.color = col; c.appendChild(s); c = s; }
+          if(t === "FONT" && /^[1-7]$/.test(n.getAttribute("size") || "") && !/font-size/i.test(st)){ const px = [0, 10, 13, 16, 18, 24, 32, 48][+n.getAttribute("size")]; if(+n.getAttribute("size") !== 3) st = st + ";font-size:" + px + "px"; }
+          const bgm = (st.match(BGCOL) || [])[1] || "", fsm = st.match(FSIZE), fsz = fsm ? Math.min(72, Math.max(10, +fsm[1])) : 0;
+          if(col || bgm || fsz){ const s = document.createElement("span"); if(col) s.style.color = col; if(bgm) s.style.backgroundColor = bgm; if(fsz) s.style.fontSize = fsz + "px"; c.appendChild(s); c = s; }
+          if(/vertical-align\s*:\s*super/i.test(st)){ const b = document.createElement("sup"); c.appendChild(b); c = b; }
+          else if(/vertical-align\s*:\s*sub/i.test(st)){ const b = document.createElement("sub"); c.appendChild(b); c = b; }
           if(/font-weight\s*:\s*(bold|[6-9]00)/i.test(st)){ const b = document.createElement("b"); c.appendChild(b); c = b; }
           if(/font-style\s*:\s*italic/i.test(st)){ const b = document.createElement("i"); c.appendChild(b); c = b; }
           if(/text-decoration[^;]*underline/i.test(st)){ const b = document.createElement("u"); c.appendChild(b); c = b; }
@@ -14203,24 +14345,30 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
     const it = cur(), top = byId(curId);
     $$("ct-edit").hidden = !(it && canEdit(it));
     const mg = !!it && canManage(it);
-    ["ct-set", "ct-left", "ct-right"].forEach(id => { $$(id).hidden = !mg; });
+    ["ct-set"].forEach(id => { $$(id).hidden = !mg; });
     const add = $$("ct-subs").querySelector(".sub-add"); if(add) add.hidden = !(top && canEdit(top));
+    try{ if(window.__ctBarSync) window.__ctBarSync(); }catch(e){}
   }
+  /* Docs layout top bar: Rename / Delete / Edit for the open tab (the bar itself is built by the Docs-layout script) */
+  window.__ctTop = {
+    state(){ const it = cur(); return { on: document.body.classList.contains("in-ctab") && !!it, edit: !!it && canEdit(it) && !editing, rename: !!it && canManage(it), del: !!it && canDel(it) }; },
+    rename(){ const t = cur(); if(!t || !canManage(t)) return; openModal(t, ""); setTimeout(() => { const n = $$("ctm-name"); if(n){ n.focus(); n.select(); } }, 40); },
+    del(){ const t = cur(); if(!t || !canDel(t)) return; openModal(t, ""); const b = $$("ctm-del"); if(b) b.click(); },   // opens the tab's settings with "Really delete for everyone?" ready to confirm
+    edit(){ startEdit(); }
+  };
 
   /* ---------- the page view ---------- */
   const view = document.createElement("div"); view.id = "ctview";
   view.innerHTML =
     '<div class="ct-bar"><div class="ct-title"><b id="ct-ic"></b><span id="ct-nm"></span></div><span class="ct-who" id="ct-who"></span><span class="ct-live" id="ct-live" hidden></span><span class="gm-spacer"></span>' +
       '<div class="ct-mod" id="ct-modbar">' +
-        '<button type="button" class="gm-b alt" id="ct-left" title="Move this tab left">◀</button>' +
-        '<button type="button" class="gm-b alt" id="ct-right" title="Move this tab right">▶</button>' +
         '<button type="button" class="gm-b alt" id="ct-set">⚙ Rename / delete</button>' +
         '<button type="button" class="gm-b pri" id="ct-edit">✎ Edit page</button>' +
       '</div></div>' +
     '<div class="ct-subs" id="ct-subs"></div>' +
     '<div class="ct-scroll"><div class="ct-doc" id="ct-doc"></div>' +
       '<div id="ct-editwrap"><div class="ct-tb" id="ct-tb"></div><div class="ct-ed" id="ct-ed" contenteditable="true" spellcheck="true"></div>' +
-      '<div class="ct-efoot"><span class="ct-stat" id="ct-stat" aria-live="polite"></span><div id="ct-err" role="alert"></div><button type="button" class="gm-b pri" id="ct-save" title="Close the editor (your changes are already saved)">Done</button></div></div>' +
+      '<div class="ct-efoot"><span class="ct-stat" id="ct-stat" aria-live="polite"></span><span class="ct-stat" id="ct-wc" title="Words · characters"></span><div id="ct-err" role="alert"></div><button type="button" class="gm-b pri" id="ct-save" title="Close the editor (your changes are already saved)">Done</button></div></div>' +
     '</div>';
   $$("box").after(view);
   const doc = $$("ct-doc"), ed = $$("ct-ed"), errEl = $$("ct-err");
@@ -14524,6 +14672,7 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
   function stopEdit(){
     editing = false; liveId = ""; clearTimeout(saveT); firstDirty = 0; composing = false; hist = new Map();
     $$("ct-editwrap").classList.remove("on"); doc.style.display = ""; $$("ct-edit").style.display = ""; errEl.textContent = ""; setStatus("");
+    try{ if(window.__ctBarSync) window.__ctBarSync(); }catch(e){}
   }
   function startEdit(){
     const t = cur(); if(!t || !canEdit(t)) return;
@@ -14532,20 +14681,12 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
     patching = true; ed.innerHTML = h; mo.takeRecords(); patching = false;
     errEl.textContent = ""; setStatus("✓ Saved"); scheduleAdj();
     doc.style.display = "none"; $$("ct-edit").style.display = "none"; $$("ct-editwrap").classList.add("on");
+    try{ if(window.__ctBarSync) window.__ctBarSync(); }catch(e){}
     try{ if(window.__tbBoost) window.__tbBoost(); if(window.__tbPull) window.__tbPull(); }catch(e){}   // look for newer changes right away
     setTimeout(() => ed.focus(), 30);
   }
   function finishEdit(){ if(autosave() === false) return; stopEdit(); renderPage(); }
   $$("ct-edit").onclick = startEdit; $$("ct-save").onclick = finishEdit;
-  function move(dir){
-    const it = cur(); if(!it || !canManage(it)) return;
-    const l = it.p ? subsOf(it.p) : tops(), i = l.findIndex(t => t.id === it.id), j = i + dir;
-    if(i < 0 || j < 0 || j >= l.length) return;
-    l.forEach((t, k) => { if((t.o || 0) !== k){ t.o = k; bump(t); } });   // make the order explicit first
-    const a = l[i], b = l[j], ao = a.o; a.o = b.o; b.o = ao; bump(a); bump(b);
-    persist(); buildTabs(); renderSubs(true);
-  }
-  $$("ct-left").onclick = () => move(-1); $$("ct-right").onclick = () => move(1);
 
 
   /* ---------- auto contrast: text / pictures that vanish against this theme get brightened or inverted (display only, never saved) ---------- */
@@ -14672,13 +14813,88 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
     ["• List", "Bulleted list", () => cmd("insertUnorderedList")], ["1. List", "Numbered list", () => cmd("insertOrderedList")], "|",
     ["⇤", "Align left", () => cmd("justifyLeft")], ["↔", "Center", () => cmd("justifyCenter")], ["⇥", "Align right", () => cmd("justifyRight")], "|",
     ["🔗", "Add link", addLink], ["Unlink", "Remove link", () => cmd("unlink")], ["―", "Divider line", () => cmd("insertHorizontalRule")], "|",
+    ["x²", "Superscript", () => cmd("superscript")], ["x₂", "Subscript", () => cmd("subscript")], ["</>", "Code block", () => cmd("formatBlock", "<pre>")], ["☐", "Checklist item", () => cmd("insertText", "☐ ")], "|",
+    ["▦", "Insert table", insTable], ["+Row", "Add a row to the table at the cursor", () => tblEdit("row")], ["+Col", "Add a column to the table at the cursor", () => tblEdit("col")], ["−Tbl", "Delete the table at the cursor", () => tblEdit("del")], "|",
+    ["Aa", "Change case (UPPER → lower → Title)", cycleCase], ["📅", "Insert today's date", () => cmd("insertText", new Date().toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" }))], ["Ω", "Insert a special character", insSym], ["🔍", "Find & replace", findRep], "|",
     ["Tx", "Clear formatting", () => cmd("removeFormat")], ["↶", "Undo", () => cmd("undo")], ["↷", "Redo", () => cmd("redo")]
   ];
+  /* ---- advanced editing helpers ---- */
+  function inTable(){ const s = getSelection(); if(!s.rangeCount) return null; let n = s.anchorNode; n = n && n.nodeType === 3 ? n.parentElement : n; const c = n && n.closest ? n.closest("td,th") : null; return c && ed.contains(c) ? c : null; }
+  function insTable(){
+    const r = parseInt(prompt("Rows (1-30)?", "3"), 10), c = parseInt(prompt("Columns (1-10)?", "3"), 10);
+    if(!(r >= 1 && c >= 1)) return; const R = Math.min(30, r), C = Math.min(10, c);
+    let h = "<table><tbody>"; for(let i = 0; i < R; i++){ h += "<tr>"; for(let j = 0; j < C; j++) h += "<td><br></td>"; h += "</tr>"; } h += "</tbody></table><p><br></p>";
+    cmd("insertHTML", h); markDirty();
+  }
+  function tblEdit(kind){
+    const td = inTable(); if(!td){ errEl.textContent = "Put the cursor inside a table first."; return; } errEl.textContent = "";
+    const tr = td.parentElement, tbl = td.closest("table"), idx = Array.prototype.indexOf.call(tr.children, td);
+    if(kind === "row"){ const nr = document.createElement("tr"); for(let i = 0; i < tr.children.length; i++){ const x = document.createElement("td"); x.innerHTML = "<br>"; nr.appendChild(x); } tr.after(nr); }
+    else if(kind === "col"){ if(tr.children.length >= 10) return; tbl.querySelectorAll("tr").forEach(r => { const x = document.createElement("td"); x.innerHTML = "<br>"; const ref = r.children[idx]; if(ref) ref.after(x); else r.appendChild(x); }); }
+    else if(kind === "del"){ tbl.remove(); }
+    markDirty();
+  }
+  let caseStep = 0;
+  function cycleCase(){
+    const s = getSelection(); if(!s.rangeCount || s.isCollapsed || !ed.contains(s.getRangeAt(0).commonAncestorContainer)){ errEl.textContent = "Select some text first."; return; } errEl.textContent = "";
+    const t = String(s), m = [x => x.toUpperCase(), x => x.toLowerCase(), x => x.toLowerCase().replace(/(^|[\s\-(])(\S)/g, (a, b, c) => b + c.toUpperCase())];
+    cmd("insertText", m[caseStep++ % 3](t));
+  }
+  function insSym(){
+    const set = "© ® ™ § ¶ † ‡ • … – — ± × ÷ ≠ ≈ ≤ ≥ ∞ √ ∑ π µ ° ′ ″ ← → ↑ ↓ ↔ ⇒ ✓ ✗ ★ ☆ ♥ ♦ ♣ ♠ € £ ¥ ¢";
+    const pick = prompt("Type or paste a character, or pick a number 1-" + set.split(" ").length + ":\n" + set.split(" ").map((c, i) => (i + 1) + "=" + c).join("  "));
+    if(pick == null || pick === "") return;
+    const arr = set.split(" "), n = /^\d+$/.test(pick.trim()) ? arr[parseInt(pick, 10) - 1] : pick;
+    if(n) cmd("insertText", n);
+  }
+  function findRep(){
+    const f = prompt("Find what?"); if(!f) return; const r = prompt("Replace with? (leave empty to just count matches)", ""); if(r == null) return;
+    const w = document.createTreeWalker(ed, NodeFilter.SHOW_TEXT), nodes = []; let x, n = 0; while((x = w.nextNode())) nodes.push(x);
+    const lf = f.toLowerCase();
+    nodes.forEach(t => { const v = t.nodeValue, lv = v.toLowerCase(); let i = lv.indexOf(lf), out = "", last = 0, c = 0; if(i < 0) return;
+      while(i >= 0){ out += v.slice(last, i) + (r === "" ? v.slice(i, i + f.length) : r); last = i + f.length; c++; i = lv.indexOf(lf, last); }
+      n += c; if(r !== ""){ t.nodeValue = out + v.slice(last); } });
+    errEl.textContent = n ? (r === "" ? n + " match" + (n > 1 ? "es" : "") + " found." : "Replaced " + n + ".") : "Nothing found.";
+    if(n && r !== "") markDirty();
+  }
+
   BTN.forEach(x => {
     if(x === "|"){ const s = document.createElement("span"); s.className = "ct-sep"; tb.appendChild(s); return; }
     const b = document.createElement("button"); b.type = "button"; b.textContent = x[0]; b.title = x[1]; b.setAttribute("aria-label", x[1]);
     b.onmousedown = e => e.preventDefault(); b.onclick = x[2]; tb.appendChild(b);
   });
+  /* font size + highlight colour + paragraph spacing, remembering the selection */
+  (function(){
+    let saved = null;
+    const grab = () => { const sl = getSelection(); if(sl.rangeCount && ed.contains(sl.getRangeAt(0).commonAncestorContainer)) saved = sl.getRangeAt(0).cloneRange(); };
+    const back = () => { ed.focus(); if(saved){ const sl = getSelection(); sl.removeAllRanges(); sl.addRange(saved); } };
+    const fs = document.createElement("select"); fs.title = "Text size"; fs.setAttribute("aria-label", "Text size");
+    fs.innerHTML = '<option value="">Size</option>' + [12, 14, 16, 18, 20, 24, 28, 32, 40, 48].map(n => '<option value="' + n + '">' + n + ' px</option>').join("") + '<option value="0">Reset size</option>';
+    fs.onmousedown = grab; fs.addEventListener("touchstart", grab, { passive: true }); fs.addEventListener("focus", grab);
+    fs.onchange = () => {
+      const v = fs.value; fs.value = ""; if(v === "") return; back();
+      if(v === "0"){ ed.querySelectorAll("span[style*='font-size']").forEach(sp => { const s2 = getSelection(); if(s2.rangeCount && s2.getRangeAt(0).intersectsNode(sp)){ sp.style.removeProperty("font-size"); if(!sp.getAttribute("style")){ while(sp.firstChild) sp.parentNode.insertBefore(sp.firstChild, sp); sp.remove(); } } }); markDirty(); return; }
+      try{ document.execCommand("styleWithCSS", false, false); document.execCommand("fontSize", false, "7"); }catch(e){}
+      ed.querySelectorAll('font[size="7"]').forEach(f => { const sp = document.createElement("span"); sp.style.fontSize = v + "px"; while(f.firstChild) sp.appendChild(f.firstChild); f.replaceWith(sp); });
+      grab(); markDirty();
+    };
+    tb.appendChild(fs);
+    const lab = document.createElement("label"); lab.title = "Highlight colour"; lab.textContent = "🖍️";
+    const ci = document.createElement("input"); ci.type = "color"; ci.value = "#fff176"; lab.appendChild(ci);
+    lab.onmousedown = grab; lab.addEventListener("pointerdown", grab); lab.addEventListener("touchstart", grab, { passive: true });
+    const paint = () => { back(); try{ document.execCommand("styleWithCSS", false, true); if(!document.execCommand("hiliteColor", false, ci.value)) document.execCommand("backColor", false, ci.value); document.execCommand("styleWithCSS", false, false); }catch(e){} grab(); scheduleAdj(); markDirty(); };
+    ci.oninput = paint; ci.onchange = paint; tb.appendChild(lab);
+    const nh = document.createElement("button"); nh.type = "button"; nh.textContent = "✕🖍"; nh.title = "Remove highlight"; nh.setAttribute("aria-label", "Remove highlight");
+    nh.onmousedown = e => e.preventDefault();
+    nh.onclick = () => { back(); try{ document.execCommand("styleWithCSS", false, true); document.execCommand("hiliteColor", false, "transparent"); document.execCommand("styleWithCSS", false, false); }catch(e){} grab(); markDirty(); };
+    tb.appendChild(nh);
+  })();
+  /* live word / character count */
+  (function(){
+    const wc = $$("ct-wc");
+    const upd = () => { if(!wc) return; const t = (ed.innerText || "").trim(), w = t ? t.split(/\s+/).length : 0; wc.textContent = w + " word" + (w === 1 ? "" : "s") + " · " + t.length + " chars"; };
+    ed.addEventListener("input", upd); ed.addEventListener("keyup", upd); setInterval(() => { if(editing) upd(); }, 1500);
+  })();
   /* ---------- pictures: shared by the 🖼️ button and drag & drop ---------- */
   const PICOK = /^image\/(png|jpe?g|webp|gif)$/i;
   function pictureData(f){
@@ -15053,6 +15269,7 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
     const t = id && byId(id);
     if(editing && (!t || t.id !== curId)){ autosave(); stopEdit(); }
     document.body.classList.toggle("in-ctab", !!t);
+    try{ if(window.__ctBarSync) window.__ctBarSync(); }catch(e){}
     const prevId = curId; curId = t ? t.id : ""; if(curId !== prevId) curSub = "";
     buildTabs(); renderSubs(true);
     if(t){ renderPage(); try{ if(window.__tbPull) window.__tbPull(); }catch(e){} }
@@ -19378,6 +19595,12 @@ html body[data-theme="gdocs"].gd-dark img.gd-keep,html body[data-theme="gdocs"].
     var m=document.querySelector('meta[name="theme-color"]'); if(m) m.content="#"+hx(p.bg);
   }
   window.__gdSkinApply=apply;
+  var skinCache={};
+  window.__gdSkinCSS=function(name){   /* css for a given skin, for the Settings live preview (does not touch the real page) */
+    if(!name||name==="gdocs") return "";
+    if(skinCache[name]) return skinCache[name];
+    try{ return (skinCache[name]=build(palette(name))); }catch(e){ return ""; }
+  };
   new MutationObserver(function(){ if(B.getAttribute("data-theme")==="gdocs"&&window.__pbSkin&&!B.classList.contains("gd-skin")) apply(); }).observe(B,{attributes:true,attributeFilter:["data-theme"]});
   apply();
 })();
@@ -19503,6 +19726,26 @@ html body[data-theme="gdocs"][data-hp="left"] #chtabs button.gd-dz-into{backgrou
 #gd-tt-toast.on{display:flex}
 #gd-tt-toast button{border:0;background:transparent;color:#8ab4f8;font:500 14px Roboto,Arial,sans-serif;cursor:pointer;padding:6px 8px;border-radius:4px}
 #gd-tt-toast button:hover{background:rgba(138,180,248,.12)}
+</style>
+<style id="gdocs-metrics">
+/* Docs layout: sizes and positions tuned to the real Google Docs window (header, toolbar, right rail, Document tabs rows) */
+#gd-bar .gd-r1{padding-left:12px}
+#gd-bar .gd-logo{margin-top:2px;margin-right:4px}
+#gd-bar .gd-logo svg,#gd-bar .gd-logo img{width:24px;height:32px}
+#gd-bar .gd-menus{margin-top:-3px}
+#gd-bar .gd-right{margin-top:-1px}
+#gd-bar .gd-share .gd-caret{width:30px}
+#gd-bar .gd-av{width:32px;height:32px}
+#gd-bar .gd-tbwrap{height:62px;padding:8px 72px 0 16px;align-items:flex-start}
+body[data-theme="gdocs"] #gd-rail{padding-top:9px}
+#gd-rail hr{margin:10px 0 23px}
+/* Document tabs rows: the expand arrow sits on the LEFT of the icon, like Docs, and every row keeps that column */
+html body[data-theme="gdocs"][data-hp="left"] #chtabs button[data-ch]{padding-left:34px !important}
+html body[data-theme="gdocs"][data-hp="left"] #chtabs button[data-ch].gd-sub{padding-left:calc(34px + var(--gd-d,0) * 22px) !important}
+html body[data-theme="gdocs"][data-hp="left"] #chtabs button[data-ch].gd-parent .gd-chev{right:auto;left:calc(6px + var(--gd-d,0) * 22px);width:22px;height:22px;margin-top:-11px}
+html body[data-theme="gdocs"] #chtabs button[data-ch] .gd-chev::before{width:0;height:0;border:4px solid transparent;border-left:6px solid #444746;border-right:0;box-sizing:content-box;transform:none}
+html body[data-theme="gdocs"] #chtabs button[data-ch]:not(.gd-collapsed) .gd-chev::before{transform:rotate(90deg)}
+html body[data-theme="gdocs"] #chtabs button[data-ch].gd-collapsed .gd-chev::before{transform:none}
 </style>
 <script>
 (function(){
@@ -19723,6 +19966,97 @@ html body[data-theme="gdocs"][data-hp="left"] #chtabs button.gd-dz-into{backgrou
     show();
   });
   show();
+})();
+</script>
+<style id="gal-size-css">
+/* Image Gallery: resizable photos */
+body.in-gal{--galw:300px}
+body.in-gal #box .img:not(.stk){width:var(--galw);max-width:92vw;height:auto;max-height:none;object-fit:cover}
+body.in-gal.gal-sq #box .img:not(.stk){height:min(var(--galw),92vw)}
+#galsz{display:none;align-items:center;gap:6px;flex:0 1 auto;flex-wrap:wrap;color:var(--muted);font-size:12px;font-weight:600}
+body.in-gal #galsz{display:flex}
+#galsz .gz-l{margin-right:2px}
+#galsz .gz-v{min-width:46px;text-align:right;font-variant-numeric:tabular-nums}
+#galsz button{height:28px;min-width:30px;padding:0 10px;border-radius:999px;border:1px solid var(--line);background:var(--row);color:var(--text);font:600 12px inherit;font-family:inherit;cursor:pointer}
+#galsz button:hover{border-color:var(--accent)}
+#galsz button.on{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 22%,var(--row))}
+#galsz input[type=range]{width:min(180px,28vw);accent-color:var(--accent)}
+@media(max-width:700px){body.in-gal #galnote{display:none}body.in-gal #galsz{flex:1;justify-content:flex-end}}
+</style>
+<script id="gal-size-js">
+(function(){
+  var B = document.body, rng = document.getElementById("galrng"), px = document.getElementById("galpx"), sq = document.getElementById("galsq"), bar = document.getElementById("galsz");
+  if(!rng || !bar) return;
+  var MIN = 80, MAX = 640, DEF = 300, st = { w: DEF, sq: false };
+  try{ var j = JSON.parse(localStorage.getItem("pb_gal_size") || "null"); if(j && +j.w >= MIN && +j.w <= MAX){ st.w = Math.round(+j.w / 10) * 10; st.sq = !!j.sq; } }catch(e){}
+  function paint(){
+    B.style.setProperty("--galw", st.w + "px"); B.classList.toggle("gal-sq", st.sq);
+    rng.value = st.w; px.textContent = st.w + "px"; sq.classList.toggle("on", st.sq); sq.setAttribute("aria-pressed", st.sq ? "true" : "false");
+    Array.prototype.forEach.call(bar.querySelectorAll("button[data-w]"), function(b){ b.classList.toggle("on", +b.dataset.w === st.w); });
+  }
+  function set(w, keep){ st.w = Math.max(MIN, Math.min(MAX, Math.round(w / 10) * 10)); paint(); if(!keep) try{ localStorage.setItem("pb_gal_size", JSON.stringify(st)); }catch(e){} }
+  function save(){ try{ localStorage.setItem("pb_gal_size", JSON.stringify(st)); }catch(e){} }
+  rng.addEventListener("input", function(){ set(+rng.value); });
+  bar.addEventListener("click", function(e){
+    var b = e.target.closest("button"); if(!b) return;
+    if(b.dataset.w) set(+b.dataset.w);
+    else if(b.id === "galsq"){ st.sq = !st.sq; paint(); save(); }
+    else if(b.id === "galrs"){ st.w = DEF; st.sq = false; paint(); save(); }
+  });
+  var box = document.getElementById("box");
+  if(box){
+    /* Ctrl / ⌘ + mouse wheel over the gallery */
+    box.addEventListener("wheel", function(e){ if(!B.classList.contains("in-gal") || !(e.ctrlKey || e.metaKey)) return; e.preventDefault(); set(st.w * (e.deltaY < 0 ? 1.12 : 1 / 1.12)); }, { passive: false });
+    /* two-finger pinch on a touch screen */
+    var d0 = 0, w0 = 0, dist = function(t){ return Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY); };
+    box.addEventListener("touchstart", function(e){ if(B.classList.contains("in-gal") && e.touches.length === 2){ d0 = dist(e.touches); w0 = st.w; } }, { passive: true });
+    box.addEventListener("touchmove", function(e){ if(d0 && e.touches.length === 2 && B.classList.contains("in-gal")){ e.preventDefault(); set(w0 * dist(e.touches) / d0, true); } }, { passive: false });
+    box.addEventListener("touchend", function(e){ if(d0 && e.touches.length < 2){ d0 = 0; save(); } });
+  }
+  paint();
+})();
+</script>
+<style id="gdocs-ctact-css">
+/* Docs layout: Rename / Delete / Edit for the open tab sit in the top bar */
+body[data-theme="gdocs"] #ct-set,body[data-theme="gdocs"] #ct-edit{display:none !important}
+#gd-bar #gd-ctact{display:none;align-items:center;gap:2px;margin-left:auto;flex:none}
+#gd-bar #gd-ctact.on{display:inline-flex}
+#gd-bar .gd-tb.has-ct .gd-edit{margin-left:0}
+#gd-bar #gd-ctact .gd-ctb{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px 0 10px;border:0;border-radius:16px;background:transparent;font:500 13px "Google Sans",Roboto,Arial,sans-serif;color:#1f1f1f;cursor:pointer;white-space:nowrap;flex:none}
+#gd-bar #gd-ctact .gd-ctb:hover{background:rgba(68,71,70,.08)}
+#gd-bar #gd-ctact .gd-ctb svg{width:18px;height:18px;fill:currentColor}
+#gd-bar #gd-ctact .gd-ctb[hidden]{display:none}
+#gd-bar #gd-ctact .gd-ctb.red{color:#b3261f}
+#gd-bar #gd-ctact .gd-ctb.pri{background:#d3e3fd;color:#0842a0}
+#gd-bar #gd-ctact .gd-ctb.pri:hover{background:#c2d7f8}
+@media(max-width:900px){#gd-bar #gd-ctact .gd-ctb span{display:none}#gd-bar #gd-ctact .gd-ctb{padding:0 8px}}
+</style>
+<script id="gdocs-ctact-js">
+(function(){
+  var tb = document.getElementById("gd-tb"); if(!tb) return;
+  var grp = document.createElement("div"); grp.id = "gd-ctact"; grp.setAttribute("role", "group"); grp.setAttribute("aria-label", "This tab");
+  var IC = {
+    rename: "M2.5 4v3h5v12h3V7h5V4h-13zm19 5h-9v3h3v7h3v-7h3V9z",
+    del: "M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z",
+    edit: "M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"
+  };
+  function mk(key, label, cls, title){
+    var b = document.createElement("button"); b.type = "button"; b.className = "gd-ctb " + cls; b.dataset.k = key; b.title = title;
+    b.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + IC[key] + '"/></svg><span>' + label + '</span>';
+    b.onclick = function(){ var a = window.__ctTop; if(a && a[key]) a[key](); };
+    return b;
+  }
+  grp.append(mk("rename", "Rename", "", "Rename this tab (name, icon, wallpaper, who can edit)"), mk("del", "Delete", "red", "Delete this tab"), mk("edit", "Edit page", "pri", "Edit this page"));
+  var ed = tb.querySelector(".gd-edit"); if(ed) tb.insertBefore(grp, ed); else tb.appendChild(grp);
+  window.__ctBarSync = function(){
+    var a = window.__ctTop, st = a ? a.state() : null, on = !!(st && st.on);
+    grp.classList.toggle("on", on); tb.classList.toggle("has-ct", on);
+    if(!on) return;
+    grp.querySelector('[data-k="rename"]').hidden = !st.rename;
+    grp.querySelector('[data-k="del"]').hidden = !st.del;
+    grp.querySelector('[data-k="edit"]').hidden = !st.edit;
+  };
+  window.__ctBarSync();
 })();
 </script>
 </body>
