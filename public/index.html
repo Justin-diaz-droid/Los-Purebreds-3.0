@@ -14351,10 +14351,12 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
   }
   /* Docs layout top bar: Rename / Delete / Edit for the open tab (the bar itself is built by the Docs-layout script) */
   window.__ctTop = {
-    state(){ const it = cur(); return { on: document.body.classList.contains("in-ctab") && !!it, edit: !!it && canEdit(it) && !editing, rename: !!it && canManage(it), del: !!it && canDel(it) }; },
-    rename(){ const t = cur(); if(!t || !canManage(t)) return; openModal(t, ""); setTimeout(() => { const n = $$("ctm-name"); if(n){ n.focus(); n.select(); } }, 40); },
-    del(){ const t = cur(); if(!t || !canDel(t)) return; openModal(t, ""); const b = $$("ctm-del"); if(b) b.click(); },   // opens the tab's settings with "Really delete for everyone?" ready to confirm
-    edit(){ startEdit(); }
+    state(){ const it = cur(), top = byId(curId); return { on: document.body.classList.contains("in-ctab") && !!it, edit: !!it && canEdit(it) && !editing, rename: !!top && canManage(top), del: !!top && canDel(top), sub: !!top && canEdit(top) && subsOf(curId).length < MAXSUB, add: inRoom() }; },
+    rename(){ const t = byId(curId); if(!t || !canManage(t)) return; openModal(t, ""); setTimeout(() => { const n = $$("ctm-name"); if(n){ n.focus(); n.select(); } }, 40); },
+    del(){ const t = byId(curId); if(!t || !canDel(t)) return; openModal(t, ""); const b = $$("ctm-del"); if(b) b.click(); },   // opens the tab's settings with "Really delete for everyone?" ready to confirm
+    edit(){ startEdit(); },
+    addSub(){ const t = byId(curId); if(t && canEdit(t)) openModal(null, curId); },
+    newTab(){ openModal(null, ""); }
   };
 
   /* ---------- the page view ---------- */
@@ -18907,6 +18909,8 @@ body[data-theme="gdocs"] #chtabs button.on{cursor:pointer}
 @media print{#gd-find{display:none !important}}
 html body[data-theme="gdocs"] #hmore-menu{background:#fff !important;border:1px solid #dadce0 !important;border-radius:4px !important;box-shadow:0 2px 6px 2px rgba(60,64,67,.15),0 1px 2px rgba(60,64,67,.3) !important;padding:6px 0 !important;min-width:220px;color:#1f1f1f}
 html body[data-theme="gdocs"] #hmore-menu :is(button,a){display:flex !important;align-items:center;justify-content:flex-start !important;gap:10px;width:100% !important;margin:0 !important;padding:8px 16px !important;border:0 !important;border-radius:0 !important;background:transparent !important;box-shadow:none !important;color:#1f1f1f !important;font:14px "Google Sans",Roboto,Arial,sans-serif !important;text-align:left !important}
+/* the rule above forced every item visible, including the ones the code hides on purpose (Owner panel, Mod panel, Mute all): keep those hidden */
+html body[data-theme="gdocs"] #hmore-menu :is(button,a)[style*="display: none"],html body[data-theme="gdocs"] #hmore-menu :is(button,a)[hidden]{display:none !important}
 html body[data-theme="gdocs"] #hmore-menu :is(button,a):hover{background:#f1f3f4 !important}
 /* More menu rows: same size / weight / spacing for every row */
 html body[data-theme="gdocs"] #hmore-menu :is(button,a){min-height:0 !important;height:auto !important;line-height:20px !important;font-weight:400 !important;opacity:1 !important;order:0}
@@ -19026,7 +19030,7 @@ html body[data-theme="gdocs"] #hmore-menu #hdr-log .dot{top:10px;right:14px}
     Settings:[]
   };
   var menus=$("gd-menus"); Object.keys(MENUS).forEach(function(n){ var b=document.createElement("button"); b.className="gd-m"; b.type="button"; b.textContent=n; b.onclick=function(e){ e.stopPropagation(); if(n==="Settings"){ closeMenu(); try{ openSettings(); }catch(err){ snk("Open Settings from the gear"); } return; } openMenu(b,n); }; menus.appendChild(b); });
-  function closeMenu(){ menu.classList.remove("on"); document.querySelectorAll("#gd-bar .open").forEach(function(x){x.classList.remove("open");}); }
+  function closeMenu(){ menu.dataset.dots=""; menu.classList.remove("on"); document.querySelectorAll("#gd-bar .open").forEach(function(x){x.classList.remove("open");}); }
   function openMenu(btn,name){
     var was=btn.classList.contains("open"); closeMenu(); if(was) return;
     menu.innerHTML=""; menu.classList.remove("gd-fontmenu"); MENUS[name].forEach(function(it){
@@ -19248,8 +19252,21 @@ html body[data-theme="gdocs"] #hmore-menu #hdr-log .dot{top:10px;right:14px}
   ibd("check","Checklist",function(){ ins("☐ ",true); },"c"); ibd("list","Bulleted list (Ctrl+Shift+8)",function(){ ins("• ",true); },"c"); ibd("num","Numbered list (Ctrl+Shift+7)",function(){ ins("1. ",true); },"c");
   function showMore(r,right){ var hb=$("hmore-btn"), mn=$("hmore-menu"); if(!hb||!mn){ snk("Nothing more here"); return; } hb.click(); if(mn.classList.contains("on")){ var w=mn.offsetWidth, h=mn.offsetHeight; var l=right?r.right+4:r.left-w+32, t=right?r.top:r.bottom+6; mn.style.left=Math.max(8,Math.min(l,innerWidth-w-8))+"px"; mn.style.top=Math.max(8,Math.min(t,innerHeight-h-8))+"px"; } }
   var moreB=ib("more","More",function(e){ e.stopPropagation(); showMore(moreB.getBoundingClientRect(),false); });
-  /* the 3 dots on the open tab in the left panel open the same More menu */
-  (function(){ var ct=$("chtabs"); if(!ct) return; ct.addEventListener("click",function(e){ if(!inTheme()) return; var b=e.target.closest&&e.target.closest("button.on"); if(!b||B.dataset.hp!=="left") return; var r=b.getBoundingClientRect(); if(e.clientX<r.right-40) return; e.stopPropagation(); e.preventDefault(); showMore(r,true); },true); })();
+  /* the 3 dots on the open tab in the left panel open a menu with that tab's editing features (rename, edit page, add subtab, delete) */
+  (function(){ var ct=$("chtabs"); if(!ct) return; ct.addEventListener("click",function(e){ if(!inTheme()) return; var b=e.target.closest&&e.target.closest("button.on"); if(!b||B.dataset.hp!=="left") return; var r=b.getBoundingClientRect(); if(e.clientX<r.right-40) return; e.stopPropagation(); e.preventDefault();
+    var was=menu.classList.contains("on")&&menu.dataset.dots==="1"; closeMenu(); b.classList.remove("open"); if(was) return;   // a second click on the dots closes the menu
+    var T=window.__ctTop, custom=/^ct:/.test(b.dataset.ch||""), st=custom&&T?T.state():null, it=[];
+    if(st&&st.on){
+      if(st.rename) it.push(["Rename","Name, icon, wallpaper, who can edit",function(){ T.rename(); }]);
+      if(st.edit) it.push(["Edit page","",function(){ T.edit(); }]);
+      if(st.sub) it.push(["Add subtab","",function(){ T.addSub(); }]);
+      if(st.del){ if(it.length) it.push("-"); it.push(["Delete","",function(){ T.del(); }]); }
+    }
+    if(T&&T.state().add){ if(it.length) it.push("-"); it.push(["New tab","",function(){ T.newTab(); }]); }
+    if(!it.length) it.push([custom?"You can't edit this tab":"Built-in tab: nothing to edit","",null]);
+    MENUS.__d=it; openMenu(b,"__d"); b.classList.remove("open"); menu.dataset.dots="1";
+    var w=menu.offsetWidth,h=menu.offsetHeight; menu.style.left=Math.max(8,Math.min(r.right+4,innerWidth-w-8))+"px"; menu.style.top=Math.max(8,Math.min(r.top,innerHeight-h-8))+"px";
+  },true); })();
   try{ var hb0=$("hmore-btn"); if(hb0) new MutationObserver(function(){ moreB.classList.toggle("gd-new",hb0.classList.contains("new")); }).observe(hb0,{attributes:true,attributeFilter:["class"]}); }catch(e){}
   var ed=document.createElement("button"); ed.type="button"; ed.className="gd-edit"; ed.title="Editing mode"; ed.innerHTML=svg("pencil")+svg("down"); tb.appendChild(ed);
   ed.onclick=function(e){ e.stopPropagation(); var set=function(v){ return function(){ B.classList.toggle("gd-view",v==="Viewing"); snk(v==="Viewing"?"Viewing: the message box is hidden":v+" mode"); }; }; MENUS.__d=[["Editing","Edit the chat",set("Editing")],["Suggesting","Edits become suggestions",set("Suggesting")],["Viewing","Read the chat (hides the message box)",set("Viewing")]]; openMenu(ed,"__d"); };
@@ -20017,47 +20034,8 @@ body.in-gal #galsz{display:flex}
 })();
 </script>
 <style id="gdocs-ctact-css">
-/* Docs layout: Rename / Delete / Edit for the open tab sit in the top bar */
+/* Docs layout: this tab's Rename / Delete / Edit live in the 3-dot menu next to the tab in the left panel */
 body[data-theme="gdocs"] #ct-set,body[data-theme="gdocs"] #ct-edit{display:none !important}
-#gd-bar #gd-ctact{display:none;align-items:center;gap:2px;margin-left:auto;flex:none}
-#gd-bar #gd-ctact.on{display:inline-flex}
-#gd-bar .gd-tb.has-ct .gd-edit{margin-left:0}
-#gd-bar #gd-ctact .gd-ctb{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px 0 10px;border:0;border-radius:16px;background:transparent;font:500 13px "Google Sans",Roboto,Arial,sans-serif;color:#1f1f1f;cursor:pointer;white-space:nowrap;flex:none}
-#gd-bar #gd-ctact .gd-ctb:hover{background:rgba(68,71,70,.08)}
-#gd-bar #gd-ctact .gd-ctb svg{width:18px;height:18px;fill:currentColor}
-#gd-bar #gd-ctact .gd-ctb[hidden]{display:none}
-#gd-bar #gd-ctact .gd-ctb.red{color:#b3261f}
-#gd-bar #gd-ctact .gd-ctb.pri{background:#d3e3fd;color:#0842a0}
-#gd-bar #gd-ctact .gd-ctb.pri:hover{background:#c2d7f8}
-@media(max-width:900px){#gd-bar #gd-ctact .gd-ctb span{display:none}#gd-bar #gd-ctact .gd-ctb{padding:0 8px}}
 </style>
-<script id="gdocs-ctact-js">
-(function(){
-  var tb = document.getElementById("gd-tb"); if(!tb) return;
-  var grp = document.createElement("div"); grp.id = "gd-ctact"; grp.setAttribute("role", "group"); grp.setAttribute("aria-label", "This tab");
-  var IC = {
-    rename: "M2.5 4v3h5v12h3V7h5V4h-13zm19 5h-9v3h3v7h3v-7h3V9z",
-    del: "M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z",
-    edit: "M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"
-  };
-  function mk(key, label, cls, title){
-    var b = document.createElement("button"); b.type = "button"; b.className = "gd-ctb " + cls; b.dataset.k = key; b.title = title;
-    b.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + IC[key] + '"/></svg><span>' + label + '</span>';
-    b.onclick = function(){ var a = window.__ctTop; if(a && a[key]) a[key](); };
-    return b;
-  }
-  grp.append(mk("rename", "Rename", "", "Rename this tab (name, icon, wallpaper, who can edit)"), mk("del", "Delete", "red", "Delete this tab"), mk("edit", "Edit page", "pri", "Edit this page"));
-  var ed = tb.querySelector(".gd-edit"); if(ed) tb.insertBefore(grp, ed); else tb.appendChild(grp);
-  window.__ctBarSync = function(){
-    var a = window.__ctTop, st = a ? a.state() : null, on = !!(st && st.on);
-    grp.classList.toggle("on", on); tb.classList.toggle("has-ct", on);
-    if(!on) return;
-    grp.querySelector('[data-k="rename"]').hidden = !st.rename;
-    grp.querySelector('[data-k="del"]').hidden = !st.del;
-    grp.querySelector('[data-k="edit"]').hidden = !st.edit;
-  };
-  window.__ctBarSync();
-})();
-</script>
 </body>
 </html>
