@@ -9735,16 +9735,16 @@ select.f{background:#2b2930;font-size:1rem;padding:12px}
 .clk{display:flex;flex-direction:column;gap:4px;margin:2px 0 6px;color:#e6e0e9;user-select:none;-webkit-user-select:none}
 .cd{font-size:1.05rem;font-weight:500;color:#d0bcff;letter-spacing:.1px}
 .ct{display:flex;align-items:baseline;font-size:clamp(3.8rem,20vw,5.8rem);line-height:1;font-weight:400;letter-spacing:-.045em;font-variant-numeric:tabular-nums}
-.ct .cc{color:#d0bcff;margin:0 .02em;animation:cpulse 2s ease-in-out infinite}
+.ct .cc{color:#d0bcff;margin:0 .02em;animation:cpulse 2s steps(6) infinite}   /* stepped: a smooth pulse re-styled the clock every frame (60x a second) for no visible gain */
 .ct small{font-size:1.05rem;font-weight:500;letter-spacing:0;color:#cac4d0;margin-left:10px}
 @keyframes cpulse{0%,100%{opacity:1}50%{opacity:.3}}
 .hero{height:clamp(150px,25dvh,230px);display:flex;align-items:center;justify-content:center}
-.hero svg{height:100%;max-height:240px;width:auto;aspect-ratio:1;color:#d0bcff;animation:spin 30s linear infinite,breathe 4s ease-in-out infinite}
+.hero svg{height:100%;max-height:240px;width:auto;aspect-ratio:1;color:#d0bcff;animation:spin 30s linear infinite,breathe 4s steps(12) infinite}
 .clk.sm{align-items:center;gap:0;margin:10px 0 4px;opacity:.85}
 .clk.sm .cd{font-size:.8rem}
 .clk.sm .ct{font-size:1.7rem;letter-spacing:-.02em}
 .clk.sm .ct small{font-size:.75rem;margin-left:6px}
-.hero svg.aclk{animation:breathe 4s ease-in-out infinite;filter:drop-shadow(0 6px 18px rgba(0,0,0,.35))}
+.hero svg.aclk{animation:breathe 4s steps(12) infinite;filter:drop-shadow(0 6px 18px rgba(0,0,0,.35))}
 .aclk #ahr,.aclk #amn{transform-origin:100px 100px}
 .spacer{flex:1}
 .prog{height:8px;background:#4a4458;border-radius:99px;overflow:hidden;margin:18px 0 10px}
@@ -18450,25 +18450,24 @@ html:not(.watch) body:not([data-theme="simple"]):not([data-theme="terminal"]):no
 <script id="hatspin-raf">
 (function(){
   var PERIOD=2400;                               // one full turn, matches the old CSS timing
+  var running=false;
+  function icons(){ try{ var host=document.getElementById("px-host"), root=host&&host.shadowRoot; return root?root.querySelectorAll(".hatspin"):[]; }catch(e){ return []; } }
   function tick(t){
-    try{
-      var host=document.getElementById("px-host"), root=host&&host.shadowRoot;
-      if(root){
-        var icons=root.querySelectorAll(".hatspin");
-        if(icons.length){
-          var ph=(t%PERIOD)/PERIOD, deg=ph*360, frontOn=ph<0.5;
-          icons.forEach(function(ic){
-            ic.querySelectorAll(".cane-rot").forEach(function(g){ g.setAttribute("transform","rotate("+deg+")"); });
-            var fr=ic.querySelector(".cane-front"), bk=ic.querySelector(".cane-back");
-            if(fr) fr.style.opacity=frontOn?"1":"0";
-            if(bk) bk.style.opacity=frontOn?"0":"1";
-          });
-        }
-      }
-    }catch(e){}
-    requestAnimationFrame(tick);
+    running=false;
+    if(document.hidden) return;                  // nothing to animate in a background tab; the 600 ms check below wakes it again
+    var list=icons();
+    if(!list.length) return;                     // no hat icons on screen: stop the per-frame loop completely
+    var ph=(t%PERIOD)/PERIOD, deg=ph*360, frontOn=ph<0.5;
+    list.forEach(function(ic){
+      ic.querySelectorAll(".cane-rot").forEach(function(g){ g.setAttribute("transform","rotate("+deg+")"); });
+      var fr=ic.querySelector(".cane-front"), bk=ic.querySelector(".cane-back");
+      if(fr) fr.style.opacity=frontOn?"1":"0";
+      if(bk) bk.style.opacity=frontOn?"0":"1";
+    });
+    running=true; requestAnimationFrame(tick);
   }
-  requestAnimationFrame(tick);
+  function wake(){ if(!running && !document.hidden && icons().length){ running=true; requestAnimationFrame(tick); } }
+  setInterval(wake,600); wake();                 // cheap check twice a second instead of running a loop at 60 fps forever
 })();
 </script>
 <style id="rule34-css">
@@ -20034,8 +20033,29 @@ body.in-gal #galsz{display:flex}
 })();
 </script>
 <style id="gdocs-ctact-css">
-/* Docs layout: this tab's Rename / Delete / Edit live in the 3-dot menu next to the tab in the left panel */
-body[data-theme="gdocs"] #ct-set,body[data-theme="gdocs"] #ct-edit{display:none !important}
+/* Docs layout: Rename / Delete live in the 3-dot menu next to the tab in the left panel; Edit page is also next to the tab name */
+body[data-theme="gdocs"] #ct-set{display:none !important}
+/* Docs layout: the page's "Edit page" button sits right next to the tab name (order: name, Edit page, who can edit) */
+body[data-theme="gdocs"] #ctview .ct-bar .ct-title{order:0}
+body[data-theme="gdocs"] #ctview .ct-bar .ct-mod{order:1}
+body[data-theme="gdocs"] #ctview .ct-bar .ct-who{order:2}
+body[data-theme="gdocs"] #ctview .ct-bar .ct-live{order:3}
+body[data-theme="gdocs"] #ctview .ct-bar .gm-spacer{order:4}
+</style>
+<style id="gdocs-narrow-css">
+/* Docs top bar on narrow windows: the title row and the menu row shrink / scroll inside their own space instead of running underneath the buttons on the right */
+#gd-bar .gd-mid{overflow:hidden}
+#gd-bar .gd-tr{min-width:0;overflow:hidden}
+#gd-bar .gd-tr > *{flex:none}
+#gd-bar #gd-title{flex:0 1 auto;min-width:48px;max-width:100%}
+#gd-bar .gd-menus{overflow-x:auto;overflow-y:hidden;scrollbar-width:none;max-width:100%}
+#gd-bar .gd-menus::-webkit-scrollbar{display:none}
+#gd-bar .gd-menus > *{flex:none}
+#gd-bar .gd-right{min-width:0}
+#gd-bar .gd-right > *{flex:none}
+@media(max-width:1000px){#gd-bar .gd-kami{display:none}#gd-bar .gd-share span{display:none}#gd-bar .gd-share{padding:0 12px}}
+@media(max-width:800px){#gd-bar .gd-pres{display:none}}
+@media(max-width:560px){#gd-bar .gd-right .gd-ib{width:34px !important}#gd-bar .gd-tr .gd-ib[data-gd="move"],#gd-bar .gd-tr .gd-ib[data-gd="verified"]{display:none}}
 </style>
 </body>
 </html>
