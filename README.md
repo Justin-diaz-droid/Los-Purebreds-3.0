@@ -1,4 +1,4 @@
-# Los Purebreds Chat
+# Los Purebreds 3.0
 
 A themeable group chat website for Los Purebreds, with a home screen, image gallery, polls, tier lists, games, media and more. It runs on Cloudflare Workers.
 
