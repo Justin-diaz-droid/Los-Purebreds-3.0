@@ -791,7 +791,7 @@ html.watch #watch-note.on{display:block}
     <button id="g-offline" type="button" hidden>Continue without chat (view only)</button>
   </div>
     <div id="gver">Version 3.0</div>
-  <label class="fld" id="g-themefld"><span>Themes</span><select id="g-theme"><option value="imessage">iMessage</option><option value="ios6">iOS 6</option><option value="discord">Discord</option><option value="whatsapp">WhatsApp</option><option value="tiktok">TikTok</option><option value="roblox">Roblox</option><option value="instagram">Instagram</option><option value="twitter">Twitter</option><option value="material">Android 17 (Material 3 Expressive)</option><option value="kde">KDE Plasma (Breeze)</option><option value="kitkat">Android 4.4 KitKat</option><option value="terminal">Terminal</option><option value="simple">Simple</option><option value="glass">Liquid Glass</option><option value="macos">macOS</option><option value="win95">Windows 95</option><option value="winxp">Windows XP</option><option value="minecraft">Minecraft</option><option value="rule34">34 theme</option><option value="gdocs">Google Docs</option></select></label>
+  <label class="fld" id="g-themefld"><span>Themes</span><select id="g-theme"><option value="imessage">iMessage</option><option value="ios6">iOS 6</option><option value="discord">Discord</option><option value="whatsapp">WhatsApp</option><option value="tiktok">TikTok</option><option value="roblox">Roblox</option><option value="instagram">Instagram</option><option value="twitter">Twitter</option><option value="material">Android 17 (Material 3 Expressive)</option><option value="kde">KDE Plasma (Breeze)</option><option value="kitkat">Android 4.4 KitKat</option><option value="terminal">Terminal</option><option value="simple">Simple</option><option value="glass">Liquid Glass</option><option value="macos">macOS</option><option value="win95">Windows 95</option><option value="winxp">Windows XP</option><option value="minecraft">Minecraft</option><option value="rule34">34 theme</option><option value="gta6" class="gta6-opt">GTA 6 (limited time)</option><option value="gdocs">Google Docs</option></select></label>
 </div>
 
 <div id="sb">
@@ -835,7 +835,7 @@ html.watch #watch-note.on{display:block}
         <select id="layoutsel"><option value="docs">Google Docs layout</option><option value="lp">Los Purebreds layout (the old layout)</option></select>
         <div class="xnote" id="layoutnote" style="font-size:12px;opacity:.7;line-height:1.4">Google Docs is the base layout. Themes (iMessage, Discord, …) recolour it. Switch to Los Purebreds to get the old layout back.</div>
         <label>Theme</label>
-        <select id="theme"><option value="imessage">iMessage</option><option value="ios6">iOS 6</option><option value="discord">Discord</option><option value="whatsapp">WhatsApp</option><option value="tiktok">TikTok</option><option value="roblox">Roblox</option><option value="instagram">Instagram</option><option value="twitter">Twitter</option><option value="material">Android 17 (Material 3 Expressive)</option><option value="kde">KDE Plasma (Breeze)</option><option value="kitkat">Android 4.4 KitKat</option><option value="terminal">Terminal</option><option value="simple">Simple</option><option value="glass">Liquid Glass</option><option value="macos">macOS</option><option value="win95">Windows 95</option><option value="winxp">Windows XP</option><option value="minecraft">Minecraft</option><option value="rule34">34 theme</option><option value="gdocs">Google Docs</option></select>
+        <select id="theme"><option value="imessage">iMessage</option><option value="ios6">iOS 6</option><option value="discord">Discord</option><option value="whatsapp">WhatsApp</option><option value="tiktok">TikTok</option><option value="roblox">Roblox</option><option value="instagram">Instagram</option><option value="twitter">Twitter</option><option value="material">Android 17 (Material 3 Expressive)</option><option value="kde">KDE Plasma (Breeze)</option><option value="kitkat">Android 4.4 KitKat</option><option value="terminal">Terminal</option><option value="simple">Simple</option><option value="glass">Liquid Glass</option><option value="macos">macOS</option><option value="win95">Windows 95</option><option value="winxp">Windows XP</option><option value="minecraft">Minecraft</option><option value="rule34">34 theme</option><option value="gta6" class="gta6-opt">GTA 6 (limited time)</option><option value="gdocs">Google Docs</option></select>
         <label>Wallpaper &amp; accent color (also tints top bar, message bar &amp; left bar)</label><input type="color" id="wcol" value="#000000">
         <label>Wallpaper image (syncs to your other devices)</label>
         <div class="stg-row"><button id="wimg" type="button" class="btn">Choose image</button><button id="wreset" type="button" class="btn alt">Reset wallpaper</button><input type="file" id="wfile" accept="image/*" style="display:none"></div>
@@ -943,9 +943,12 @@ let usr = "User", peer = null, conns = [], isHost = false, logs = [];
 /* private DM state */
 let dmWith = "", dmNm = "", chipT = null;
 let seen = {}; try { seen = JSON.parse(load("dm_seen", "{}")) || {}; } catch(e){ seen = {}; }
-const PH = {discord:"Message #purebred-chat",whatsapp:"Type a message",tiktok:"Send a message...",roblox:"To chat click here or press / key",instagram:"Message...",twitter:"Start a new message",imessage:"iMessage",ios6:"iMessage",material:"Text message",kitkat:"Type a message",terminal:"enter message…",simple:"Message",glass:"Message",win95:"Type a message",winxp:"Type a message",minecraft:"Type a message or /command",rule34:"Tags: type a message",gdocs:"Type @ to insert",kde:"Type a message…",macos:"iMessage"};
-const THEMES = ["imessage","ios6","discord","whatsapp","tiktok","roblox","instagram","twitter","material","kde","kitkat","terminal","simple","glass","win95","winxp","minecraft","rule34","gdocs","macos"];
-const CHNAME = {discord:"# purebred-chat",whatsapp:"WhatsApp Group",tiktok:"TikTok Inbox",roblox:"Roblox Chat",instagram:"Instagram Direct",twitter:"Twitter Messages",imessage:"iMessage Channel",ios6:"Messages",material:"Messages",kitkat:"Hangouts",terminal:"/dev/purebred",simple:"Messages",glass:"Messages",win95:"Messages",winxp:"Messenger",minecraft:"Minecraft Chat",rule34:"34 Chat",gdocs:"Google Docs",kde:"Konversation",macos:"Messages"};
+const PH = {gta6:"Type a message",discord:"Message #purebred-chat",whatsapp:"Type a message",tiktok:"Send a message...",roblox:"To chat click here or press / key",instagram:"Message...",twitter:"Start a new message",imessage:"iMessage",ios6:"iMessage",material:"Text message",kitkat:"Type a message",terminal:"enter message…",simple:"Message",glass:"Message",win95:"Type a message",winxp:"Type a message",minecraft:"Type a message or /command",rule34:"Tags: type a message",gdocs:"Type @ to insert",kde:"Type a message…",macos:"iMessage"};
+/* LIMITED TIME: the "GTA 6" theme is available until this moment (local time) and then disappears everywhere on its own. */
+const GTA6_END = new Date(2026, 11, 19, 0, 0, 0).getTime();   // December 19, 2026, 12:00 AM
+function gta6Live(){ return Date.now() < GTA6_END; }
+const THEMES = ["imessage","ios6","discord","whatsapp","tiktok","roblox","instagram","twitter","material","kde","kitkat","terminal","simple","glass","win95","winxp","minecraft","rule34","gdocs","macos"].concat(gta6Live() ? ["gta6"] : []);
+const CHNAME = {gta6:"Vice City Chat",discord:"# purebred-chat",whatsapp:"WhatsApp Group",tiktok:"TikTok Inbox",roblox:"Roblox Chat",instagram:"Instagram Direct",twitter:"Twitter Messages",imessage:"iMessage Channel",ios6:"Messages",material:"Messages",kitkat:"Hangouts",terminal:"/dev/purebred",simple:"Messages",glass:"Messages",win95:"Messages",winxp:"Messenger",minecraft:"Minecraft Chat",rule34:"34 Chat",gdocs:"Google Docs",kde:"Konversation",macos:"Messages"};
 let draft = null, stgOpen = false, pvLoaded = false, pvq = 0;
 const shownKeys = new Set();
 let groups = {};
@@ -1004,12 +1007,12 @@ function pbLayoutTheme(t){
 }
 function setTheme(t){
   t = pbLayoutTheme(t);
-  if(!["imessage","ios6","discord","whatsapp","tiktok","roblox","instagram","twitter","material","kde","kitkat","terminal","simple","glass","win95","winxp","minecraft","rule34","gdocs","macos"].includes(t)) t = "gdocs";
+  if(!THEMES.includes(t)) t = "gdocs";
   document.body.dataset.theme = t;
   const shown = pbSkin() || t;                                  // what the theme pickers / saved setting show (the skin, when there is one)
   $("theme").value = shown; $("g-theme").value = shown;
-  $("chname").textContent = {discord:"# purebred-chat",whatsapp:"WhatsApp Group",tiktok:"TikTok Inbox",roblox:"Roblox Chat",instagram:"Instagram Direct",twitter:"Twitter Messages",imessage:"iMessage Channel",ios6:"Messages",material:"Messages",kitkat:"Hangouts",terminal:"/dev/purebred",simple:"Messages",glass:"Messages",win95:"Messages",winxp:"Messenger",minecraft:"Minecraft Chat",rule34:"34 Chat",gdocs:"Google Docs",kde:"Konversation",macos:"Messages"}[t];
-  $("inp").placeholder = {discord:"Message #purebred-chat",whatsapp:"Type a message",tiktok:"Send a message...",roblox:"To chat click here or press / key",instagram:"Message...",twitter:"Start a new message",imessage:"iMessage",ios6:"iMessage",material:"Text message",kitkat:"Type a message",terminal:"enter message…",simple:"Message",glass:"Message",win95:"Type a message",winxp:"Type a message",minecraft:"Type a message or /command",rule34:"Tags: type a message",gdocs:"Type @ to insert",kde:"Type a message…",macos:"iMessage"}[t];
+  $("chname").textContent = {gta6:"Vice City Chat",discord:"# purebred-chat",whatsapp:"WhatsApp Group",tiktok:"TikTok Inbox",roblox:"Roblox Chat",instagram:"Instagram Direct",twitter:"Twitter Messages",imessage:"iMessage Channel",ios6:"Messages",material:"Messages",kitkat:"Hangouts",terminal:"/dev/purebred",simple:"Messages",glass:"Messages",win95:"Messages",winxp:"Messenger",minecraft:"Minecraft Chat",rule34:"34 Chat",gdocs:"Google Docs",kde:"Konversation",macos:"Messages"}[t];
+  $("inp").placeholder = {gta6:"Type a message",discord:"Message #purebred-chat",whatsapp:"Type a message",tiktok:"Send a message...",roblox:"To chat click here or press / key",instagram:"Message...",twitter:"Start a new message",imessage:"iMessage",ios6:"iMessage",material:"Text message",kitkat:"Type a message",terminal:"enter message…",simple:"Message",glass:"Message",win95:"Type a message",winxp:"Type a message",minecraft:"Type a message or /command",rule34:"Tags: type a message",gdocs:"Type @ to insert",kde:"Type a message…",macos:"iMessage"}[t];
   save("chat_theme", shown); if(curCh === "dm") updateDmBar();
   try{ if(window.__gdSkinApply) window.__gdSkinApply(); }catch(e){}
   applyWall();
@@ -10403,6 +10406,42 @@ body[data-theme="simple"] #replybar,body[data-theme="simple"] #dmbar{background:
   saveBtn.onclick = function(){ if(stg.classList.contains("open")){ put($("x-auto").checked); if(window.__pbApple) window.__pbApple.set($("x-apple").checked); } return prev ? prev.apply(this, arguments) : undefined; };
 })();
 </script>
+<!-- =====================  LIMITED TIME: "GTA 6" theme (Vice City sunset look), gone on December 19, 2026  ===================== -->
+<style id="gta6-css">
+/* colours only (no logos or artwork): neon pink / sunset orange / cyan on deep night purple. The Docs layout uses the same colours as its colour skin. */
+html body[data-theme="gta6"]{
+  --bg:#150724; --side:#1f0a33; --line:#4b2078; --row:#2e1150; --accent:#ff3d9a; --on-accent:#fff;
+  --text:#fff0f9; --muted:#cfa7e0; --input:#25103d; --me:#ff3d9a; --peer:#2e1150; --bar:#1f0a33; --bar-text:#fff0f9;
+  color-scheme:dark; background:linear-gradient(180deg,#150724 0%,#2a0b45 62%,#6a1855 100%) fixed;
+}
+html body[data-theme="gta6"] ::selection{background:#ff3d9a;color:#fff}
+html body[data-theme="gta6"] #hdr{border-bottom:2px solid transparent;border-image:linear-gradient(90deg,#ff3d9a,#ff8a3d,#35e0ff) 1}
+html body[data-theme="gta6"] .hdr-sb{color:#ff8a3d;font-weight:800;letter-spacing:.14em;text-transform:uppercase;text-shadow:0 0 10px rgba(255,61,154,.65)}
+html body[data-theme="gta6"] .row-ch.active{background:color-mix(in srgb,#ff3d9a 18%,transparent);box-shadow:inset 3px 0 0 #ff8a3d}
+html body[data-theme="gta6"] .msg.me .bubble{background:linear-gradient(135deg,#ff3d9a 0%,#ff8a3d 100%);color:#fff;box-shadow:0 0 14px rgba(255,61,154,.35)}
+html body[data-theme="gta6"] .msg.peer .bubble{background:var(--peer);border:1px solid #4b2078}
+html body[data-theme="gta6"] .pill{border:1px solid #4b2078}
+html body[data-theme="gta6"] .pill:focus-within{border-color:#ff3d9a;box-shadow:0 0 0 3px rgba(255,61,154,.28),0 0 16px rgba(255,61,154,.3)}
+html body[data-theme="gta6"] #sendbtn{background:linear-gradient(135deg,#ff3d9a,#ff8a3d);color:#fff}
+html body[data-theme="gta6"] #chtabs button.on{background:linear-gradient(135deg,#ff3d9a,#ff8a3d);color:#fff}
+html body[data-theme="gta6"] *{scrollbar-color:#ff3d9a transparent}
+</style>
+<script id="gta6-js">
+(function(){
+  /* once the end date passes: the option leaves both pickers, and anyone still using the theme is switched back to the default look */
+  function sweep(){
+    if(gta6Live()) return;
+    var i = THEMES.indexOf("gta6"); if(i >= 0) THEMES.splice(i, 1);
+    document.querySelectorAll(".gta6-opt").forEach(function(o){ o.remove(); });
+    if(document.body.dataset.theme === "gta6" || window.__pbSkin === "gta6"){
+      window.__pbSkin = "";
+      try{ setTheme(pbLayout() === "docs" ? "gdocs" : "imessage"); if(typeof rerender === "function") rerender(); }catch(e){}
+    }
+  }
+  sweep();
+  if(gta6Live()) setInterval(sweep, 30000);       // also catches the moment it ends while the page is open
+})();
+</script>
 <!-- =====================  APPLE-STYLE EMOJI (optional: Settings > Experimental, or the switch in the emoji box)  ===================== -->
 <style id="apple-emoji-css">
 /* a wrapped emoji keeps its real character inside (copy, search and edit still work); the picture just covers it once it has loaded */
@@ -14259,12 +14298,31 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
 .ct-tb{position:sticky;top:0;z-index:5;display:flex;flex-wrap:wrap;gap:4px;padding:8px;margin-bottom:10px;border:1px solid var(--line);border-radius:12px;background:var(--side,var(--row))}
 .ct-tb button,.ct-tb label{border:none;border-radius:8px;background:var(--row);color:var(--text);min-width:32px;height:32px;padding:0 9px;font-size:14px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
 .ct-tb button:hover,.ct-tb label:hover{filter:brightness(1.25)}
-.ct-tb input[type=color]{width:0;height:0;opacity:0;position:absolute;pointer-events:none}
+.ct-tb input[type=color],.ct-tb label input[type=file]{width:0;height:0;opacity:0;position:absolute;pointer-events:none}
 .ct-tb select{border:none;border-radius:8px;background:var(--row);color:var(--text);height:32px;padding:0 6px;font-size:13px;font-weight:700;cursor:pointer}
 .ct-ed sub,.ct-doc sub{vertical-align:sub;font-size:.75em}.ct-ed sup,.ct-doc sup{vertical-align:super;font-size:.75em}
 .ct-tb .ct-ico-on{outline:2px solid var(--accent)}
 #ct-wc{margin-left:auto}
 .ct-sep{width:1px;background:var(--line);margin:2px 3px}
+.ct-tb{align-items:center}
+.ct-tb .ctm-q{min-width:34px;gap:5px}
+.ct-tb .ctm-q b,.ct-tb .ctm-q i,.ct-tb .ctm-q u{font-size:16px}
+.ct-tb .ctm-size{font-weight:600}
+.ctm-grp{position:relative}
+.ct-tb .ctm-btn{gap:6px;padding:0 10px 0 8px}
+.ct-tb .ctm-btn .ctm-i{font-size:15px;opacity:.9}
+.ct-tb .ctm-btn .ctm-n{font-size:13px;font-weight:700}
+.ct-tb .ctm-btn .ctm-c{font-size:10px;opacity:.7}
+.ct-tb .ctm-btn.on{background:var(--accent);color:var(--on-accent,#fff)}
+.ctm-pan{position:absolute;top:calc(100% + 6px);left:0;z-index:20;min-width:250px;max-width:min(320px,86vw);padding:6px;border:1px solid var(--line);border-radius:12px;background:var(--side,var(--row));box-shadow:0 10px 30px rgba(0,0,0,.35);display:flex;flex-direction:column;gap:2px}
+.ctm-pan[hidden]{display:none}
+.ctm-pan.r{left:auto;right:0}
+.ct-tb .ctm-pan .ctm-item{position:relative;display:flex;align-items:center;justify-content:flex-start;gap:10px;width:100%;height:auto;min-height:40px;padding:6px 10px;background:transparent;text-align:left;font-weight:400;border-radius:8px;box-sizing:border-box}
+.ct-tb .ctm-pan .ctm-item:hover,.ct-tb .ctm-pan .ctm-item:focus-visible{background:var(--row);filter:none}
+.ctm-g{flex:none;width:30px;height:30px;border-radius:8px;background:var(--row);display:inline-flex;align-items:center;justify-content:center;font-size:14px;font-weight:700}
+.ctm-t{display:flex;flex-direction:column;min-width:0;line-height:1.25}
+.ctm-t b{font-size:13.5px;font-weight:700}
+.ctm-t small{font-size:11.5px;font-weight:400;color:var(--muted);white-space:normal}
 .ct-ed{min-height:46vh;padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:var(--input,var(--row));outline:none}
 .ct-ed:focus{border-color:var(--accent)}
 .ct-efoot{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:12px}
@@ -14345,7 +14403,8 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
   const COLOR = /(?:^|;)\s*color\s*:\s*(#[0-9a-f]{3,8}|rgba?\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*(?:,\s*[\d.]+\s*)?\))\s*(?:;|$)/i;
   const BGCOL = /(?:^|;)\s*background(?:-color)?\s*:\s*(#[0-9a-f]{3,8}|rgba?\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*(?:,\s*[\d.]+\s*)?\))\s*(?:;|$)/i;
   const FSIZE = /(?:^|;)\s*font-size\s*:\s*(\d{2,3})px\s*(?:;|$)/i;
-  const ALIGN = /(?:^|;)\s*text-align\s*:\s*(left|center|right)\s*(?:;|$)/i;
+  const ALIGN = /(?:^|;)\s*text-align\s*:\s*(left|center|right|justify)\s*(?:;|$)/i;
+  const FAMS = { "georgia": 'Georgia,"Times New Roman",serif', "ui-monospace": 'ui-monospace,Consolas,"Courier New",monospace', "comic sans ms": '"Comic Sans MS","Segoe Print","Bradley Hand",cursive', "impact": 'Impact,"Arial Black",sans-serif' };   // the only fonts a page may use (value comes from here, never from the text)
   const IMGOK = /^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+\/=]+$/;
   const hrefOk = h => { h = String(h || "").trim(); return /^(https?:\/\/|mailto:)/i.test(h) && h.length < 800 ? h : ""; };
   function clean(html){
@@ -14365,7 +14424,8 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
           if(!col && t === "FONT" && /^#[0-9a-f]{3,8}$/i.test(n.getAttribute("color") || "")) col = n.getAttribute("color");
           if(t === "FONT" && /^[1-7]$/.test(n.getAttribute("size") || "") && !/font-size/i.test(st)){ const px = [0, 10, 13, 16, 18, 24, 32, 48][+n.getAttribute("size")]; if(+n.getAttribute("size") !== 3) st = st + ";font-size:" + px + "px"; }
           const bgm = (st.match(BGCOL) || [])[1] || "", fsm = st.match(FSIZE), fsz = fsm ? Math.min(72, Math.max(10, +fsm[1])) : 0;
-          if(col || bgm || fsz){ const s = document.createElement("span"); if(col) s.style.color = col; if(bgm) s.style.backgroundColor = bgm; if(fsz) s.style.fontSize = fsz + "px"; c.appendChild(s); c = s; }
+          const ffm = (st.match(/(?:^|;)\s*font-family\s*:\s*([^;]+)/i) || [])[1] || (t === "FONT" ? (n.getAttribute("face") || "") : ""), ff = FAMS[String(ffm).split(",")[0].replace(/["']/g, "").trim().toLowerCase()] || "";
+          if(col || bgm || fsz || ff){ const s = document.createElement("span"); if(col) s.style.color = col; if(bgm) s.style.backgroundColor = bgm; if(fsz) s.style.fontSize = fsz + "px"; if(ff) s.style.fontFamily = ff; c.appendChild(s); c = s; }
           if(/vertical-align\s*:\s*super/i.test(st)){ const b = document.createElement("sup"); c.appendChild(b); c = b; }
           else if(/vertical-align\s*:\s*sub/i.test(st)){ const b = document.createElement("sub"); c.appendChild(b); c = b; }
           if(/font-weight\s*:\s*(bold|[6-9]00)/i.test(st)){ const b = document.createElement("b"); c.appendChild(b); c = b; }
@@ -14404,8 +14464,11 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
         }
         const e = document.createElement(t.toLowerCase());
         if(/^(P|DIV|H1|H2|H3|LI|BLOCKQUOTE|TD|TH)$/.test(t)){
-          const m = (n.getAttribute("style") || "").match(ALIGN) || (/^(left|center|right)$/i.test(n.getAttribute("align") || "") ? [0, n.getAttribute("align").toLowerCase()] : null);
+          const m = (n.getAttribute("style") || "").match(ALIGN) || (/^(left|center|right|justify)$/i.test(n.getAttribute("align") || "") ? [0, n.getAttribute("align").toLowerCase()] : null);
           if(m) e.style.textAlign = m[1].toLowerCase();
+          const sty = n.getAttribute("style") || "";
+          const ind = sty.match(/(?:^|;)\s*margin-left\s*:\s*(\d{2,3})px/i); if(ind){ const px = +ind[1]; if(px >= 24 && px <= 144 && px % 24 === 0) e.style.marginLeft = px + "px"; }     // indent: whole steps of 24px, up to 6
+          const lh = sty.match(/(?:^|;)\s*line-height\s*:\s*(1\.15|1\.5|2)\s*(?:;|$)/i); if(lh) e.style.lineHeight = lh[1];
         }
         dst.appendChild(e);
         if(t !== "BR" && t !== "HR") walk(n, e, depth + 1);
@@ -14977,7 +15040,14 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
     ["x²", "Superscript", () => cmd("superscript")], ["x₂", "Subscript", () => cmd("subscript")], ["</>", "Code block", () => cmd("formatBlock", "<pre>")], ["☐", "Checklist item", () => cmd("insertText", "☐ ")], "|",
     ["▦", "Insert table", insTable], ["+Row", "Add a row to the table at the cursor", () => tblEdit("row")], ["+Col", "Add a column to the table at the cursor", () => tblEdit("col")], ["−Tbl", "Delete the table at the cursor", () => tblEdit("del")], "|",
     ["Aa", "Change case (UPPER → lower → Title)", cycleCase], ["📅", "Insert today's date", () => cmd("insertText", new Date().toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" }))], ["Ω", "Insert a special character", insSym], ["🔍", "Find & replace", findRep], "|",
-    ["Tx", "Clear formatting", () => cmd("removeFormat")], ["↶", "Undo", () => cmd("undo")], ["↷", "Redo", () => cmd("redo")]
+    ["Tx", "Clear formatting", () => cmd("removeFormat")], ["↶", "Undo", () => cmd("undo")], ["↷", "Redo", () => cmd("redo")],
+    ["⇔", "Justify", () => cmd("justifyFull")],
+    ["→", "Indent more", () => indent(1)], ["←", "Indent less", () => indent(-1)],
+    ["1", "Line spacing: single", () => spacing("")], ["1.15", "Line spacing: 1.15", () => spacing("1.15")], ["1.5", "Line spacing: 1.5", () => spacing("1.5")], ["2", "Line spacing: double", () => spacing("2")],
+    ["AB", "Case: UPPER", () => setCase("upper")], ["ab", "Case: lower", () => setCase("lower")], ["Ab", "Case: Title", () => setCase("title")], ["Ab.", "Case: Sentence", () => setCase("sentence")],
+    ["−▭", "Delete row", () => tblEdit("delrow")], ["−▯", "Delete column", () => tblEdit("delcol")], ["▤", "Header row", () => tblEdit("head")],
+    ["✂", "Cut", () => cmd("cut")], ["⧉", "Copy", () => cmd("copy")], ["📋", "Paste as plain text", pastePlain], ["⬚", "Select all", () => cmd("selectAll")],
+    ["🕒", "Insert the time", () => cmd("insertText", new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }))]
   ];
   /* ---- advanced editing helpers ---- */
   function inTable(){ const s = getSelection(); if(!s.rangeCount) return null; let n = s.anchorNode; n = n && n.nodeType === 3 ? n.parentElement : n; const c = n && n.closest ? n.closest("td,th") : null; return c && ed.contains(c) ? c : null; }
@@ -14993,6 +15063,13 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
     if(kind === "row"){ const nr = document.createElement("tr"); for(let i = 0; i < tr.children.length; i++){ const x = document.createElement("td"); x.innerHTML = "<br>"; nr.appendChild(x); } tr.after(nr); }
     else if(kind === "col"){ if(tr.children.length >= 10) return; tbl.querySelectorAll("tr").forEach(r => { const x = document.createElement("td"); x.innerHTML = "<br>"; const ref = r.children[idx]; if(ref) ref.after(x); else r.appendChild(x); }); }
     else if(kind === "del"){ tbl.remove(); }
+    else if(kind === "delrow"){ if(tbl.querySelectorAll("tr").length <= 1) tbl.remove(); else tr.remove(); }
+    else if(kind === "delcol"){ if(tr.children.length <= 1) tbl.remove(); else tbl.querySelectorAll("tr").forEach(r => { if(r.children[idx]) r.children[idx].remove(); }); }
+    else if(kind === "head"){
+      const first = tbl.querySelector("tr"); if(!first) return;
+      const toTh = first.children[0] && first.children[0].tagName === "TD";
+      Array.prototype.slice.call(first.children).forEach(c => { const n = document.createElement(toTh ? "th" : "td"); n.innerHTML = c.innerHTML; if(c.style.textAlign) n.style.textAlign = c.style.textAlign; c.replaceWith(n); });
+    }
     markDirty();
   }
   let caseStep = 0;
@@ -15019,10 +15096,57 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
     if(n && r !== "") markDirty();
   }
 
+  /* ---- more editing helpers: indent, line spacing, case, plain paste, text size steps ---- */
+  const BLOCKS = "p,div,h1,h2,h3,li,blockquote";
+  function leafBlocks(){
+    const s = getSelection(); if(!s.rangeCount) return [];
+    const get = () => { const r = s.getRangeAt(0); return Array.prototype.filter.call(ed.querySelectorAll(BLOCKS), b => r.intersectsNode(b) && !b.querySelector(BLOCKS)); };
+    if(!ed.contains(s.getRangeAt(0).commonAncestorContainer)) return [];
+    let out = get(); if(!out.length){ cmd("formatBlock", "<p>"); out = get(); }       // loose text on the page: make it a paragraph first
+    return out;
+  }
+  function indent(dir){
+    ed.focus(); const bl = leafBlocks(); if(!bl.length){ errEl.textContent = "Click in the text you want to indent."; return; } errEl.textContent = "";
+    bl.forEach(b => { const cur = Math.round((parseFloat(b.style.marginLeft) || 0) / 24), n = Math.max(0, Math.min(6, cur + dir)); if(n) b.style.marginLeft = (n * 24) + "px"; else b.style.removeProperty("margin-left"); if(!b.getAttribute("style")) b.removeAttribute("style"); });
+    markDirty();
+  }
+  function spacing(v){
+    ed.focus(); const bl = leafBlocks(); if(!bl.length){ errEl.textContent = "Click in the text you want to space out."; return; } errEl.textContent = "";
+    bl.forEach(b => { if(v) b.style.lineHeight = v; else b.style.removeProperty("line-height"); if(!b.getAttribute("style")) b.removeAttribute("style"); });
+    markDirty();
+  }
+  function setCase(kind){
+    const s = getSelection(); if(!s.rangeCount || s.isCollapsed || !ed.contains(s.getRangeAt(0).commonAncestorContainer)){ errEl.textContent = "Select some text first."; return; } errEl.textContent = "";
+    const x = String(s), f = {
+      upper: v => v.toUpperCase(), lower: v => v.toLowerCase(),
+      title: v => v.toLowerCase().replace(/(^|[\s\-(])(\S)/g, (a, b, c) => b + c.toUpperCase()),
+      sentence: v => v.toLowerCase().replace(/(^\s*|[.!?]\s+)([a-z])/g, (a, b, c) => b + c.toUpperCase())
+    }[kind];
+    cmd("insertText", f(x));
+  }
+  function pastePlain(){
+    ed.focus(); errEl.textContent = "";
+    const blocked = () => { errEl.textContent = "Your browser blocked clipboard access. Press Ctrl+Shift+V (Cmd+Shift+V on a Mac) to paste as plain text."; };
+    if(navigator.clipboard && navigator.clipboard.readText) navigator.clipboard.readText().then(tx => { if(tx){ ed.focus(); cmd("insertText", tx); } }).catch(blocked); else blocked();
+  }
+  const SIZES = [12, 14, 16, 18, 20, 24, 28, 32, 40, 48];
+  function sizeSelection(px){
+    try{ document.execCommand("styleWithCSS", false, false); document.execCommand("fontSize", false, "7"); }catch(e){}
+    ed.querySelectorAll('font[size="7"]').forEach(f => { const sp = document.createElement("span"); sp.style.fontSize = px + "px"; while(f.firstChild) sp.appendChild(f.firstChild); f.replaceWith(sp); });
+    markDirty();
+  }
+  function stepSize(dir){
+    const s = getSelection(); if(!s.rangeCount || s.isCollapsed || !ed.contains(s.getRangeAt(0).commonAncestorContainer)){ errEl.textContent = "Select some text first."; return; } errEl.textContent = "";
+    let n = s.anchorNode; n = n && n.nodeType === 3 ? n.parentElement : n; const cur = Math.round(parseFloat(getComputedStyle(n).fontSize)) || 16;
+    let next = null;
+    if(dir > 0){ next = SIZES.find(v => v > cur); } else { for(let i = SIZES.length - 1; i >= 0; i--) if(SIZES[i] < cur){ next = SIZES[i]; break; } }
+    if(next) sizeSelection(next);
+  }
+  const stage = document.createElement("div");   // every control is still built exactly as before, here; the labelled menus below then arrange them
   BTN.forEach(x => {
-    if(x === "|"){ const s = document.createElement("span"); s.className = "ct-sep"; tb.appendChild(s); return; }
+    if(x === "|") return;
     const b = document.createElement("button"); b.type = "button"; b.textContent = x[0]; b.title = x[1]; b.setAttribute("aria-label", x[1]);
-    b.onmousedown = e => e.preventDefault(); b.onclick = x[2]; tb.appendChild(b);
+    b.onmousedown = e => e.preventDefault(); b.onclick = x[2]; stage.appendChild(b);
   });
   /* font size + highlight colour + paragraph spacing, remembering the selection */
   (function(){
@@ -15039,16 +15163,16 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
       ed.querySelectorAll('font[size="7"]').forEach(f => { const sp = document.createElement("span"); sp.style.fontSize = v + "px"; while(f.firstChild) sp.appendChild(f.firstChild); f.replaceWith(sp); });
       grab(); markDirty();
     };
-    tb.appendChild(fs);
+    stage.appendChild(fs);
     const lab = document.createElement("label"); lab.title = "Highlight colour"; lab.textContent = "🖍️";
     const ci = document.createElement("input"); ci.type = "color"; ci.value = "#fff176"; lab.appendChild(ci);
     lab.onmousedown = grab; lab.addEventListener("pointerdown", grab); lab.addEventListener("touchstart", grab, { passive: true });
     const paint = () => { back(); try{ document.execCommand("styleWithCSS", false, true); if(!document.execCommand("hiliteColor", false, ci.value)) document.execCommand("backColor", false, ci.value); document.execCommand("styleWithCSS", false, false); }catch(e){} grab(); scheduleAdj(); markDirty(); };
-    ci.oninput = paint; ci.onchange = paint; tb.appendChild(lab);
+    ci.oninput = paint; ci.onchange = paint; stage.appendChild(lab);
     const nh = document.createElement("button"); nh.type = "button"; nh.textContent = "✕🖍"; nh.title = "Remove highlight"; nh.setAttribute("aria-label", "Remove highlight");
     nh.onmousedown = e => e.preventDefault();
     nh.onclick = () => { back(); try{ document.execCommand("styleWithCSS", false, true); document.execCommand("hiliteColor", false, "transparent"); document.execCommand("styleWithCSS", false, false); }catch(e){} grab(); markDirty(); };
-    tb.appendChild(nh);
+    stage.appendChild(nh);
   })();
   /* live word / character count */
   (function(){
@@ -15128,7 +15252,7 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
       scheduleAdj(); grab(); markDirty();   // the edit rebuilt the nodes: remember where the selection is now, so the next colour change still hits the same text
     };
     ci.oninput = paint; ci.onchange = paint;
-    tb.appendChild(lab);
+    stage.appendChild(lab);
     const pl = document.createElement("label"); pl.title = "Add a picture"; pl.textContent = "🖼️";
     const fi = document.createElement("input"); fi.type = "file"; fi.accept = "image/png,image/jpeg,image/webp,image/gif"; pl.appendChild(fi);
     let ps = null; pl.onmousedown = () => { const s = getSelection(); ps = s.rangeCount ? s.getRangeAt(0).cloneRange() : null; };
@@ -15137,7 +15261,156 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
       if(ps){ const s = getSelection(); s.removeAllRanges(); s.addRange(ps); }
       await addPictures([f]);
     };
-    tb.appendChild(pl);
+    stage.appendChild(pl);
+  })();
+  (function(){   // font picker + text size steps
+    const FAMILY = { serif: 'Georgia,"Times New Roman",serif', mono: 'ui-monospace,Consolas,"Courier New",monospace', hand: '"Comic Sans MS","Segoe Print","Bradley Hand",cursive', display: 'Impact,"Arial Black",sans-serif' };
+    let saved = null;
+    const grab = () => { const sl = getSelection(); if(sl.rangeCount && ed.contains(sl.getRangeAt(0).commonAncestorContainer)) saved = sl.getRangeAt(0).cloneRange(); };
+    const back = () => { ed.focus(); if(saved){ const sl = getSelection(); sl.removeAllRanges(); sl.addRange(saved); } };
+    const ff = document.createElement("select"); ff.title = "Font"; ff.setAttribute("aria-label", "Font");
+    ff.innerHTML = '<option value="">Font</option><option value="serif">Serif (Georgia)</option><option value="mono">Monospace</option><option value="hand">Handwriting</option><option value="display">Bold display</option><option value="0">Default font</option>';
+    ff.onmousedown = grab; ff.addEventListener("touchstart", grab, { passive: true }); ff.addEventListener("focus", grab);
+    ff.onchange = () => {
+      const v = ff.value; ff.value = ""; if(v === "") return; back();
+      const sl = getSelection(); if(!sl.rangeCount || sl.isCollapsed){ errEl.textContent = "Select some text first."; return; } errEl.textContent = "";
+      if(v === "0"){ ed.querySelectorAll("span[style*='font-family']").forEach(sp => { if(sl.getRangeAt(0).intersectsNode(sp)){ sp.style.removeProperty("font-family"); if(!sp.getAttribute("style")){ while(sp.firstChild) sp.parentNode.insertBefore(sp.firstChild, sp); sp.remove(); } } }); markDirty(); return; }
+      try{ document.execCommand("styleWithCSS", false, false); document.execCommand("fontName", false, "pbfont"); }catch(e){}
+      ed.querySelectorAll('font[face="pbfont"]').forEach(f => { const sp = document.createElement("span"); sp.style.fontFamily = FAMILY[v]; while(f.firstChild) sp.appendChild(f.firstChild); f.replaceWith(sp); });
+      grab(); markDirty();
+    };
+    stage.appendChild(ff);
+    [["A−", "Smaller text", -1], ["A+", "Larger text", 1]].forEach(x => {
+      const b = document.createElement("button"); b.type = "button"; b.textContent = x[0]; b.title = x[1]; b.setAttribute("aria-label", x[1]);
+      b.onmousedown = e => e.preventDefault(); b.onclick = () => stepSize(x[2]); stage.appendChild(b);
+    });
+    ed.addEventListener("keydown", e => { if((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && String(e.key).toLowerCase() === "k"){ e.preventDefault(); addLink(); } });   // Ctrl+K = link, like most editors
+  })();
+  /* ---------- toolbar: the everyday buttons stay visible, everything else sits in labelled menus ---------- */
+  (function(){
+    const find = k => Array.prototype.find.call(stage.children, e => (e.dataset.k || e.title) === k);
+    Array.prototype.forEach.call(stage.children, e => { e.dataset.k = e.dataset.k || e.title; });
+    const mk = (tag, cls, html) => { const e = document.createElement(tag); if(cls) e.className = cls; if(html != null) e.innerHTML = html; return e; };
+    const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+    const sep = () => tb.appendChild(mk("span", "ct-sep"));
+    /* a control becomes a menu row: icon, a plain-words name, and one line saying what it does */
+    function asRow(k, icon, label, hint){
+      const el = find(k); if(!el) return null;
+      const keep = el.querySelector("input");
+      el.classList.add("ctm-item"); el.title = hint; el.setAttribute("aria-label", label); el.setAttribute("role", "menuitem");
+      el.textContent = ""; el.appendChild(mk("span", "ctm-g", esc(icon))); el.appendChild(mk("span", "ctm-t", "<b>" + esc(label) + "</b><small>" + esc(hint) + "</small>"));
+      if(keep) el.appendChild(keep);
+      return el;
+    }
+    /* quick buttons that stay on the bar, with a visible name where the symbol alone is not obvious */
+    function quick(k, html, label, cls){
+      const el = find(k); if(!el) return;
+      el.innerHTML = html; el.title = label; el.setAttribute("aria-label", label); el.classList.add("ctm-q"); if(cls) el.classList.add(cls); tb.appendChild(el);
+    }
+    const open = { b: null };
+    function closeMenu(){ if(open.b){ open.b.setAttribute("aria-expanded", "false"); open.b.classList.remove("on"); open.b.nextSibling.hidden = true; open.b = null; } }
+    function group(icon, name, tip, rows){
+      const wrap = mk("div", "ctm-grp");
+      const btn = mk("button", "ctm-btn", '<span class="ctm-i">' + esc(icon) + '</span><span class="ctm-n">' + esc(name) + '</span><span class="ctm-c">▾</span>');
+      btn.type = "button"; btn.title = tip; btn.setAttribute("aria-haspopup", "true"); btn.setAttribute("aria-expanded", "false");
+      const pan = mk("div", "ctm-pan"); pan.hidden = true; pan.setAttribute("role", "menu"); pan.setAttribute("aria-label", name);
+      rows.forEach(r => { if(r) pan.appendChild(r); });
+      btn.onmousedown = e => e.preventDefault();                         // keep the text selection in the page
+      btn.onclick = () => {
+        if(open.b === btn){ closeMenu(); return; }
+        closeMenu(); pan.hidden = false; pan.classList.remove("r");
+        const rc = pan.getBoundingClientRect(), lim = Math.min(window.innerWidth, (tb.getBoundingClientRect().right || window.innerWidth)) - 6;
+        if(rc.right > lim) pan.classList.add("r");
+        btn.setAttribute("aria-expanded", "true"); btn.classList.add("on"); open.b = btn;
+      };
+      pan.addEventListener("click", e => {                               // choosing an action closes the menu (colour / picture pickers stay until they finish)
+        const it = e.target.closest(".ctm-item"); if(!it) return;
+        if(it.tagName === "LABEL" && it.querySelector("input")) return;
+        setTimeout(closeMenu, 0);
+      });
+      pan.addEventListener("change", e => { if(e.target.type === "file") setTimeout(closeMenu, 0); });
+      wrap.appendChild(btn); wrap.appendChild(pan); tb.appendChild(wrap);
+    }
+
+    quick("Bold", "<b>B</b>", "Bold"); quick("Italic", "<i>I</i>", "Italic"); quick("Underline", "<u>U</u>", "Underline");
+    sep();
+    group("¶", "Paragraph", "Headings, quote and code blocks", [
+      asRow("Normal text", "¶", "Normal text", "Plain paragraph"),
+      asRow("Big heading", "H1", "Big heading", "Large title"),
+      asRow("Heading", "H2", "Heading", "Section heading"),
+      asRow("Small heading", "H3", "Small heading", "Sub-section heading"),
+      asRow("Quote", "❝", "Quote", "Indented quote block"),
+      asRow("Code block", "</>", "Code block", "Fixed-width code text")
+    ]);
+    group("☰", "Lists", "Bulleted, numbered and checklist", [
+      asRow("Bulleted list", "•", "Bulleted list", "Dots, one per line"),
+      asRow("Numbered list", "1.", "Numbered list", "1, 2, 3 in order"),
+      asRow("Checklist item", "☐", "Checklist item", "Adds an empty tick box")
+    ]);
+    group("≡", "Align", "Line up the text", [
+      asRow("Align left", "⇤", "Align left", "Text starts at the left"),
+      asRow("Center", "↔", "Center", "Text in the middle"),
+      asRow("Align right", "⇥", "Align right", "Text ends at the right"),
+      asRow("Justify", "⇔", "Justify", "Even edges on both sides")
+    ]);
+    group("↕", "Spacing", "Indent and line spacing", [
+      asRow("Indent more", "→", "Indent more", "Move the paragraph right (up to 6 steps)"),
+      asRow("Indent less", "←", "Indent less", "Move the paragraph back left"),
+      asRow("Line spacing: single", "1", "Single spacing", "Tight lines (the default)"),
+      asRow("Line spacing: 1.15", "1.15", "Spacing 1.15", "A little more air"),
+      asRow("Line spacing: 1.5", "1.5", "Spacing 1.5", "Roomy lines"),
+      asRow("Line spacing: double", "2", "Double spacing", "Extra roomy lines")
+    ]);
+    group("Aa", "Format", "More text styles and clean-up", [
+      asRow("Strikethrough", "S", "Strikethrough", "Line through the text"),
+      asRow("Superscript", "x²", "Superscript", "Raised small text, like m²"),
+      asRow("Subscript", "x₂", "Subscript", "Lowered small text, like H₂O"),
+      asRow("Case: UPPER", "AB", "UPPERCASE", "Make the selection all capitals"),
+      asRow("Case: lower", "ab", "lowercase", "Make the selection all small letters"),
+      asRow("Case: Title", "Ab", "Title Case", "Capital letter on every word"),
+      asRow("Case: Sentence", "Ab.", "Sentence case", "Capital only at the start of sentences"),
+      asRow("Clear formatting", "Tx", "Clear formatting", "Remove bold, colours and sizes from the selection")
+    ]);
+    group("🎨", "Colour", "Text colour and highlight", [
+      asRow("Text colour", "🎨", "Text colour", "Pick a colour for the selected text"),
+      asRow("Highlight colour", "🖍️", "Highlight", "Pick a highlight colour for the selected text"),
+      asRow("Remove highlight", "✕", "Remove highlight", "Clear the highlight from the selection")
+    ]);
+    group("＋", "Insert", "Links, pictures, lines, dates and symbols", [
+      asRow("Add link", "🔗", "Link", "A web address, or a tab of this site"),
+      asRow("Remove link", "⛓", "Remove link", "Turn the link back into plain text"),
+      asRow("Add a picture", "🖼️", "Picture", "PNG, JPG, WEBP or GIF (you can also drag one in)"),
+      asRow("Divider line", "―", "Divider line", "A horizontal line across the page"),
+      asRow("Insert today's date", "📅", "Today's date", "Types today's date at the cursor"),
+      asRow("Insert the time", "🕒", "Current time", "Types the time at the cursor"),
+      asRow("Insert a special character", "Ω", "Special character", "Symbols like © ™ → ★ €")
+    ]);
+    group("▦", "Table", "Create and edit a table", [
+      asRow("Insert table", "▦", "Insert table", "Choose how many rows and columns"),
+      asRow("Add a row to the table at the cursor", "＋", "Add row", "Below the row the cursor is in"),
+      asRow("Add a column to the table at the cursor", "＋", "Add column", "Right of the column the cursor is in"),
+      asRow("Header row", "▤", "Header row on/off", "Make the first row a bold header (or back)"),
+      asRow("Delete row", "−", "Delete row", "Remove the row the cursor is in"),
+      asRow("Delete column", "−", "Delete column", "Remove the column the cursor is in"),
+      asRow("Delete the table at the cursor", "🗑", "Delete table", "Put the cursor inside a table first")
+    ]);
+    group("✎", "Edit", "Cut, copy, paste and select", [
+      asRow("Cut", "✂", "Cut", "Move the selection to the clipboard"),
+      asRow("Copy", "⧉", "Copy", "Copy the selection"),
+      asRow("Paste as plain text", "📋", "Paste as plain text", "Paste with no fonts or colours (or Ctrl+Shift+V)"),
+      asRow("Select all", "⬚", "Select all", "Select the whole page")
+    ]);
+    sep();
+    { const ff = find("Font"); if(ff){ ff.classList.add("ctm-size"); tb.appendChild(ff); } }
+    { const fs = find("Text size"); if(fs){ fs.classList.add("ctm-size"); tb.appendChild(fs); } }
+    quick("Smaller text", "A<small>−</small>", "Smaller text (select text first)"); quick("Larger text", "A<small>+</small>", "Larger text (select text first)");
+    quick("Find & replace", '<span aria-hidden="true">🔍</span> Find', "Find & replace");
+    sep();
+    quick("Undo", '<span aria-hidden="true">↶</span> Undo', "Undo the last change"); quick("Redo", '<span aria-hidden="true">↷</span> Redo', "Redo the change you undid");
+
+    document.addEventListener("pointerdown", e => { if(open.b && !e.target.closest(".ctm-grp")) closeMenu(); }, true);
+    tb.addEventListener("keydown", e => { if(e.key === "Escape" && open.b){ const b = open.b; closeMenu(); b.focus(); } });
+    new MutationObserver(() => { if(open.b && !tb.offsetParent) closeMenu(); }).observe($$("ct-editwrap"), { attributes: true });
   })();
   /* ---------- link picker: a web address, or one of this site's tabs / subtabs (like Google Docs tab links) ---------- */
   const lkBox = document.createElement("div"); lkBox.id = "ct-lk";
