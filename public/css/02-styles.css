@@ -1,0 +1,186 @@
+/* ---- gdocs-zfix ---- */
+/* Docs bars sit under every window (Settings, admin panel, etc.), not over them */
+html body[data-theme="gdocs"] #gd-bar,html body[data-theme="gdocs"].gd-bar-on #gd-bar{z-index:30 !important}
+html body[data-theme="gdocs"] #gd-rail{z-index:31 !important}
+html body[data-theme="gdocs"] :is(#stg,#amod,#mmod,#ct-modal,#pollmod,#profmod,#frmod,#tldlg){z-index:2500 !important}
+
+/* ---- gdocs-fontmenu ---- */
+#gd-menu.gd-fontmenu{max-height:min(70vh,520px);overflow-y:auto;min-width:260px}#gd-menu.gd-fontmenu button span{font-size:15px}
+
+/* ---- hm-ed-quiet ---- */
+/* the owner-only "Edit home" button: small and faint until you point at it (or while you're editing) */
+html body #home .hm-ed{top:8px;right:46px;gap:4px}
+html body #home .hm-ed button{padding:2px 8px;font-size:11px;opacity:.35;box-shadow:none;transition:opacity .15s linear}
+html body #home .hm-ed:hover button,html body #home .hm-ed button:focus-visible,html body #home .hm-ed button.go{opacity:1}
+@media(hover:none){html body #home .hm-ed button{opacity:.5}}
+
+/* ---- gdocs-juan ---- */
+/* Juan mode inside the Docs theme: his wallpaper behind the page, and his animations (apple, peek, toast, wobble) left running */
+html body.juan-on[data-theme="gdocs"] :is(#main,#home){background:#1b1208 url(assets/juan/juan_tile.jpg) 0 0/72px 72px repeat !important}
+html body.juan-on[data-theme="gdocs"] :is(#box,#home){text-shadow:none}
+html body.juan-on[data-theme="gdocs"] #hdr,html body.juan-on[data-theme="gdocs"] #sb{background:#fff7e6 !important}
+html body.juan-on[data-theme="gdocs"] #chtabs button.on,html body.juan-on[data-theme="gdocs"] .row-ch.active{background:#ffd98a;color:#3a2405}
+html body.juan-on[data-theme="gdocs"] #juan-apple,html body.juan-on[data-theme="gdocs"] #juan-peek{z-index:45}
+html body.juan-on[data-theme="gdocs"] #juan-toast{z-index:99999}
+html body.juan-on[data-theme="gdocs"] #home .hm-mascot{animation:juan-wob 2.4s ease-in-out infinite !important}
+
+/* ---- gdocs-colorpick ---- */
+.gd-cp,.gd-cd{font-family:"Google Sans",Roboto,Arial,sans-serif;color:#202124;-webkit-user-select:none;user-select:none;box-sizing:border-box}
+.gd-cp *,.gd-cd *{box-sizing:border-box}
+.gd-cp{position:fixed;z-index:2600;width:308px;background:#fff;border-radius:8px;box-shadow:0 2px 6px 2px rgba(60,64,67,.15),0 1px 3px rgba(60,64,67,.3);padding:6px 0 14px;font-size:14px}
+.gd-cp svg{width:20px;height:20px;fill:currentColor;flex:none}
+.gd-cp .rs{display:flex;align-items:center;gap:16px;width:100%;height:40px;padding:0 16px;margin:0 0 4px;border:0;background:none;font:inherit;font-size:14px;color:#202124;cursor:pointer;text-align:left}
+.gd-cp .rs svg{color:#5f6368;margin-left:2px}
+.gd-cp .rs:hover{background:#f1f3f4}
+.gd-cp .grid{padding:0 16px}
+.gd-cp .r{display:flex;gap:6px;margin-bottom:6px}
+.gd-cp .r.g{margin-bottom:10px}
+.gd-cp .sw{width:22px;height:22px;flex:none;border-radius:50%;border:1px solid transparent;padding:0;margin:0;cursor:pointer;display:flex;align-items:center;justify-content:center;outline:0}
+.gd-cp .sw.lt{border-color:#dadce0}
+.gd-cp .sw:hover,.gd-cp .sw:focus-visible{box-shadow:0 0 0 2px #fff,0 0 0 3px #5f6368}
+.gd-cp .sw svg{width:16px;height:16px}
+.gd-cp .lbl{display:flex;align-items:center;gap:8px;padding:6px 16px 8px;font-size:12px;font-weight:500;letter-spacing:.8px;color:#5f6368}
+.gd-cp .lbl svg{width:16px;height:16px}
+.gd-cp .r.th,.gd-cp .r.cu{padding:0 16px;margin-bottom:2px;flex-wrap:wrap}
+.gd-cp hr{border:0;border-top:1px solid #dadce0;margin:10px 16px 4px}
+.gd-cp .add{width:22px;height:22px;flex:none;border:0;padding:0;margin:0;background:none;border-radius:50%;color:#5f6368;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.gd-cp .add svg{width:24px;height:24px}
+.gd-cp .add:hover{color:#202124}
+.gd-cd{position:fixed;z-index:2610;left:50%;top:50%;transform:translate(-50%,-50%);width:min(436px,96vw);max-height:96vh;overflow:auto;background:#fff;border-radius:12px;padding:32px 32px 24px;box-shadow:0 4px 8px 3px rgba(60,64,67,.15),0 1px 3px rgba(60,64,67,.3)}
+.gd-cd .sv{position:relative;height:190px;border-radius:4px;cursor:crosshair}
+.gd-cd .sv .t{position:absolute;width:24px;height:24px;margin:-12px 0 0 -12px;border-radius:50%;border:3px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.5);pointer-events:none}
+.gd-cd .mid{display:flex;align-items:center;gap:22px;margin-top:22px}
+.gd-cd .prev{position:relative;width:42px;height:42px;border-radius:50%;flex:none;overflow:hidden;background-color:#fff;background-image:linear-gradient(45deg,#ccc 25%,transparent 25%,transparent 75%,#ccc 75%),linear-gradient(45deg,#ccc 25%,transparent 25%,transparent 75%,#ccc 75%);background-size:8px 8px;background-position:0 0,4px 4px}
+.gd-cd .prev i{position:absolute;inset:0}
+.gd-cd .eye{position:relative;width:52px;height:44px;flex:none;border:0;border-radius:4px;background:transparent;color:#444746;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-left:-6px;padding:0}
+.gd-cd .eye:hover,.gd-cd .eye:focus-visible{background:#fef7e0}
+.gd-cd .eye svg{width:24px;height:24px;fill:currentColor}
+.gd-cd .eye .tip{display:none;position:absolute;left:-6px;top:100%;margin-top:6px;z-index:3;padding:9px 14px;border-radius:4px;background:#202124;color:#fff;font:500 14px "Google Sans",Roboto,Arial,sans-serif;white-space:nowrap;pointer-events:none}
+.gd-cd .eye:hover .tip,.gd-cd .eye:focus-visible .tip{display:block}
+.gd-cd .sl{flex:1;min-width:0;display:flex;flex-direction:column;gap:18px}
+.gd-cd .hue,.gd-cd .al{position:relative;height:12px;border-radius:6px;cursor:pointer}
+.gd-cd .hue{background:linear-gradient(to right,#f00 0%,#ff0 17%,#0f0 33%,#0ff 50%,#00f 67%,#f0f 83%,#f00 100%)}
+.gd-cd .al{background-color:#fff;background-image:linear-gradient(45deg,#ccc 25%,transparent 25%,transparent 75%,#ccc 75%),linear-gradient(45deg,#ccc 25%,transparent 25%,transparent 75%,#ccc 75%);background-size:8px 8px;background-position:0 0,4px 4px}
+.gd-cd .al i{position:absolute;inset:0;border-radius:6px}
+.gd-cd .hue b,.gd-cd .al b{position:absolute;top:50%;width:20px;height:20px;margin:-10px 0 0 -10px;border-radius:50%;border:3px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.5);pointer-events:none}
+.gd-cd .lab{display:flex;gap:12px;margin-top:28px;font-size:13px;color:#5f6368}
+.gd-cd .lab span{width:52px;text-align:left;padding-left:2px}
+.gd-cd .lab span.hx{width:114px;flex:none}
+.gd-cd .ins{display:flex;gap:12px;margin-top:6px}
+.gd-cd .ins input{width:52px;height:44px;border:1px solid #dadce0;border-radius:4px;background:#fff;color:#202124;font:400 15px "Google Sans",Roboto,Arial,sans-serif;text-align:center;padding:0 4px;outline:0;-webkit-user-select:text;user-select:text}
+.gd-cd .ins input.hx{width:114px;flex:none;text-align:left;padding:0 12px}
+.gd-cd .ins input:hover{border-color:#80868b}
+.gd-cd .ins input:focus{border:2px solid #0b57d0;padding-left:calc(4px - 1px)}
+.gd-cd .ins input.hx:focus{padding-left:11px}
+.gd-cd .btns{display:flex;justify-content:flex-end;gap:20px;margin-top:28px}
+.gd-cd .btns button{height:44px;border-radius:4px;font:500 15px "Google Sans",Roboto,Arial,sans-serif;color:#202124;cursor:pointer;padding:0 24px}
+.gd-cd .btns .cn{min-width:122px;background:#fff;border:1px solid #dadce0}
+.gd-cd .btns .cn:hover{background:#f8f9fa}
+.gd-cd .btns .ok{min-width:90px;background:#fbbc04;border:1px solid #fbbc04}
+.gd-cd .btns .ok:hover{background:#f9ab00;border-color:#f9ab00}
+body.gd-dark .gd-cp,body.gd-dark .gd-cd{background:#1e1f20;color:#e3e3e3}
+body.gd-dark .gd-cp .rs,body.gd-dark .gd-cd .ins input,body.gd-dark .gd-cd .btns button{color:#e3e3e3}
+body.gd-dark .gd-cp .rs:hover{background:#2d2f31}
+body.gd-dark .gd-cp .lbl,body.gd-dark .gd-cp .rs svg,body.gd-dark .gd-cp .add,body.gd-dark .gd-cd .lab{color:#9aa0a6}
+body.gd-dark .gd-cp hr,body.gd-dark .gd-cp .sw.lt{border-color:#444746}
+body.gd-dark .gd-cp .sw:hover{box-shadow:0 0 0 2px #1e1f20,0 0 0 3px #c4c7c5}
+body.gd-dark .gd-cd .ins input{background:#1e1f20;border-color:#5f6368}
+body.gd-dark .gd-cd .ins input:focus{border-color:#a8c7fa}
+body.gd-dark .gd-cd .btns .cn{background:#1e1f20;border-color:#5f6368}
+body.gd-dark .gd-cd .btns .ok{color:#202124}
+body.gd-dark .gd-cd .eye{color:#c4c7c5}
+body.gd-dark .gd-cd .eye:hover{background:#3a3320}
+@media(max-width:480px){.gd-cd{padding:20px 18px 18px}.gd-cd .lab,.gd-cd .ins{gap:8px}.gd-cd .lab span,.gd-cd .ins input{width:44px}.gd-cd .lab span.hx,.gd-cd .ins input.hx{width:96px}.gd-cd .btns .cn{min-width:100px}}
+
+/* ---- gdocs-zoombox ---- */
+#gd-bar .gd-zoomw{display:inline-flex;align-items:center;height:32px;flex:none;border-radius:4px;font:400 13px "Google Sans",Roboto,Arial,sans-serif;color:#1f1f1f}
+#gd-bar .gd-zoomw:hover{background:rgba(68,71,70,.08)}
+#gd-bar .gd-zoomw input{width:32px;height:24px;box-sizing:border-box;border:1px solid transparent;border-radius:4px;background:transparent;color:#1f1f1f;font:inherit;text-align:right;padding:0 1px;margin:0;outline:0;-webkit-user-select:text;user-select:text;cursor:text}
+#gd-bar .gd-zoomw input:hover{border-color:#c4c7c5}
+#gd-bar .gd-zoomw input:focus{border-color:#0b57d0;box-shadow:0 0 0 1px #0b57d0;background:#fff;color:#1f1f1f}
+#gd-bar .gd-zoomw .gd-zp{margin-left:1px}
+#gd-bar .gd-zoomw .gd-mini{margin-left:0}
+body.gd-dark #gd-bar .gd-zoomw,body.gd-dark #gd-bar .gd-zoomw input{color:#e3e3e3}
+body.gd-dark #gd-bar .gd-zoomw input:hover{border-color:#5f6368}
+body.gd-dark #gd-bar .gd-zoomw input:focus{background:#1e1f20;border-color:#a8c7fa;box-shadow:0 0 0 1px #a8c7fa}
+#gd-tb.gd-k-draw #gd-zoom{opacity:.35;pointer-events:none}
+
+/* ---- gdocs-subtabs ---- */
+/* Docs theme, left tabs panel: tabs can sit inside other tabs (drag a tab onto the middle of another one) */
+html body[data-theme="gdocs"][data-hp="left"] #chtabs button[data-ch]{position:relative;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+html body[data-theme="gdocs"][data-hp="left"] #chtabs button.gd-sub{padding-left:calc(14px + var(--gd-d,0) * 22px) !important}
+html body[data-theme="gdocs"][data-hp="left"] #chtabs button.gd-subhide{display:none !important}
+html body[data-theme="gdocs"] #chtabs .gd-chev{display:none}
+html body[data-theme="gdocs"][data-hp="left"] #chtabs button.gd-parent .gd-chev{display:flex !important;position:absolute;right:44px;top:50%;width:24px;height:24px;margin-top:-12px;border-radius:50%;align-items:center;justify-content:center;cursor:pointer;padding:0}
+html body[data-theme="gdocs"][data-hp="left"] #chtabs button.gd-parent .gd-chev:hover{background:rgba(68,71,70,.12)}
+html body[data-theme="gdocs"] #chtabs .gd-chev::before{content:"";width:7px;height:7px;border-right:2px solid #444746;border-bottom:2px solid #444746;transform:rotate(45deg) translate(-1px,-1px);box-sizing:border-box}
+html body[data-theme="gdocs"] #chtabs button.gd-collapsed .gd-chev::before{transform:rotate(-45deg)}
+html body[data-theme="gdocs"].gd-dark #chtabs .gd-chev::before{border-color:#c4c7c5}
+html body[data-theme="gdocs"] #chtabs button.gd-dragging{z-index:60;opacity:.92;box-shadow:0 8px 22px rgba(0,0,0,.28) !important;pointer-events:none;background:#fff !important;transition:none !important}
+html body[data-theme="gdocs"][data-hp="left"] #chtabs button.gd-dz-before{box-shadow:inset 0 3px 0 var(--accent,#0b57d0) !important}
+html body[data-theme="gdocs"][data-hp="left"] #chtabs button.gd-dz-after{box-shadow:inset 0 -3px 0 var(--accent,#0b57d0) !important}
+html body[data-theme="gdocs"][data-hp="left"] #chtabs button.gd-dz-into{background:rgba(11,87,208,.16) !important;outline:2px solid var(--accent,#0b57d0);outline-offset:-2px}
+#gd-tt-toast{position:fixed;left:24px;bottom:24px;z-index:99998;display:none;align-items:center;gap:14px;background:#2d2e30;color:#f1f3f4;font:14px Roboto,Arial,sans-serif;padding:10px 12px 10px 18px;border-radius:4px;box-shadow:0 3px 5px -1px rgba(0,0,0,.2),0 6px 10px rgba(0,0,0,.14);max-width:min(440px,calc(100vw - 48px))}
+#gd-tt-toast.on{display:flex}
+#gd-tt-toast button{border:0;background:transparent;color:#8ab4f8;font:500 14px Roboto,Arial,sans-serif;cursor:pointer;padding:6px 8px;border-radius:4px}
+#gd-tt-toast button:hover{background:rgba(138,180,248,.12)}
+
+/* ---- gdocs-metrics ---- */
+/* Docs layout: sizes and positions tuned to the real Google Docs window (header, toolbar, right rail, Document tabs rows) */
+#gd-bar .gd-r1{padding-left:12px}
+#gd-bar .gd-logo{margin-top:2px;margin-right:4px}
+#gd-bar .gd-logo svg,#gd-bar .gd-logo img{width:24px;height:32px}
+#gd-bar .gd-menus{margin-top:-3px}
+#gd-bar .gd-right{margin-top:-1px}
+#gd-bar .gd-share .gd-caret{width:30px}
+#gd-bar .gd-av{width:32px;height:32px}
+#gd-bar .gd-tbwrap{height:62px;padding:8px 72px 0 16px;align-items:flex-start}
+body[data-theme="gdocs"] #gd-rail{padding-top:9px}
+#gd-rail hr{margin:10px 0 23px}
+/* Document tabs rows: the expand arrow sits on the LEFT of the icon, like Docs, and every row keeps that column */
+html body[data-theme="gdocs"][data-hp="left"] #chtabs button[data-ch]{padding-left:34px !important}
+html body[data-theme="gdocs"][data-hp="left"] #chtabs button[data-ch].gd-sub{padding-left:calc(34px + var(--gd-d,0) * 22px) !important}
+html body[data-theme="gdocs"][data-hp="left"] #chtabs button[data-ch].gd-parent .gd-chev{right:auto;left:calc(6px + var(--gd-d,0) * 22px);width:22px;height:22px;margin-top:-11px}
+html body[data-theme="gdocs"] #chtabs button[data-ch] .gd-chev::before{width:0;height:0;border:4px solid transparent;border-left:6px solid #444746;border-right:0;box-sizing:content-box;transform:none}
+html body[data-theme="gdocs"] #chtabs button[data-ch]:not(.gd-collapsed) .gd-chev::before{transform:rotate(90deg)}
+html body[data-theme="gdocs"] #chtabs button[data-ch].gd-collapsed .gd-chev::before{transform:none}
+
+/* ---- gal-size-css ---- */
+/* Image Gallery: resizable photos */
+body.in-gal{--galw:300px}
+body.in-gal #box .img:not(.stk){width:var(--galw);max-width:92vw;height:auto;max-height:none;object-fit:cover}
+body.in-gal.gal-sq #box .img:not(.stk){height:min(var(--galw),92vw)}
+#galsz{display:none;align-items:center;gap:6px;flex:0 1 auto;flex-wrap:wrap;color:var(--muted);font-size:12px;font-weight:600}
+body.in-gal #galsz{display:flex}
+#galsz .gz-l{margin-right:2px}
+#galsz .gz-v{min-width:46px;text-align:right;font-variant-numeric:tabular-nums}
+#galsz button{height:28px;min-width:30px;padding:0 10px;border-radius:999px;border:1px solid var(--line);background:var(--row);color:var(--text);font:600 12px inherit;font-family:inherit;cursor:pointer}
+#galsz button:hover{border-color:var(--accent)}
+#galsz button.on{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 22%,var(--row))}
+#galsz input[type=range]{width:min(180px,28vw);accent-color:var(--accent)}
+@media(max-width:700px){body.in-gal #galnote{display:none}body.in-gal #galsz{flex:1;justify-content:flex-end}}
+
+/* ---- gdocs-ctact-css ---- */
+/* Docs layout: Rename / Delete live in the 3-dot menu next to the tab in the left panel; Edit page is also next to the tab name */
+body[data-theme="gdocs"] #ct-set{display:none !important}
+/* Docs layout: the page's "Edit page" button sits right next to the tab name (order: name, Edit page, who can edit) */
+body[data-theme="gdocs"] #ctview .ct-bar .ct-title{order:0}
+body[data-theme="gdocs"] #ctview .ct-bar .ct-mod{order:1}
+body[data-theme="gdocs"] #ctview .ct-bar .ct-who{order:2}
+body[data-theme="gdocs"] #ctview .ct-bar .ct-live{order:3}
+body[data-theme="gdocs"] #ctview .ct-bar .gm-spacer{order:4}
+
+/* ---- gdocs-narrow-css ---- */
+/* Docs top bar on narrow windows: the title row and the menu row shrink / scroll inside their own space instead of running underneath the buttons on the right */
+#gd-bar .gd-mid{overflow:hidden}
+#gd-bar .gd-tr{min-width:0;overflow:hidden}
+#gd-bar .gd-tr > *{flex:none}
+#gd-bar #gd-title{flex:0 1 auto;min-width:48px;max-width:100%}
+#gd-bar .gd-menus{overflow-x:auto;overflow-y:hidden;scrollbar-width:none;max-width:100%}
+#gd-bar .gd-menus::-webkit-scrollbar{display:none}
+#gd-bar .gd-menus > *{flex:none}
+#gd-bar .gd-right{min-width:0}
+#gd-bar .gd-right > *{flex:none}
+@media(max-width:1000px){#gd-bar .gd-kami{display:none}#gd-bar .gd-share span{display:none}#gd-bar .gd-share{padding:0 12px}}
+@media(max-width:800px){#gd-bar .gd-pres{display:none}}
+@media(max-width:560px){#gd-bar .gd-right .gd-ib{width:34px !important}#gd-bar .gd-tr .gd-ib[data-gd="move"],#gd-bar .gd-tr .gd-ib[data-gd="verified"]{display:none}}

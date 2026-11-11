@@ -8,7 +8,7 @@ A themeable group chat website for Los Purebreds, with a home screen, image gall
 .github/workflows/    Automation (version bump workflow)
 public/               The website SOURCE (edit these files)
   index.html          The page itself (HTML only, it links to the files below)
-  js/                 The scripts, one file per feature (loaded in numbered order, do not reorder)
+  js/                 The scripts, merged into 23 bundle-NN.js files (loaded in numbered order, do not reorder; each feature starts with a /* ===== name ===== */ marker)
   css/                The styles (2 files)
   assets/             Images, icons, sounds and wallpapers used by the site
     favicon.png         Browser tab icon
