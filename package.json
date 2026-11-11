@@ -1,0 +1,8 @@
+{
+  "name": "purebred-chat-web",
+  "private": true,
+  "type": "module",
+  "description": "Build tooling for the Los Purebreds website (see scripts/build-web.mjs)",
+  "scripts": { "build:web": "node scripts/build-web.mjs" },
+  "devDependencies": { "esbuild": "^0.28.2" }
+}
