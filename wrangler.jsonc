@@ -2,8 +2,8 @@
   "name": "purebred-chat",
   "main": "build/worker/shim.mjs",
   "compatibility_date": "2025-06-01",
-  "build": { "command": "npm install --no-audit --no-fund --silent && node scripts/build-web.mjs && cargo install -q worker-build && worker-build --release" },
-  "assets": { "directory": "./dist", "binding": "ASSETS" },
+  "build": { "command": "cargo install -q worker-build && worker-build --release" },
+  "assets": { "directory": "./public", "binding": "ASSETS" },
   "durable_objects": { "bindings": [{ "name": "ROOM", "class_name": "Room" }, { "name": "STORE", "class_name": "Store" }] },
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Room"] }, { "tag": "v2", "new_sqlite_classes": ["Store"] }]
 }
