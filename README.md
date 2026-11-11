@@ -1,6 +1,6 @@
 # Los Purebreds 3.0
 
-A themeable group chat website for Los Purebreds, with a home screen, image gallery, polls, tier lists, games, media and more. It runs on Cloudflare Workers.
+A themeable group chat website for Los Purebreds, with a home screen, image gallery, polls, tier lists, games, media and more. The server side is written in Rust and runs on Cloudflare Workers.
 
 ## Project structure
 
@@ -14,7 +14,13 @@ public/
     icons/              Home-screen tile icons and top bar tab icons
     jumpscare/          Jumpscare picture and sound
     wallpapers/         Desktop-style theme backgrounds
-src/                  Worker code (server side): the chat relay and the cloud storage
+src/                  Worker code (server side), in Rust
+  lib.rs                Router: /ws -> chat relay, /db/... -> cloud storage, everything else -> public/
+  room.rs               `Room` Durable Object: the WebSocket chat relay
+  store.rs              `Store` Durable Object: cloud storage (tabs, games, media, chat history)
+  util.rs               Small pure helpers (with unit tests)
+Cargo.toml            Rust dependencies
+rust-toolchain.toml   Pins the wasm32 build target
 wrangler.jsonc        Cloudflare Workers configuration
 README.md             This file
 ```
@@ -60,17 +66,21 @@ The site is served from the `public/` folder, as set in `wrangler.jsonc`.
   npx wrangler deploy
   ```
 
+  Wrangler runs the Rust build for you (`wrangler.jsonc` → `build.command`), which needs [Rust](https://rustup.rs) installed. Cloudflare's Git build image already has it.
+
 ## Running locally
 
 ```bash
-npx wrangler dev
+npx wrangler dev      # builds the Rust worker, then serves the site
+cargo test            # unit tests for the helpers in src/util.rs
+node tests/smoke.mjs  # end-to-end test of chat relay + cloud storage (needs `wrangler dev` running, Node 22+)
 ```
 
 Then open the address it prints (usually `http://localhost:8787`).
 
 ## Cloud storage (how tabs, games and chat history sync)
 
-Custom tabs, the games list, media and the public chat history are stored by the Worker itself (the `Store` Durable Object in `src/worker.js`, address `/db/...`). There is no Firebase any more, so there is no separate service or quota to run out of, and school or phone networks that block Firebase are no longer a problem.
+Custom tabs, the games list, media and the public chat history are stored by the Worker itself (the `Store` Durable Object in `src/store.rs`, address `/db/...`). There is no Firebase any more, so there is no separate service or quota to run out of, and school or phone networks that block Firebase are no longer a problem.
 
 - Pages ask one tiny question ("anything new?") every few seconds and only download when something changed.
 - **First deploy:** `wrangler.jsonc` now has a second migration (`v2`) that creates `Store`. A normal push to `main` or `npx wrangler deploy` applies it.
