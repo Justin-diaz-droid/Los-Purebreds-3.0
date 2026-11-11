@@ -390,6 +390,14 @@ if(L.getItem("pb_autologin")==="1"&&L.getItem("pb_code")==="lospurebro"&&L.getIt
   #topbanner .tb-status{min-height:20px;display:flex;align-items:center;justify-content:center;gap:7px;font-size:12px;color:var(--cx-muted,var(--muted))}
   #topbanner .tb-status.load::before{content:"";width:12px;height:12px;border-radius:50%;border:2px solid currentColor;border-top-color:transparent;animation:tbspin .7s linear infinite}
   @keyframes tbspin{to{transform:rotate(360deg)}}
+  /* start-of-chat intro: only drawn once the whole history has loaded and you are at the very first message (JS adds .at-top) */
+  #topbanner .tb-intro{display:none;flex-direction:column;align-items:center;gap:8px;width:100%;max-width:none;padding:8px 14px 4px;box-sizing:border-box;color:var(--text)}
+  #topbanner.at-top .tb-intro{display:flex}
+  #topbanner .ti-icon{width:92px;height:92px;flex:none}
+  #topbanner .ti-name{font:400 clamp(20px,5.2vw,30px)/1.15 "Bungee","Russo One","Rubik Mono One",system-ui,sans-serif;letter-spacing:.5px}
+  #topbanner .ti-doc{font:400 clamp(19px,4.8vw,26px)/1.2 "Pirata One","Metal Mania","Fredericka the Great",Georgia,serif;letter-spacing:.4px}
+  #topbanner .ti-date{font:400 clamp(11px,2.8vw,13px)/1.3 "Pirata One","Metal Mania",Georgia,serif;letter-spacing:.3px;opacity:.9}
+  #topbanner .ti-line{align-self:stretch;border-top:2px dashed currentColor;opacity:.55;margin:6px 0}
   body.in-gal #topbanner,body.in-shame #topbanner,body.in-polls #topbanner,body.in-dm #topbanner,body.in-draw #topbanner,body.in-tier #topbanner{display:none}
   .pintag{font-size:10px;font-weight:700;color:var(--accent);margin-left:6px}
   .msg.pinned .bubble{box-shadow:0 0 0 2px var(--accent)}
@@ -885,7 +893,14 @@ html.watch #watch-note.on{display:block}
   <div id="hdrwrap"><div id="hdr"><button id="hdr-set" title="Settings">⚙️</button><span id="status">Not connected</span><div id="chtabs"><button type="button" data-ch="main" class="on">💬 Chat</button><button type="button" data-ch="gal">🖼️ Image Gallery</button><button type="button" data-ch="polls">📊 Polls</button><button type="button" data-ch="shame">🚨 Hall of Shame</button></div><div id="online" title="See who's online"></div></div>
     <div id="onpop"></div>
     <button id="hdr-arrow" class="arrow" title="Hide / show top bar"></button></div>
-  <div id="box"><div id="topbanner"><div class="tb-rip">H.M. ~~~~ Ryosuke: RIP 🕊️🪦🪽</div><div id="tb-status" class="tb-status" role="status" aria-live="polite"></div></div></div>
+  <div id="box"><div id="topbanner"><div class="tb-intro" aria-label="Start of the chat">
+    <svg class="ti-icon" viewBox="0 0 100 100" aria-hidden="true"><path d="M50 9C27 9 9 26 9 47c0 20 16 36 38 38 4 0 8 0 12-1l25 7-6-19c8-7 13-16 13-25C91 26 73 9 50 9z" fill="none" stroke="currentColor" stroke-width="7" stroke-linejoin="round"/><circle cx="31" cy="48" r="6.5" fill="currentColor"/><circle cx="50" cy="48" r="6.5" fill="currentColor"/><circle cx="69" cy="48" r="6.5" fill="currentColor"/></svg>
+    <div class="ti-name">Los PureBreds CHATROOM</div>
+    <div class="ti-line"></div>
+    <div class="ti-doc">Current Document 4 C.R (NEW)</div>
+    <div class="ti-date">Los PureBreds, October 10, 2026 at 5.15 PM,</div>
+    <div class="ti-line"></div>
+  </div><div class="tb-rip">H.M. ~~~~ Ryosuke: RIP 🕊️🪦🪽</div><div id="tb-status" class="tb-status" role="status" aria-live="polite"></div></div></div>
   <div id="typing"></div>
   <div id="replybar"><span class="rb-t"></span><button id="replyhide" type="button" title="Hidden reply: only they can see it">🙈 Hidden</button><button id="replyx" type="button" title="Cancel reply" aria-label="Cancel reply">✕</button></div>
   <div id="tray">
@@ -2531,6 +2546,7 @@ function setTop(){
   if(el.dataset.st === st) return; el.dataset.st = st;
   el.textContent = st === "load" ? "Loading older messages…" : st === "top" ? "You reached the top of the chat." : "";
   el.className = "tb-status" + (st ? " " + st : "");
+  const tb = document.getElementById("topbanner"); if(tb) tb.classList.toggle("at-top", st === "top");   // start-of-chat intro shows only at the very top
 }
 function topLoad(){                                      // near the top: show "Loading…" for a moment, then pull in the older messages
   if(topT || winTopDone || winLoading) return;
@@ -2559,6 +2575,12 @@ function winFill(){                                      // very short messages 
   for(let n = 0; n < 6 && bx.scrollHeight < bx.clientHeight + 300 && !winTopDone; n++) if(!loadOlder()) break;
 }
 window.__pbEnd = () => { if(winHi !== Infinity){ resetWin(); rerender(); } };   // "jump to latest" needs the newest rows drawn
+window.__pbTop = () => {                                // "jump to first message": draw the very oldest rows, then scroll up to them
+  const v = viewLogs(); if(!v.length) return;
+  winLo = v[0].ts || 0; winHi = v.length > WIN_INIT ? (v[WIN_INIT - 1].ts || 0) : Infinity; winTopDone = false;
+  rerender(); $("box").scrollTop = 0;
+  requestAnimationFrame(() => requestAnimationFrame(() => { $("box").scrollTop = 0; }));   // again once the top banner has appeared, so it stays in view
+};
 $("box").addEventListener("scroll", () => {
   if(winRaf) return;
   winRaf = requestAnimationFrame(() => {
@@ -8180,6 +8202,38 @@ body[data-theme="ios6"] #replybar *,body[data-theme="ios6"] #dmbar *{color:inher
   update();
 })();
 </script>
+<style id="jumptop-css">
+#jumptop-btn{position:fixed;z-index:6;width:34px;height:34px;margin:0;padding:0;border-radius:50%;border:1px solid var(--line);background:var(--bar,var(--row));color:var(--bar-text,var(--text));display:none;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,.35);opacity:.92;animation:jumpin .18s ease-out}
+#jumptop-btn.on{display:flex}
+#jumptop-btn:hover{filter:brightness(1.15);opacity:1}
+#jumptop-btn:active{transform:scale(.92)}
+</style>
+<script id="jumptop-js">
+(function(){
+  /* small "jump to the very first message" button in the top corner of the chat. Hidden once you are already at the first message. */
+  const box = document.getElementById("box"); if(!box) return;
+  const btn = document.createElement("button"); btn.id = "jumptop-btn"; btn.type = "button";
+  btn.title = "Jump to first message"; btn.setAttribute("aria-label", "Jump to first message");
+  btn.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4.5h12M12 20V9M6 14l6-6 6 6"/></svg>';
+  document.body.appendChild(btn);
+  let raf = 0;
+  function update(){
+    raf = 0;
+    const r = box.getBoundingClientRect();
+    let on = !!(r.width && r.height) && !!box.querySelector(".msg[data-ts]");
+    if(on){ btn.style.left = (r.right - 34 - 18) + "px"; btn.style.top = (r.top + 10) + "px"; }
+    if(on){ const atTop = box.scrollTop < 120 && !hasOlder(); on = !atTop; }   // hasOlder: older messages exist that are not drawn yet
+    btn.classList.toggle("on", on);
+  }
+  const soon = () => { if(!raf) raf = requestAnimationFrame(update); };
+  box.addEventListener("scroll", soon, { passive: true });
+  window.addEventListener("resize", soon);
+  if(window.ResizeObserver) new ResizeObserver(soon).observe(box);
+  tick(update, 900);
+  btn.addEventListener("click", () => { if(window.__pbTop) window.__pbTop(); soon(); });
+  update();
+})();
+</script>
 <style id="fr-css">
 #sbfr{padding:6px 8px 0}
 #sbfr .sbh{display:flex;align-items:center;justify-content:space-between;font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--bar-text,var(--muted));opacity:.8;padding:6px 10px}
@@ -10331,20 +10385,125 @@ body[data-theme="simple"] #replybar,body[data-theme="simple"] #dmbar{background:
   card.innerHTML = '<h3>\uD83E\uDDEA Experimental</h3>' +
     '<div class="xnote">Features that are still being tested. They can change or break.</div>' +
     '<label class="chk"><input type="checkbox" id="x-auto">Auto login: sign in automatically on this device</label>' +
-    '<div class="xnote">Skips the join screen when you open the page. It needs your name and password saved on this device, so join once normally first. Press Save changes to apply.</div>';
+    '<div class="xnote">Skips the join screen when you open the page. It needs your name and password saved on this device, so join once normally first. Press Save changes to apply.</div>' +
+    '<label class="chk"><input type="checkbox" id="x-apple">Apple-style emoji: show every emoji as Apple-style artwork on any device</label>' +
+    '<div class="xnote">Each emoji picture is loaded from the internet only while it is on screen, so it uses a little extra memory. Off = your device\'s own emoji. Press Save changes to apply. You can also switch it in the emoji box.</div>';
   scroll.appendChild(card);
 
   /* each time Settings opens, show the saved value */
   var wasOpen = false;
   new MutationObserver(function(){
     var open = stg.classList.contains("open");
-    if(open && !wasOpen){ $("x-auto").checked = get(); }
+    if(open && !wasOpen){ $("x-auto").checked = get(); if(window.__pbApple) $("x-apple").checked = window.__pbApple.get(); }
     wasOpen = open;
   }).observe(stg, {attributes:true, attributeFilter:["class"]});
 
   /* only saved when you press Save changes (Cancel throws it away, like every other setting) */
   var prev = saveBtn.onclick;
-  saveBtn.onclick = function(){ if(stg.classList.contains("open")) put($("x-auto").checked); return prev ? prev.apply(this, arguments) : undefined; };
+  saveBtn.onclick = function(){ if(stg.classList.contains("open")){ put($("x-auto").checked); if(window.__pbApple) window.__pbApple.set($("x-apple").checked); } return prev ? prev.apply(this, arguments) : undefined; };
+})();
+</script>
+<!-- =====================  APPLE-STYLE EMOJI (optional: Settings > Experimental, or the switch in the emoji box)  ===================== -->
+<style id="apple-emoji-css">
+/* a wrapped emoji keeps its real character inside (copy, search and edit still work); the picture just covers it once it has loaded */
+.apemo.ap-on{display:inline-block;width:1.15em;height:1.15em;vertical-align:-.2em;overflow:hidden;white-space:nowrap;text-indent:-9999px;color:transparent !important;text-shadow:none !important;background-repeat:no-repeat;background-position:center;background-size:contain}
+#ap-sw{display:flex;align-items:center;gap:8px;padding:6px 12px;border-top:1px solid rgba(128,128,128,.25);font-size:12px;cursor:pointer;user-select:none;-webkit-user-select:none;opacity:.9}
+#ap-sw input{appearance:none;-webkit-appearance:none;width:30px;height:18px;min-width:30px;padding:0;margin:0;border:0;border-radius:9px;background:#9aa0a6;position:relative;cursor:pointer;flex:none;transition:background .15s}
+#ap-sw input::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;transition:transform .15s}
+#ap-sw input:checked{background:#34c759}
+#ap-sw input:checked::after{transform:translateX(12px)}
+</style>
+<script id="apple-emoji-js">
+(function(){
+  var KEY = "pb_apple_emoji", BASE = "https://cdn.jsdelivr.net/npm/emoji-datasource-apple@15.1.2/img/apple/64/";
+  var on = false, mo = null, io = null, raf = 0, pending = new Set(), cache = new Map();
+  function saved(){ try{ return localStorage.getItem(KEY) === "1"; }catch(e){ return false; } }
+  function keep(v){ try{ if(v) localStorage.setItem(KEY, "1"); else localStorage.removeItem(KEY); }catch(e){} }
+
+  /* what counts as an emoji: picture-style characters, text-style ones only with the emoji selector, skin tones, joined families/professions, flags, keycaps */
+  var EL = "(?:\\p{Emoji_Presentation}|\\p{Extended_Pictographic}\\uFE0F)\\p{Emoji_Modifier}?";
+  var SRC = "\\p{Regional_Indicator}{2}|[0-9#*]\\uFE0F?\\u20E3|" + EL + "(?:\\u200D" + EL + ")*(?:[\\u{E0020}-\\u{E007E}]+\\u{E007F})?";
+  var RE = new RegExp(SRC, "gu"), TEST = new RegExp(SRC, "u");
+  var SKIP = /^(SCRIPT|STYLE|NOSCRIPT|TEXTAREA|INPUT|SELECT|OPTION|CANVAS|IFRAME|TITLE|HEAD)$/;
+  function skipEl(e){ return !e || SKIP.test(e.tagName) || e.isContentEditable || !!(e.closest && e.closest(".apemo,svg")); }
+  function nameOf(s){ return Array.from(s).map(function(c){ return c.codePointAt(0).toString(16); }).join("-"); }
+
+  /* find (and remember) which picture file exists for an emoji; null = none, so the device's own emoji stays */
+  function ensure(name, cb){
+    var st = cache.get(name);
+    if(st){ if(st.done) cb(st.url); else st.cbs.push(cb); return; }
+    st = { done: false, url: null, cbs: [cb] }; cache.set(name, st);
+    var alts = [name, name.replace(/-fe0f/g, ""), name.replace(/^([0-9a-f]+)-(20e3)$/, "$1-fe0f-$2")].filter(function(v, i, a){ return a.indexOf(v) === i; });
+    function fire(){ var c = st.cbs; st.cbs = []; c.forEach(function(f){ f(st.url); }); }
+    (function next(i){
+      if(i >= alts.length){ st.done = true; fire(); return; }
+      var im = new Image();
+      im.onload = function(){ st.done = true; st.url = BASE + alts[i] + ".png"; fire(); };
+      im.onerror = function(){ next(i + 1); };
+      im.src = BASE + alts[i] + ".png";
+    })(0);
+  }
+  function paint(el){
+    ensure(el.dataset.ae, function(url){
+      if(!url || !el.isConnected || !on) return;
+      el.style.backgroundImage = 'url("' + url + '")'; el.classList.add("ap-on");
+    });
+  }
+  function scanText(tn){
+    var p = tn.parentNode; if(!p || p.nodeType !== 1 || skipEl(p)) return;
+    var s = tn.nodeValue; if(!s || !TEST.test(s)) return;
+    var frag = document.createDocumentFragment(), last = 0, m; RE.lastIndex = 0;
+    while((m = RE.exec(s))){
+      if(m.index > last) frag.appendChild(document.createTextNode(s.slice(last, m.index)));
+      var sp = document.createElement("span"); sp.className = "apemo"; sp.dataset.ae = nameOf(m[0]); sp.textContent = m[0];
+      frag.appendChild(sp); if(io) io.observe(sp);          // the picture is only fetched once it scrolls into view
+      last = m.index + m[0].length;
+    }
+    if(last < s.length) frag.appendChild(document.createTextNode(s.slice(last)));
+    tn.replaceWith(frag);
+  }
+  function scan(n){
+    if(!n.isConnected) return;
+    if(n.nodeType === 3){ scanText(n); return; }
+    if(n.nodeType !== 1 || skipEl(n)) return;
+    var w = document.createTreeWalker(n, NodeFilter.SHOW_TEXT, null), t, arr = [];
+    while((t = w.nextNode())) arr.push(t);
+    arr.forEach(scanText);
+  }
+  function queue(n){ pending.add(n); if(!raf) raf = requestAnimationFrame(flush); }
+  function flush(){ raf = 0; var l = Array.from(pending); pending.clear(); l.forEach(scan); }
+
+  function enable(){
+    if(on) return; on = true;
+    io = new IntersectionObserver(function(es){ es.forEach(function(e){ if(e.isIntersecting){ io.unobserve(e.target); paint(e.target); } }); }, { rootMargin: "200px" });
+    mo = new MutationObserver(function(ms){
+      ms.forEach(function(m){
+        if(m.type === "characterData") queue(m.target);
+        else m.addedNodes.forEach(function(n){ queue(n); });
+      });
+    });
+    mo.observe(document.body, { childList: true, subtree: true, characterData: true });
+    queue(document.body); sync();
+  }
+  function disable(){
+    if(!on) return; on = false;
+    if(mo) mo.disconnect(); if(io) io.disconnect(); mo = io = null; pending.clear();
+    document.querySelectorAll(".apemo").forEach(function(sp){ sp.replaceWith(document.createTextNode(sp.textContent)); });
+  }
+  function sync(){ var c = document.getElementById("ap-sw-in"); if(c) c.checked = on; var x = document.getElementById("x-apple"); if(x) x.checked = on; }
+  function set(v){ keep(!!v); if(v) enable(); else disable(); sync(); }
+  window.__pbApple = { get: function(){ return on; }, set: set };
+
+  /* the switch inside the emoji box */
+  var panel = document.getElementById("emo-panel");
+  if(panel){
+    var lab = document.createElement("label"); lab.id = "ap-sw";
+    lab.innerHTML = '<input type="checkbox" id="ap-sw-in" aria-label="Apple-style emoji"><span>Apple-style emoji</span>';
+    panel.appendChild(lab);
+    lab.querySelector("input").addEventListener("change", function(e){ set(e.target.checked); });
+  }
+  if(saved()){ if(document.readyState === "complete") enable(); else window.addEventListener("load", enable); }
+  sync();
 })();
 </script>
 <!-- =====================  SETTINGS: iOS / iPadOS layout  ===================== -->
