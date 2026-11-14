@@ -798,7 +798,7 @@ html.watch #watch-note.on{display:block}
   <div>
     <div class="hdr-sb">Messages</div>
     <div class="row-ch active" id="ch-main"><div class="av-sb lp"></div><div><b style="font-size:15px">Los Purebreds</b><br><span id="chname" class="csub">iMessage Channel</span></div></div>
-    <div class="row-ch" id="ch-shame"><div class="av-sb" style="font-size:18px">🚨</div><div><b style="font-size:15px">Hall of Shame</b><br><span class="csub">Mods &amp; owners post · owners delete</span></div></div>
+    <div class="row-ch" id="ch-shame" style="display:none" hidden><div class="av-sb" style="font-size:18px">🚨</div><div><b style="font-size:15px">Hall of Shame</b><br><span class="csub">Mods &amp; owners post · owners delete</span></div></div>
     <div class="row-ch" id="ch-gal"><div class="av-sb" style="font-size:18px">🖼️</div><div><b style="font-size:15px">Image Gallery</b><br><span class="csub">Photos only</span></div></div>
     <div class="row-ch" id="ch-polls"><div class="av-sb" style="font-size:18px">📊</div><div><b style="font-size:15px">Polls</b><br><span class="csub">Polls only</span></div></div>
     <div id="sbroster"></div>
@@ -890,7 +890,7 @@ html.watch #watch-note.on{display:block}
 </div></div>
 <button id="sb-arrow" class="arrow" title="Hide / show messages bar"></button>
 <div id="main">
-  <div id="hdrwrap"><div id="hdr"><button id="hdr-set" title="Settings">⚙️</button><span id="status">Not connected</span><div id="chtabs"><button type="button" data-ch="main" class="on">💬 Chat</button><button type="button" data-ch="gal">🖼️ Image Gallery</button><button type="button" data-ch="polls">📊 Polls</button><button type="button" data-ch="shame">🚨 Hall of Shame</button></div><div id="online" title="See who's online"></div></div>
+  <div id="hdrwrap"><div id="hdr"><button id="hdr-set" title="Settings">⚙️</button><span id="status">Not connected</span><div id="chtabs"><button type="button" data-ch="main" class="on">💬 Chat</button><button type="button" data-ch="gal">🖼️ Image Gallery</button><button type="button" data-ch="polls">📊 Polls</button></div><div id="online" title="See who's online"></div></div>
     <div id="onpop"></div>
     <button id="hdr-arrow" class="arrow" title="Hide / show top bar"></button></div>
   <div id="box"><div id="topbanner"><div class="tb-intro" aria-label="Start of the chat">
@@ -2691,7 +2691,7 @@ function applyToDom(l){
   renderDMList();
   const e = $(l.i);
   if(l.del){ if(e){ e.classList.add("gone"); setTimeout(() => { e.remove(); queueRegroup(); }, 180); } else queueRegroup(); return; }
-  if(!e){ renderRow(l, true); return; }
+  if(!e){ renderRow(l, true); try{ if(window.__pbNote) window.__pbNote(l); }catch(_){} return; }
   if(!!l.pn !== e.classList.contains("pinned") || (l.pn && +e.dataset.pn !== l.pn)){   // pinned / unpinned: move it
     const bx = $("box"), keep = bx.scrollTop; e.remove(); renderRow(l); bx.scrollTop = keep; return;
   }
@@ -7366,7 +7366,7 @@ body.tab-dragging,body.tab-dragging *{user-select:none !important;-webkit-user-s
 <script>
 /* =============== ↕ drag to reorder your tabs (header tabs + sidebar rooms) — saved on this device only =============== */
 (function(){
-  const KEYS=["main","shame","gal","polls","draw","tier","games","media"], LS="pb_taborder", DEF=["main","shame","gal","polls","draw","tier","games","media"];
+  const KEYS=["main","gal","polls","draw","tier","games","media"], LS="pb_taborder", DEF=["main","gal","polls","draw","tier","games","media"];
   let order=[];
   try{ const a=JSON.parse(localStorage.getItem(LS)||"[]"); if(Array.isArray(a)) order=a.filter(k=>KEYS.includes(k)); }catch(e){}
   const full=()=>{ const o=order.filter((k,i,a)=>KEYS.includes(k)&&a.indexOf(k)===i); DEF.forEach(k=>{ if(!o.includes(k)) o.push(k); }); return o; };
@@ -10442,6 +10442,137 @@ html body[data-theme="gta6"] *{scrollbar-color:#ff3d9a transparent}
   if(gta6Live()) setInterval(sweep, 30000);       // also catches the moment it ends while the page is open
 })();
 </script>
+<!-- =====================  DISCORD-STYLE NOTIFICATIONS (a message in another tab pops up at the top; click it to jump there)  ===================== -->
+<style id="note-css">
+#pbnote{position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:2147483000;display:flex;flex-direction:column;gap:8px;width:min(380px,calc(100vw - 20px));pointer-events:none}
+.pbn{pointer-events:auto;display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:14px;cursor:pointer;background:var(--side,#2b2d31);color:var(--text,#fff);border:1px solid var(--line,rgba(255,255,255,.14));border-left:4px solid var(--accent,#5865f2);box-shadow:0 8px 28px rgba(0,0,0,.4);animation:pbnIn .22s ease-out;transition:opacity .2s,transform .2s}
+.pbn.out{opacity:0;transform:translateY(-12px)}
+.pbn .pbn-av{flex:0 0 38px;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-size:16px;background-size:cover}
+.pbn .pbn-tx{flex:1;min-width:0}
+.pbn .pbn-h{font-size:12px;color:var(--muted,#b5bac1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pbn .pbn-h b{color:var(--text,#fff);font-size:13px}
+.pbn .pbn-b{font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.pbn .pbn-n{background:var(--accent,#5865f2);color:var(--on-accent,#fff);border-radius:10px;font-size:11px;font-weight:700;padding:1px 7px}
+.pbn .pbn-x{flex:0 0 auto;border:0;background:transparent;color:var(--muted,#b5bac1);font-size:18px;line-height:1;cursor:pointer;padding:2px 6px;border-radius:8px}
+.pbn .pbn-x:hover{background:rgba(128,128,128,.25);color:var(--text,#fff)}
+@keyframes pbnIn{from{opacity:0;transform:translateY(-16px)}to{opacity:1;transform:none}}
+</style>
+<script id="note-js">
+(function(){
+  var LS = "pb_notify", LSS = "pb_notify_snd";
+  function on(){ try{ return localStorage.getItem(LS) !== "0"; }catch(e){ return true; } }
+  function snd(){ try{ return localStorage.getItem(LSS) === "1"; }catch(e){ return false; } }
+  function setOn(v){ try{ localStorage.setItem(LS, v ? "1" : "0"); }catch(e){} }
+  function setSnd(v){ try{ if(v) localStorage.setItem(LSS, "1"); else localStorage.removeItem(LSS); }catch(e){} }
+  var host = null, cards = [];
+  function getHost(){ if(!host){ host = document.createElement("div"); host.id = "pbnote"; document.body.appendChild(host); } return host; }
+  function beep(){
+    try{
+      var A = window.AudioContext || window.webkitAudioContext; if(!A) return;
+      var c = new A(), o = c.createOscillator(), g = c.createGain();
+      o.type = "sine"; o.frequency.value = 880; g.gain.value = 0.06;
+      o.connect(g); g.connect(c.destination); o.start();
+      g.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + 0.25);
+      o.stop(c.currentTime + 0.27); setTimeout(function(){ try{ c.close(); }catch(e){} }, 400);
+    }catch(e){}
+  }
+  function chOf(l){ return isHd(l) ? "" : (l.ch || ""); }
+  function chatShown(){
+    if(document.hidden) return false;
+    return ["", "main", "gal", "polls", "shame", "dm"].indexOf(curCh) >= 0 || curCh === undefined;
+  }
+  function preview(l){
+    if(l.sp) return "🙈 Spoiler";
+    if(l.img) return "📷 Photo";
+    if(l.aud) return "🎤 Voice message";
+    if(l.fl) return "📎 " + (l.fn || "File");
+    if(l.poll) return "📊 " + String(l.poll.q || "Poll").slice(0, 60);
+    if(l.gif) return "GIF";
+    if(l.stk) return "Sticker";
+    return String(l.b == null ? "" : l.b).replace(/\s+/g, " ").slice(0, 100) || "New message";
+  }
+  function where(l){
+    var ch = chOf(l);
+    if(l.g && groups[l.g]) return groups[l.g].n || "Group";
+    if(l.to) return "Direct message";
+    return tabLabel(ch === "" ? "main" : ch);
+  }
+  function key(l){ return (l.g ? "g" + l.g : l.to ? "d" + l.c : "c" + chOf(l)); }
+  function close(c){
+    var i = cards.indexOf(c); if(i < 0) return; cards.splice(i, 1);
+    clearTimeout(c.t); c.el.classList.add("out"); setTimeout(function(){ c.el.remove(); }, 200);
+  }
+  function arm(c){ clearTimeout(c.t); c.t = setTimeout(function(){ close(c); }, 6500); }
+  function go(l){
+    var ch = chOf(l);
+    try{
+      if(l.to || l.g){ dmWith = dmKey(l) || (l.g ? "g:" + l.g : "d:" + l.c); dmNm = l.g && groups[l.g] ? groups[l.g].n : l.u; setChannel("dm"); }
+      else if(ch === "gal") setChannel("gal");
+      else if(ch === "polls") setChannel("polls");
+      else if(ch === "shame") setChannel("shame");
+      else setChannel("");
+    }catch(e){}
+    if(ch !== "gal") setTimeout(function(){ try{ jumpTo(l.i); }catch(e){} }, 220);
+  }
+  window.__pbNote = function(l){
+    try{
+      if(!on() || !l || l.del || l.pn || l.c === uid) return;
+      if(!l.ts || Date.now() - l.ts > 15000) return;
+      if(l.to && l.to !== uid) return;
+      if(l.g && !isMember(l.g)) return;
+      var ch = chOf(l);
+      if(chatShown()){
+        if(l.to || l.g){ if(curCh === "dm" && dmWith === dmKey(l)) return; }
+        else if(viewMatch(l)) return;
+      }
+      var k = key(l), c = null;
+      for(var i = 0; i < cards.length; i++) if(cards[i].k === k){ c = cards[i]; break; }
+      if(c){
+        c.n++; c.l = l;
+        c.el.querySelector(".pbn-b").textContent = preview(l);
+        var nb = c.el.querySelector(".pbn-n"); if(!nb){ nb = document.createElement("span"); nb.className = "pbn-n"; c.el.querySelector(".pbn-h").appendChild(document.createTextNode(" ")); c.el.querySelector(".pbn-h").appendChild(nb); }
+        nb.textContent = c.n + " new";
+        arm(c);
+      } else {
+        var el = document.createElement("div"); el.className = "pbn"; el.setAttribute("role", "alert");
+        el.innerHTML = '<div class="pbn-av"></div><div class="pbn-tx"><div class="pbn-h"><b></b> <span></span></div><div class="pbn-b"></div></div><button class="pbn-x" aria-label="Dismiss">×</button>';
+        el.querySelector("b").textContent = l.u || "Someone";
+        el.querySelector(".pbn-h span").textContent = "· " + where(l);
+        el.querySelector(".pbn-b").textContent = preview(l);
+        try{ paintAv(el.querySelector(".pbn-av"), l.u || "?"); }catch(e){}
+        c = { k: k, l: l, n: 1, el: el, t: 0 };
+        el.onclick = function(ev){ if(ev.target.closest(".pbn-x")){ close(c); return; } var m = c.l; close(c); go(m); };
+        el.onmouseenter = function(){ clearTimeout(c.t); };
+        el.onmouseleave = function(){ arm(c); };
+        getHost().appendChild(el); cards.push(c);
+        while(cards.length > 3) close(cards[0]);
+        arm(c);
+        if(snd()) beep();
+      }
+    }catch(e){}
+  };
+  window.__pbNoteCfg = { on: on, snd: snd, setOn: setOn, setSnd: setSnd };
+
+  /* settings card */
+  var stg = document.getElementById("stg"), scroll = document.querySelector(".stg-scroll"), saveBtn = document.getElementById("save");
+  if(!stg || !scroll || !saveBtn) return;
+  var card = document.createElement("div"); card.className = "stg-card"; card.id = "stg-note"; card.dataset.pbcat = "messages";
+  card.innerHTML = '<h3>🔔 Notifications</h3>' +
+    '<label class="chk"><input type="checkbox" id="n-on">Pop-up when someone messages in another tab</label>' +
+    '<div class="xnote">A small card appears at the top (like Discord). Click it to jump to that message.</div>' +
+    '<label class="chk"><input type="checkbox" id="n-snd">Play a short sound</label>' +
+    '<div class="xnote">Press Save changes to apply.</div>';
+  scroll.appendChild(card);
+  var was = false;
+  new MutationObserver(function(){
+    var open = stg.classList.contains("open");
+    if(open && !was){ document.getElementById("n-on").checked = on(); document.getElementById("n-snd").checked = snd(); }
+    was = open;
+  }).observe(stg, {attributes:true, attributeFilter:["class"]});
+  var prev = saveBtn.onclick;
+  saveBtn.onclick = function(){ if(stg.classList.contains("open")){ setOn(document.getElementById("n-on").checked); setSnd(document.getElementById("n-snd").checked); } return prev ? prev.apply(this, arguments) : undefined; };
+})();
+</script>
 <!-- =====================  APPLE-STYLE EMOJI (optional: Settings > Experimental, or the switch in the emoji box)  ===================== -->
 <style id="apple-emoji-css">
 /* a wrapped emoji keeps its real character inside (copy, search and edit still work); the picture just covers it once it has loaded */
@@ -13160,7 +13291,7 @@ body.in-home #home{display:flex}
   try{ const l = document.createElement("link"); l.rel = "stylesheet"; l.href = "https://fonts.googleapis.com/css2?family=Itim&display=swap"; document.head.appendChild(l); }catch(e){}
   const ICONS = {"games": "assets/icons/games.png", "chat": "assets/icons/chat.png", "media": "assets/icons/media.png", "draw": "assets/icons/draw.png", "shame": "assets/icons/shame.png", "polls": "assets/icons/polls.png", "gal": "assets/icons/gallery.png", "tier": "assets/icons/tier.png"};
   const ITEMS = [
-    ["games","Games","games"],["chat","Main chat room","main"],["media","Media","media"],["draw","drawing board","draw"],["shame","Hall of shame","shame"],
+    ["games","Games","games"],["chat","Main chat room","main"],["media","Media","media"],["draw","drawing board","draw"],
     ["polls","Polls Tab","polls"],["gal","Image Gallery","gal"],["tier","Tier List","tier"]
   ];
   window.__pbHomeIcons = {}; ITEMS.forEach(([ic, label, ch]) => { if(ch && ICONS[ic]) window.__pbHomeIcons[ch] = ICONS[ic]; });
@@ -13220,7 +13351,7 @@ body.in-home #home{display:flex}
       const k = b.dataset.ch; if(!k || k === "home" || k === "app" || k === "dm" || k === "grp" || seen.has(k)) return; seen.add(k);
       out.push([k, (b.textContent || "").trim() || k]);
     });
-    ["main", "gal", "polls", "shame", "draw", "tier", "games"].forEach(k => { if(!seen.has(k)) out.push([k, k]); });
+    ["main", "gal", "polls", "draw", "tier", "games"].forEach(k => { if(!seen.has(k)) out.push([k, k]); });
     return out;
   }
   function iconNode(t){
@@ -13298,7 +13429,7 @@ body.in-home #home{display:flex}
     '<div class="hm-btns"><button type="button" id="hm-cx">Cancel</button><button type="button" class="go" id="hm-ok">Save</button></div></div>';
   document.body.appendChild(modal);
   let editIdx = -1, pic = "";
-  const BUILT = [["", "(none)"], ["games", "Games & Media"], ["chat", "Chat"], ["draw", "Drawing"], ["shame", "Hall of Shame"], ["polls", "Polls"], ["gal", "Gallery"], ["tier", "Tier list"]];
+  const BUILT = [["", "(none)"], ["games", "Games & Media"], ["chat", "Chat"], ["draw", "Drawing"], ["polls", "Polls"], ["gal", "Gallery"], ["tier", "Tier list"]];
   $$("hm-ic").innerHTML = BUILT.map(([k, l]) => '<option value="' + k + '">' + l + '</option>').join("");
   const SUBHINT = { games: ["Games", "Proxy", "Media", "Music"], draw: ["Public"] };
   function fillSubHints(){
@@ -15443,7 +15574,7 @@ body.in-ctab #box,body.in-ctab #typing,body.in-ctab #replybar,body.in-ctab #tray
       add(top, "📄 " + top.name + " (main page)");
       subsOf(top.id).forEach(x => add(x, x.ic + " " + x.name));
     }
-    { const BI = [["home","🏠","Home"],["main","💬","Chat"],["gal","🖼️","Image Gallery"],["polls","📊","Polls"],["shame","🚨","Hall of Shame"],["draw","🎨","Draw"],["tier","🏆","Tiers"],["games","🎮","Games & Media"]];
+    { const BI = [["home","🏠","Home"],["main","💬","Chat"],["gal","🖼️","Image Gallery"],["polls","📊","Polls"],["draw","🎨","Draw"],["tier","🏆","Tiers"],["games","🎮","Games & Media"]];
       const nm = (k, ic, d) => { const b = document.querySelector('#chtabs button[data-ch="' + k + '"]'); return b ? (b.textContent || "").replace(/\s+/g, " ").trim() || (ic + " " + d) : ""; };
       const rows = BI.map(([k, ic, d]) => [k, nm(k, ic, d)]).filter(x => x[1]);
       if(rows.length){
