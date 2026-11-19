@@ -100,3 +100,9 @@ In **Create a poll**, tick **Let people type their own answer (no choices)**. Th
 - Keep `index.html` and the `assets/` folder together inside `public/`.
 - Emoji, the small inline UI icons (send, edit, delete) and the loading screen's spinning hat and cane are written in code, so they are not files in `assets/`.
 - Never commit passwords, API keys or tokens to this repo.
+
+## Editing the site
+
+- Edit `source/index.html` (readable). `public/index.html` is generated and minified.
+- Rebuild: `npm i esbuild` then `node tools/build.mjs`.
+- Only `public/` is deployed.
