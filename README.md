@@ -19,6 +19,15 @@ wrangler.jsonc        Cloudflare Workers configuration
 README.md             This file
 ```
 
+## Layouts
+
+Settings → Layout picks how the site is arranged: **Los Purebreds** (the default), **Google Docs**, or **Canvas**.
+
+The **Canvas** layout copies the school Canvas look: a dark navigation rail on the left (Users Online, Dashboard, Tabs, Settings, Changelog, Edit History, Add Tabs, Synergy, Admin Panel and a minimize arrow), a **Tabs** tray that slides out with every tab as a link, and a **Dashboard** of cards. Each card shows the same picture as that tab's icon (`public/assets/icons/`). Add Tabs only shows when you are allowed to make tabs, and Admin Panel only for owners and mods.
+
+- Synergy and the **View Grades** button both open the Tier List. To point them somewhere else, change `SYNERGY_TAB` and `GRADES_TAB` at the top of `<script id="canvas-js">` in `source/index.html` (use a tab key such as `tier`, `games`, `polls`, `draw`, `gal` or `main`).
+- Until an owner edits the homepage icons, the Dashboard shows six cards: Chat Room, Games & Media, Drawing Board, Polls tab, Image gallery, Tier list. Once the owner edits them (✏️ Edit home), those icons are used everywhere.
+
 ## Changing images and icons
 
 Every image the site uses is a normal file in `public/assets/`. To change one:
