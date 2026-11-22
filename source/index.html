@@ -13309,7 +13309,7 @@ body.in-home #home{display:flex}
     '<div class="hm-deco hm-curve"></div><div class="hm-deco hm-curve2"></div>' +
     '<svg class="hm-deco hm-tri" viewBox="0 0 100 100" aria-hidden="true"><polygon points="14,14 88,50 14,86" fill="currentColor" stroke="currentColor" stroke-width="16" stroke-linejoin="round"/></svg>' +
     '<svg class="hm-deco hm-scal" viewBox="0 0 100 100" aria-hidden="true"><path id="hm-scalp" fill="currentColor"/></svg>' +
-    '<div class="hm-wrap"><div class="cv-head"><h1>Dashboard</h1></div><div class="hm-top">Los PureBreds 3.0</div>' +
+    '<div class="hm-wrap"><div class="cv-head"><h1>Dashboard</h1><div class="cv-ha"><button type="button" class="cv-sw">Switch to new dashboard view</button><button type="button" class="cv-km" aria-label="Dashboard options"><svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><circle cx="12" cy="5" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="12" cy="19" r="1.9"/></svg></button></div></div><div class="hm-top">Los PureBreds 3.0</div>' +
     '<img class="hm-mascot" alt="" draggable="false">' +
     '<div class="hm-banner">- Unification Initiation -</div>' +
     '<div class="hm-hint">Owner edit mode: tap an icon to change it, ◀ ▶ to move, ✕ to remove, or add a new one.</div>' +
@@ -13370,8 +13370,25 @@ body.in-home #home{display:flex}
     else { i.classList.add("emo"); if(!t.i) i.classList.add("def"); i.textContent = t.i || "⭐"; }
     return i;
   }
+  /* ---- Canvas layout: course-card text (code, title, term, the three shortcut icons) and the round ⋮ button ---- */
+  const CV_COLORS = ["#2063c1", "#626e7b", "#00558e", "#2063c1", "#626e7b", "#2063c1"];
+  const cvIco = d => '<svg viewBox="2 2 20 20" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">' + d + '</svg>';
+  const CV_ACT = cvIco('<path d="M3.5 9.5v5h3l8 4.5V5l-8 4.5z"/><path d="M6.5 14.5l1 4.5h2.2l-.9-3.2"/><path d="M18 9.5a3.5 3.5 0 0 1 0 5"/>') +
+    cvIco('<path d="M5 3.5h10.5V10M5 3.5v17h6.5"/><path d="M8 8h5M8 11.5h3M8 15h2"/><path d="M19.8 11.2l-6.3 6.3-.9 3 3-.9 6.3-6.3z"/>') +
+    cvIco('<path d="M4 4.5h11v7.5H9.5l-3.2 3v-3H4z"/><path d="M17.5 8.5H20v7.5h-1.8v3l-3.2-3H11.5v-1.5"/>');
+  const cvTerm = () => { const n = new Date(), y = n.getFullYear(), m = n.getMonth(); return m >= 7 ? y + "/" + (y + 1) + " S1" : m === 0 ? (y - 1) + "/" + y + " S1" : (y - 1) + "/" + y + " S2"; };
+  function cvCard(t, n, b){
+    b.classList.add("cv-card"); b.style.setProperty("--cv-c", CV_COLORS[n % CV_COLORS.length]);
+    const w = document.createElement("span"); w.className = "cv-cb";
+    const mk = (cls, txt) => { const x = document.createElement("span"); x.className = cls; x.textContent = txt; return x; };
+    const act = document.createElement("span"); act.className = "cv-act"; act.setAttribute("aria-hidden", "true"); act.innerHTML = CV_ACT;
+    w.append(mk("cv-code", "Los Purebreds PD: " + (n + 1)), mk("cv-ttl", t.n), mk("cv-term", cvTerm()), act);
+    const kb = document.createElement("span"); kb.className = "cv-kb"; kb.setAttribute("aria-hidden", "true");
+    kb.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="4" r="2.1"/><circle cx="12" cy="12" r="2.1"/><circle cx="12" cy="20" r="2.1"/></svg>';
+    b.append(kb); return w;
+  }
   function render(){
-    const list = current(), sig = JSON.stringify(list) + "|" + editing;
+    const list = current(), cvOn = document.body.classList.contains("lay-canvas"), sig = JSON.stringify(list) + "|" + editing + "|" + cvOn;
     const own = isOwner(); $$("hm-ed").classList.toggle("on", own);
     if(!own && editing){ editing = false; working = null; }
     if(sig === lastSig && !(grid.dataset.own !== String(own))) return;
@@ -13385,7 +13402,8 @@ body.in-home #home{display:flex}
       const cell = document.createElement("div"); cell.className = "hm-cell";
       const b = document.createElement("button"); b.type = "button"; b.className = "hm-it";
       const lb = document.createElement("span"); lb.textContent = t.n;
-      b.append(iconNode(t), lb);
+      if(cvOn){ b.append(iconNode(t), cvCard(t, n, b)); b.setAttribute("aria-label", t.n); }   // Canvas layout: a real Canvas course card
+      else b.append(iconNode(t), lb);
       b.onclick = () => { if(editing) openEditor(n); else go(t); };
       cell.appendChild(b);
       if(editing){
@@ -20948,19 +20966,19 @@ body.lm-edit .lm-btn{pointer-events:none}
 /* no live blur behind the always-on bars (they never overlap the messages, so it looked the same but cost a lot to repaint) */
 body[data-theme="imessage"] :is(#sb,#hdr,#tray,#replybar){-webkit-backdrop-filter:none;backdrop-filter:none}
 </style>
-<!-- =====================  CANVAS LAYOUT: left navigation rail, Tabs tray, Dashboard of cards (Settings > Layout > Canvas)  ===================== -->
+<!-- =====================  CANVAS LAYOUT: left navigation rail, Courses tray, Dashboard of course cards, course header + course menu on every tab (Settings > Layout > Canvas)  ===================== -->
 <style id="canvas-css">
 /* colours (also used by the little preview in Settings) */
 body[data-theme="canvas"]{
-  --bg:#fff; --side:#fff; --line:#c7cdd1; --row:#f5f5f5; --input:#fff;
-  --text:#2d3b45; --muted:#6b7780; --accent:#0374b5; --on-accent:#fff;
-  --me:#0374b5; --peer:#eef1f3; --t-me:#fff; --t-on:#fff; --r:4px; --r-sm:3px;
+  --bg:#fff; --side:#fff; --line:#d7dade; --row:#f5f5f5; --input:#fff;
+  --text:#273540; --muted:#59646c; --accent:#09508c; --on-accent:#fff;
+  --me:#09508c; --peer:#eef1f3; --t-me:#fff; --t-on:#fff; --r:4px; --r-sm:3px;
   color-scheme:light;
   font-family:Lato,"Helvetica Neue",Helvetica,Arial,sans-serif,"Noto Color Emoji","Apple Color Emoji","Segoe UI Emoji";
 }
 /* nothing below shows unless the Canvas layout is on */
-#cv-nav,#cv-tray,#cv-bar{display:none}
-body.lay-canvas{--cv-w:84px;--cv-link:#0374b5;--cv-ink:#2d3b45;--cv-line:#c7cdd1}
+#cv-nav,#cv-tray,#cv-bar,#cv-cn{display:none}
+body.lay-canvas{--cv-w:84px;--cv-link:#09508c;--cv-ink:#273540;--cv-line:#e8eaec;--cv-btn:#d7dade;--cv-rail:#334451;--cv-cnw:241px;--cv-rsw:288px;--cv-font:Lato,"Helvetica Neue",Helvetica,Arial,sans-serif}
 body.lay-canvas.cv-collapsed{--cv-w:54px}
 @media(max-width:700px){body.lay-canvas{--cv-w:54px}}
 
@@ -20968,94 +20986,149 @@ body.lay-canvas.cv-collapsed{--cv-w:54px}
 html body.lay-canvas #hdrwrap{display:none !important}
 html body.lay-canvas #main{padding:0 !important;background:#fff}
 
-/* ---------- navigation rail ---------- */
-body.lay-canvas #cv-nav{display:flex;flex:none;flex-direction:column;width:var(--cv-w);height:100%;background:#394b58;color:#fff;position:relative;z-index:6;font:400 12px/1.2 Lato,"Helvetica Neue",Helvetica,Arial,sans-serif;transition:width .18s ease}
+/* ---------- global navigation rail ---------- */
+body.lay-canvas #cv-nav{display:flex;flex:none;flex-direction:column;width:var(--cv-w);height:100%;background:var(--cv-rail);color:#fff;position:relative;z-index:6;font:400 12px/1.2 var(--cv-font);transition:width .18s ease}
 #cv-nav ul{list-style:none;margin:0;padding:0;flex:1 1 auto;min-height:0;overflow:hidden auto;scrollbar-width:none}
 #cv-nav ul::-webkit-scrollbar{display:none}
 #cv-nav li{margin:0;padding:0}
 #cv-nav li[hidden]{display:none}
-#cv-nav .cv-ni,#cv-nav .cv-col{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;width:100%;min-height:62px;margin:0;padding:8px 4px;border:0;border-radius:0;background:transparent;color:#fff;font:inherit;text-align:center;cursor:pointer;-webkit-appearance:none;appearance:none;box-shadow:none;transform:none}
+#cv-nav .cv-ni,#cv-nav .cv-col{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:6px;width:100%;min-height:62px;margin:0;padding:7px 4px 8px;border:0;border-radius:0;background:transparent;color:#fff;font:inherit;text-align:center;cursor:pointer;-webkit-appearance:none;appearance:none;box-shadow:none;transform:none}
 #cv-nav .cv-ni:hover,#cv-nav .cv-col:hover{background:rgba(255,255,255,.1);transform:none}
 #cv-nav .cv-ni:focus-visible,#cv-nav .cv-col:focus-visible{outline:2px solid #fff;outline-offset:-3px}
 #cv-nav .cv-ni.on{background:#fff;color:var(--cv-link)}
+#cv-nav .cv-ni.on:hover{background:#fff}
+#cv-nav .cv-ni.on .cv-lb{text-decoration:none}
 #cv-nav .cv-ic,#cv-nav .cv-ic svg{display:block;width:26px;height:26px;flex:none}
-#cv-nav .cv-lb{display:block;max-width:100%;text-decoration:underline;font-size:12px;line-height:1.15;overflow-wrap:anywhere}
-#cv-nav .cv-badge{position:absolute;top:6px;left:calc(50% + 4px);min-width:18px;height:18px;padding:0 5px;box-sizing:border-box;border-radius:9px;background:#fff;color:#2d3b45;font-size:11px;font-weight:700;line-height:18px;text-align:center;pointer-events:none}
+#cv-nav .cv-lb{display:block;max-width:100%;text-decoration:underline;font-size:13.5px;line-height:15px;overflow-wrap:anywhere}
+/* Account: round picture instead of an icon, a little taller */
+#cv-nav .cv-ni.acct{min-height:70px;gap:6px;padding-top:4px}
+#cv-nav .cv-av{display:block;flex:none;width:36px;height:36px;box-sizing:border-box;border:2px solid #fff;border-radius:50%;background:radial-gradient(circle at 34% 28%,#6aa6ea 0,#2f78d4 38%,#1d56ad 72%,#16418a 100%);box-shadow:0 0 0 1px rgba(0,0,0,.15)}
+#cv-nav .cv-av.has{background-size:cover;background-position:center}
+#cv-nav .cv-badge{position:absolute;top:6px;left:calc(50% + 4px);min-width:18px;height:18px;padding:0 5px;box-sizing:border-box;border-radius:9px;background:#fff;color:#273540;font-size:11px;font-weight:700;line-height:18px;text-align:center;pointer-events:none}
 #cv-nav .cv-badge[hidden]{display:none}
 #cv-nav .cv-badge.dot{min-width:10px;width:10px;height:10px;padding:0;border-radius:50%;top:12px;left:calc(50% + 10px);background:#ff6b5e}
 #cv-nav .cv-ni.on .cv-badge:not(.dot){background:var(--cv-link);color:#fff}
-#cv-nav .cv-col{flex:none;min-height:56px}
+#cv-nav .cv-col{flex:none;min-height:56px;justify-content:center;padding:8px 4px}
 #cv-nav .cv-col svg{display:block;width:26px;height:26px;transition:transform .18s}
 body.cv-collapsed #cv-nav .cv-col svg{transform:rotate(180deg)}
 body.cv-collapsed #cv-nav .cv-lb{display:none}
-body.cv-collapsed #cv-nav .cv-ni{min-height:50px}
-@media(max-width:700px){body.lay-canvas #cv-nav .cv-lb{display:none}body.lay-canvas #cv-nav .cv-ni{min-height:50px}body.lay-canvas #cv-nav .cv-col{display:none}}
+body.cv-collapsed #cv-nav .cv-ni{min-height:50px;justify-content:center;padding:8px 4px}
+body.cv-collapsed #cv-nav .cv-ni.acct{min-height:50px;justify-content:center;padding-top:8px}
+@media(max-width:700px){body.lay-canvas #cv-nav .cv-lb{display:none}body.lay-canvas #cv-nav .cv-ni{min-height:50px;justify-content:center;padding:8px 4px}body.lay-canvas #cv-nav .cv-ni.acct{min-height:50px;justify-content:center;padding-top:8px}body.lay-canvas #cv-nav .cv-col{display:none}}
 
-/* ---------- tray (Tabs / Users Online) ---------- */
-body.lay-canvas #cv-tray{display:flex;flex-direction:column;position:fixed;top:0;bottom:0;left:var(--cv-w);width:min(360px,calc(100vw - var(--cv-w)));box-sizing:border-box;background:#fff;color:var(--cv-ink);z-index:7;box-shadow:2px 0 10px rgba(0,0,0,.3);font:400 16px/1.4 Lato,"Helvetica Neue",Helvetica,Arial,sans-serif;visibility:hidden;opacity:0;transform:translateX(-14px);transition:transform .18s ease,opacity .18s ease,visibility 0s .18s}
+/* ---------- tray (Courses / Users Online) ---------- */
+body.lay-canvas #cv-tray{display:flex;flex-direction:column;position:fixed;top:0;bottom:0;left:var(--cv-w);width:min(360px,calc(100vw - var(--cv-w)));box-sizing:border-box;background:#fff;color:var(--cv-ink);z-index:7;box-shadow:2px 0 10px rgba(0,0,0,.3);font:400 16px/1.4 var(--cv-font);visibility:hidden;opacity:0;transform:translateX(-14px);transition:transform .18s ease,opacity .18s ease,visibility 0s .18s}
 body.lay-canvas #cv-tray.on{visibility:visible;opacity:1;transform:none;transition:transform .18s ease,opacity .18s ease,visibility 0s}
 #cv-tray .cv-th{flex:none;display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 24px;padding:20px 0 14px;border-bottom:1px solid var(--cv-line)}
-#cv-tray h2{margin:0;font:700 22px/1.2 Lato,"Helvetica Neue",Helvetica,Arial,sans-serif;color:var(--cv-ink)}
-#cv-tray .cv-x{flex:none;display:flex;align-items:center;justify-content:center;width:34px;height:30px;margin:0;padding:0;border:1px solid var(--cv-line);border-radius:3px;background:#fff;color:var(--cv-ink);cursor:pointer;box-shadow:none}
-#cv-tray .cv-x:hover{background:#f5f5f5}
+#cv-tray h2{margin:0;font:700 22px/1.2 var(--cv-font);color:var(--cv-ink)}
+#cv-tray .cv-x{flex:none;display:flex;align-items:center;justify-content:center;width:34px;height:30px;margin:0;padding:0;border:1px solid var(--cv-btn);border-radius:4px;background:#fff;color:var(--cv-ink);cursor:pointer;box-shadow:none}
+#cv-tray .cv-x:hover{background:#f2f4f4}
 #cv-tray .cv-x:focus-visible,#cv-tray .cv-link:focus-visible{outline:2px solid var(--cv-link);outline-offset:2px}
 #cv-tray .cv-body{flex:1 1 auto;min-height:0;overflow:hidden auto;padding:8px 24px 24px}
 #cv-tray ul{list-style:none;margin:0;padding:0}
 #cv-tray li{margin:0;padding:13px 0}
-#cv-tray .cv-link{display:inline;margin:0;padding:0;border:0;background:none;color:var(--cv-link);font:400 18px/1.35 Lato,"Helvetica Neue",Helvetica,Arial,sans-serif;text-decoration:underline;text-align:left;cursor:pointer;box-shadow:none;transform:none}
+#cv-tray .cv-link{display:inline;margin:0;padding:0;border:0;background:none;color:var(--cv-link);font:400 16px/1.35 var(--cv-font);text-decoration:underline;text-align:left;cursor:pointer;box-shadow:none;transform:none}
 #cv-tray .cv-link.cur{color:var(--cv-ink);font-weight:700}
-#cv-tray .cv-empty{padding:16px 0;color:#6b7780;font-size:14px}
-#cv-tray .cv-ul .prow{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #eef1f3;font-size:15px;color:var(--cv-ink);transform:none;background:none}
+#cv-tray .cv-empty{padding:16px 0;color:#59646c;font-size:14px}
+#cv-tray .cv-ul .prow{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--cv-line);font-size:15px;color:var(--cv-ink);transform:none;background:none}
 #cv-tray .cv-ul .pav{width:30px;height:30px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;background-size:cover;background-position:center}
 #cv-tray .cv-ul .pnm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-#cv-tray .cv-ul .pdev{font-size:12px;color:#6b7780;white-space:nowrap}
+#cv-tray .cv-ul .pdev{font-size:12px;color:#59646c;white-space:nowrap}
 @media(prefers-reduced-motion:reduce){body.lay-canvas #cv-tray,#cv-nav{transition:none !important}}
 
-/* ---------- breadcrumb bar on every page except the Dashboard ---------- */
-body.lay-canvas #cv-bar{display:flex;align-items:center;gap:8px;flex:none;min-height:48px;padding:0 24px;box-sizing:border-box;background:#fff;border-bottom:1px solid var(--cv-line);color:var(--cv-ink);font:400 14px/1.3 Lato,"Helvetica Neue",Helvetica,Arial,sans-serif}
+/* ---------- course page = every tab: header (menu button + name) and the course menu on the left ---------- */
+body.lay-canvas:not(.in-home) #main{position:relative;padding-left:var(--cv-cnw) !important;padding-right:var(--cv-rsw) !important}
+body.lay-canvas.cv-cn-off:not(.in-home) #main{padding-left:24px !important}
+body.lay-canvas #cv-bar{display:flex;align-items:center;gap:18px;flex:none;height:69px;box-sizing:border-box;margin:0 calc(24px - var(--cv-rsw)) 0 calc(24px - var(--cv-cnw));padding:0;background:#fff;border-bottom:1px solid var(--cv-line);color:var(--cv-ink);font:400 18px/1.3 var(--cv-font)}
+body.lay-canvas.cv-cn-off #cv-bar{margin-left:0}
 body.lay-canvas.in-home #cv-bar{display:none}
-#cv-bar .cv-crumb{margin:0;padding:0;border:0;background:none;color:var(--cv-link);font:inherit;cursor:pointer;box-shadow:none;transform:none}
-#cv-bar .cv-crumb:hover{text-decoration:underline}
-#cv-bar .cv-sep{color:#6b7780}
-#cv-bar .cv-cur{display:flex;align-items:center;gap:7px;min-width:0;font-weight:700}
-#cv-bar .cv-cur img{width:22px;height:22px;border-radius:50%;flex:none}
-#cv-bar #cv-status{margin-left:auto;font-size:12px;color:#6b7780;white-space:nowrap}
+#cv-bar #cv-hb{display:flex;align-items:center;justify-content:center;flex:none;width:36px;height:36px;margin:0 0 0 0;padding:0;border:0;border-radius:4px;background:none;color:#145891;cursor:pointer;box-shadow:none;transform:none}
+#cv-bar #cv-hb svg{display:block;width:24px;height:24px}
+#cv-bar #cv-hb:hover{background:#f2f4f4}
+#cv-bar #cv-hb:focus-visible{outline:2px solid var(--cv-link);outline-offset:1px}
+#cv-bar .cv-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--cv-ink)}
+#cv-bar #cv-ir{display:flex;align-items:center;gap:8px;flex:none;height:38px;margin:0;padding:0 12px;box-sizing:border-box;border:1px solid var(--cv-btn);border-radius:4px;background:#f2f4f4;color:var(--cv-ink);font:400 16px/1 var(--cv-font);cursor:pointer;box-shadow:none;transform:none;white-space:nowrap}
+#cv-bar #cv-ir:hover{background:#e8eaec}
+#cv-bar #cv-ir svg{display:block;width:20px;height:20px;color:#0a5a9e}
+#cv-rs{display:none}
+body.lay-canvas:not(.in-home) #cv-rs{display:block;position:absolute;z-index:3;right:24px;top:100px;bottom:0;width:240px;overflow:hidden auto;color:var(--cv-ink);font:400 14px/20px var(--cv-font)}
+#cv-rs .cv-rb{display:flex;align-items:center;gap:6px;width:100%;height:42px;margin:0 0 4px;padding:0 12px;box-sizing:border-box;border:1px solid var(--cv-line);border-radius:4px;background:#fff;color:var(--cv-ink);font:400 16px/1 var(--cv-font);text-align:left;cursor:pointer;box-shadow:none;transform:none}
+#cv-rs .cv-rb:hover{background:#f2f4f4}
+#cv-rs .cv-rb svg{display:block;width:16px;height:16px;flex:none}
+#cv-rs h2{margin:22px 0 0;padding:0 0 8px;border-bottom:1px solid var(--cv-line);font:700 16px/21px var(--cv-font);color:var(--cv-ink)}
+#cv-rs p{margin:9px 0 0;font:400 14px/20px var(--cv-font)}
+@media(max-width:1100px){body.lay-canvas{--cv-rsw:0px}#cv-rs,body.lay-canvas:not(.in-home) #cv-rs{display:none}#cv-bar #cv-ir{display:none}}
+#cv-bar #cv-status{margin-left:auto;font-size:12px;color:#59646c;white-space:nowrap}
 #cv-bar #cv-status:empty{display:none}
 
-/* ---------- Dashboard = the home view, drawn as Canvas cards ---------- */
+body.lay-canvas:not(.in-home) #cv-cn{display:block;position:absolute;z-index:4;left:24px;top:70px;bottom:0;width:193px;box-sizing:border-box;overflow:hidden auto;padding:24px 0 24px;background:#fff;color:var(--cv-ink);font:400 16px/1.3 var(--cv-font)}
+body.lay-canvas.cv-cn-off #cv-cn{display:none}
+#cv-cn .cv-tm{margin:0 0 14px 12px;font:italic 400 11px/14px var(--cv-font);color:var(--cv-ink)}
+#cv-cn ul{list-style:none;margin:0;padding:0}
+#cv-cn li{display:flex;align-items:center;min-height:36px;margin:0 0 1px;padding:0 0 0 4px;border-left:2px solid transparent}
+#cv-cn li.cur{border-left-color:var(--cv-ink)}
+#cv-cn .cv-cl{display:inline;margin:0;padding:2px 0;border:0;background:none;color:var(--cv-link);font:400 16px/1.3 var(--cv-font);text-decoration:underline;text-align:left;cursor:pointer;box-shadow:none;transform:none;overflow-wrap:anywhere}
+#cv-cn li.cur .cv-cl{color:var(--cv-ink);font-weight:700}
+#cv-cn .cv-cl:focus-visible{outline:2px solid var(--cv-link);outline-offset:2px}
+@media(max-width:900px){
+  body.lay-canvas:not(.in-home) #main{padding-left:0 !important}
+  body.lay-canvas #cv-bar{margin:0 12px;gap:14px}
+  body.lay-canvas:not(.in-home) #cv-cn{display:none;left:0;top:69px;width:min(260px,82vw);padding-left:12px;box-shadow:2px 0 10px rgba(0,0,0,.3)}
+  body.lay-canvas.cv-cn-open:not(.in-home) #cv-cn{display:block}
+}
+
+/* ---------- Dashboard = the home view, drawn as Canvas course cards ---------- */
 .cv-head,.cv-side{display:none}
-html body.lay-canvas #home{background:#fff;color:var(--cv-ink);font-family:Lato,"Helvetica Neue",Helvetica,Arial,sans-serif;justify-content:flex-start;align-items:stretch;overflow:hidden auto}
+html body.lay-canvas #home{background:#fff;color:var(--cv-ink);font-family:var(--cv-font);justify-content:flex-start;align-items:stretch;overflow:hidden auto}
 html body.lay-canvas #home *{font-family:inherit}
 body.lay-canvas #home .hm-deco,body.lay-canvas #home .hm-mascot,body.lay-canvas #home .hm-banner,body.lay-canvas #home .hm-top{display:none !important}
-body.lay-canvas #home .hm-page{display:flex;flex-direction:row;align-items:flex-start;width:100%;max-width:none;min-height:100%;box-sizing:border-box;padding:22px 26px 40px 48px;background:#fff;overflow:visible}
+body.lay-canvas #home .hm-page{display:flex;flex-direction:row;align-items:flex-start;width:100%;max-width:none;min-height:100%;box-sizing:border-box;padding:21px 26px 40px 50px;background:#fff;overflow:visible}
 body.lay-canvas #home .hm-wrap{flex:1 1 auto;min-width:0;width:auto;max-width:none;margin:0;padding:0;align-items:stretch}
-body.lay-canvas #home .cv-head{display:block;margin:0 0 24px;padding:0 0 15px;border-bottom:1px solid var(--cv-line)}
-body.lay-canvas #home .cv-head h1{margin:0;font:700 36px/1.2 Lato,"Helvetica Neue",Helvetica,Arial,sans-serif;color:var(--cv-ink);text-align:left}
+body.lay-canvas #home .cv-head{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0 0 24px;padding:0 0 15px;border-bottom:1px solid var(--cv-line)}
+body.lay-canvas #home .cv-head h1{margin:0;font:700 36px/44px var(--cv-font);color:var(--cv-ink);text-align:left}
+body.lay-canvas #home .cv-ha{display:flex;align-items:center;gap:20px;flex:none;margin-right:7px;position:relative;top:2px}
+body.lay-canvas #home .cv-sw{height:38px;margin:0;padding:0 12px;box-sizing:border-box;border:1px solid var(--cv-btn);border-radius:4px;background:#f2f4f4;color:var(--cv-ink);font:400 16px/1 var(--cv-font);cursor:pointer;box-shadow:none;transform:none;white-space:nowrap}
+body.lay-canvas #home .cv-sw:hover{background:#e8eaec}
+body.lay-canvas #home .cv-km{display:flex;align-items:center;justify-content:center;width:24px;height:38px;margin:0;padding:0;border:0;border-radius:4px;background:none;color:var(--cv-ink);cursor:pointer;box-shadow:none;transform:none}
+body.lay-canvas #home .cv-km svg{display:block;width:20px;height:20px}
+body.lay-canvas #home .cv-sw:focus-visible,body.lay-canvas #home .cv-km:focus-visible{outline:2px solid var(--cv-link);outline-offset:2px}
 body.lay-canvas #home .hm-hint{margin:-8px 0 18px;text-align:left;max-width:none;color:var(--cv-ink)}
-body.lay-canvas #home .hm-grid{display:grid;grid-template-columns:repeat(auto-fill,262px);gap:34px;justify-content:start;max-width:none;padding:0}
+body.lay-canvas #home .hm-grid{display:grid;grid-template-columns:repeat(auto-fill,262px);gap:35px;justify-content:start;max-width:none;padding:0}
 body.lay-canvas #home .hm-cell{width:262px;display:block}
-body.lay-canvas #home .hm-it{width:262px;display:flex;flex-direction:column;align-items:stretch;gap:0;padding:0;overflow:hidden;border-radius:4px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.4);color:var(--cv-ink);text-align:center;transition:box-shadow .15s}
-body.lay-canvas #home .hm-it:hover,body.lay-canvas #home .hm-it:focus-visible{transform:none;box-shadow:0 2px 8px rgba(0,0,0,.45)}
+
+/* a course card: coloured header (picture or flat colour) + course code, title, term and the three shortcut icons */
+body.lay-canvas #home .hm-it{position:relative;width:262px;height:271px;display:flex;flex-direction:column;align-items:stretch;gap:0;padding:0;overflow:hidden;border-radius:4px;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.28);color:var(--cv-ink);text-align:left;font:400 16px/1.3 var(--cv-font);transition:box-shadow .15s}
+body.lay-canvas #home .hm-it:hover,body.lay-canvas #home .hm-it:focus-visible{transform:none;box-shadow:0 2px 6px rgba(0,0,0,.28)}
 body.lay-canvas #home .hm-it:focus-visible{outline:2px solid var(--cv-link);outline-offset:2px}
-body.lay-canvas #home .hm-it>.hm-ic{width:100%;height:146px;border-radius:0;box-shadow:none;display:flex;align-items:center;justify-content:center;overflow:hidden;background:linear-gradient(#6f6f6f,#2c2c2c)}
+body.lay-canvas #home .hm-it>.hm-ic{flex:none;width:100%;height:146px;border-radius:0;box-shadow:none;display:flex;align-items:center;justify-content:center;overflow:hidden;background:var(--cv-c,#2063c1)}
 body.lay-canvas #home .hm-it:hover>.hm-ic,body.lay-canvas #home .hm-it:focus-visible>.hm-ic{box-shadow:none}
-body.lay-canvas #home .hm-it>.hm-ic img{width:108px;height:108px;border-radius:50%;object-fit:cover}
-body.lay-canvas #home .hm-it>.hm-ic.emo{font-size:58px;line-height:1;color:#fff;background:linear-gradient(#6f6f6f,#2c2c2c)}
-body.lay-canvas #home .hm-it>span:not(.hm-ic){display:flex;align-items:center;justify-content:center;min-height:98px;padding:12px 16px;box-sizing:border-box;font:400 20px/1.25 "Helvetica Neue",Helvetica,Arial,sans-serif;color:var(--cv-ink);overflow-wrap:anywhere}
-body.lay-canvas #home .hm-it:hover>span:not(.hm-ic){text-decoration:underline}
+body.lay-canvas #home .hm-it>.hm-ic img{width:100%;height:100%;border-radius:0;object-fit:cover}
+body.lay-canvas #home .hm-it>.hm-ic.emo{font-size:58px;line-height:1;color:#fff;background:var(--cv-c,#2063c1)}
+body.lay-canvas #home .cv-kb{position:absolute;top:13px;right:12px;display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:50%;background:var(--cv-c,#2063c1);color:#fff}
+body.lay-canvas #home .cv-kb svg{display:block;width:24px;height:24px}
+body.lay-canvas #home .cv-cb{display:block;flex:1 1 auto;min-height:0;padding:13px 20px 0;text-align:left}
+body.lay-canvas #home .cv-cb>span{display:block}
+body.lay-canvas #home .cv-code{font:700 14px/19px var(--cv-font);color:var(--cv-c,#2063c1);text-decoration:underline;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+body.lay-canvas #home .cv-ttl{margin-top:5px;font:400 16px/20px var(--cv-font);color:var(--cv-link);text-decoration:underline;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+body.lay-canvas #home .cv-term{margin-top:2px;font:400 12px/14px var(--cv-font);color:var(--cv-link);text-decoration:underline}
+body.lay-canvas #home .cv-act{display:flex !important;align-items:center;gap:45px;margin:12px 0 0 3px;padding:0;height:20px;color:#3e5466}
+body.lay-canvas #home .cv-act svg{display:block;width:20px;height:20px;flex:none}
 body.lay-canvas #home.editing .hm-cell .hm-ic{outline:2px dashed #fff;outline-offset:-8px}
+body.lay-canvas #home.editing .cv-kb{display:none}
 body.lay-canvas #home .hm-tools{top:8px;padding:0 8px}
-body.lay-canvas #home .hm-add .hm-it{box-shadow:none;border:2px dashed var(--cv-line)}
-body.lay-canvas #home .hm-add .hm-it>.hm-ic{background:#fff;border:0;color:var(--cv-link);font-size:44px}
+body.lay-canvas #home .hm-add .hm-it{box-shadow:none;border:2px dashed var(--cv-btn);align-items:center;justify-content:center;gap:10px}
+body.lay-canvas #home .hm-add .hm-it>.hm-ic{width:auto;height:auto;background:#fff;border:0;color:var(--cv-link);font-size:44px}
+body.lay-canvas #home .hm-add .hm-it>span:not(.hm-ic){display:block;font:400 16px/1.3 var(--cv-font);color:var(--cv-link);text-decoration:underline}
 body.lay-canvas #home .hm-ed{top:14px;right:18px}
-body.lay-canvas #home .hm-ed button{border:1px solid var(--cv-line);border-radius:3px;background:#fff;color:var(--cv-ink);box-shadow:none}
+body.lay-canvas #home .hm-ed button{border:1px solid var(--cv-btn);border-radius:4px;background:#fff;color:var(--cv-ink);box-shadow:none}
 body.lay-canvas #home .hm-ed button.go{background:var(--cv-link);border-color:var(--cv-link);color:#fff}
 
-body.lay-canvas #home .cv-side{display:block;flex:none;width:250px;margin:6px 0 0 70px;color:var(--cv-ink)}
-body.lay-canvas #home .cv-side h2{margin:0;padding:0 0 8px;border-bottom:1px solid var(--cv-line);font:700 16px/1.3 Lato,"Helvetica Neue",Helvetica,Arial,sans-serif;color:var(--cv-ink)}
-body.lay-canvas #home .cv-side p{margin:12px 0 30px;font-size:14px;line-height:1.4}
-body.lay-canvas #home .cv-grades{display:block;width:100%;margin:6px 0 0;padding:10px 14px;box-sizing:border-box;border:1px solid var(--cv-line);border-radius:3px;background:#fff;color:var(--cv-ink);font:400 16px/1.4 Lato,"Helvetica Neue",Helvetica,Arial,sans-serif;text-align:left;cursor:pointer;box-shadow:none;transform:none}
-body.lay-canvas #home .cv-grades:hover{background:#f5f5f5}
+/* Dashboard sidebar: To Do, Recent Feedback, View Grades */
+body.lay-canvas #home .cv-side{display:block;flex:none;width:240px;margin:18px 0 0 72px;color:var(--cv-ink)}
+body.lay-canvas #home .cv-side h2{margin:0;padding:0 0 8px;border-bottom:1px solid var(--cv-line);font:700 16px/21px var(--cv-font);color:var(--cv-ink)}
+body.lay-canvas #home .cv-side p{margin:9px 0 20px;font:400 14px/20px var(--cv-font);color:var(--cv-ink)}
+body.lay-canvas #home .cv-grades{display:block;width:100%;height:42px;margin:14px 0 0;padding:0 14px;box-sizing:border-box;border:1px solid var(--cv-line);border-radius:4px;background:#fff;color:var(--cv-ink);font:400 16px/1 var(--cv-font);text-align:left;cursor:pointer;box-shadow:none;transform:none}
+body.lay-canvas #home .cv-grades:hover{background:#f2f4f4}
 body.lay-canvas #home .cv-grades:focus-visible{outline:2px solid var(--cv-link);outline-offset:2px}
 @media(max-width:1000px){
   body.lay-canvas #home .hm-page{flex-direction:column;padding:18px 16px 32px 24px}
@@ -21065,12 +21138,14 @@ body.lay-canvas #home .cv-grades:focus-visible{outline:2px solid var(--cv-link);
 @media(max-width:600px){
   body.lay-canvas #home .hm-page{padding:14px 12px 28px}
   body.lay-canvas #home .cv-head h1{font-size:28px}
+  body.lay-canvas #home .cv-sw{display:none}
   body.lay-canvas #home .hm-grid{grid-template-columns:repeat(auto-fill,minmax(136px,1fr));gap:16px}
   body.lay-canvas #home .hm-cell,body.lay-canvas #home .hm-it{width:100%}
-  body.lay-canvas #home .hm-it>.hm-ic{height:104px}
-  body.lay-canvas #home .hm-it>.hm-ic img{width:76px;height:76px}
-  body.lay-canvas #home .hm-it>span:not(.hm-ic){min-height:70px;font-size:16px;padding:8px 10px}
-  body.lay-canvas #cv-bar{padding:0 12px}
+  body.lay-canvas #home .hm-it{height:auto;min-height:236px}
+  body.lay-canvas #home .hm-it>.hm-ic{height:96px}
+  body.lay-canvas #home .cv-cb{padding:10px 12px 12px}
+  body.lay-canvas #home .cv-act{gap:24px}
+  body.lay-canvas #home .cv-kb{top:8px;right:8px;width:30px;height:30px}
 }
 </style>
 <script id="canvas-js">
@@ -21078,11 +21153,12 @@ body.lay-canvas #home .cv-grades:focus-visible{outline:2px solid var(--cv-link);
   "use strict";
   /* Where the two "grades" shortcuts go (a tab key: tier, games, polls, draw, gal, main …). Change these two words to point them anywhere. */
   var SYNERGY_TAB = "tier", GRADES_TAB = "tier";
-  var d = document, B = d.body, KEY = "pb_cv_collapsed";
+  var d = document, B = d.body, KEY = "pb_cv_collapsed", KEY2 = "pb_cv_cn_off";
   function $(id){ return d.getElementById(id); }
   function wanted(){ try{ return typeof pbLayout === "function" && pbLayout() === "canvas"; }catch(e){ return false; } }
   function cur(){ try{ return typeof curCh !== "undefined" ? curCh : "main"; }catch(e){ return "main"; } }
   function goChannel(k){ var b = d.querySelector('#chtabs button[data-ch="' + k + '"]'); if(b) b.click(); else if(typeof setChannel === "function") setChannel(k); }
+  function term(){ var n = new Date(), y = n.getFullYear(), m = n.getMonth(); return m >= 7 ? y + "/" + (y + 1) + " S1" : m === 0 ? (y - 1) + "/" + y + " S1" : (y - 1) + "/" + y + " S2"; }
 
   /* ---------- icons (outline, 26px, they take the colour of the text) ---------- */
   function svg(inner){ return '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' + inner + '</svg>'; }
@@ -21095,26 +21171,27 @@ body.lay-canvas #home .cv-grades:focus-visible{outline:2px solid var(--cv-link);
     online: svg('<circle cx="9" cy="8" r="3.2"/><path d="M2.8 19.5c0-3.4 2.8-5.6 6.2-5.6s6.2 2.2 6.2 5.6"/><path d="M15.5 4.9a3.1 3.1 0 0 1 0 6"/><path d="M17.2 13.9c2.4.5 4 2.4 4 5.2"/>'),
     dash: svg('<path d="M3.2 17.5A9.4 9.4 0 1 1 20.8 17.5"/><path d="M12 17.5l4.2-6.2"/><circle cx="12" cy="17.5" r="1.3" fill="currentColor"/><path d="M12 6v1.8M6.2 8.6l1.2 1.2M17.8 8.6l-1.2 1.2"/>'),
     tabs: svg('<path d="M6 3.5h11.5A1.5 1.5 0 0 1 19 5v14.5H7.5A1.5 1.5 0 0 1 6 18z"/><path d="M6 18a1.5 1.5 0 0 1 1.5-1.5H19"/><path d="M9.5 7.5h6"/>'),
-    gear: svg('<circle cx="12" cy="12" r="8.4" stroke-width="2.8" stroke-dasharray="3.3 3.3"/><circle cx="12" cy="12" r="6.3"/><circle cx="12" cy="12" r="2.6"/>'),
     log: svg('<path d="M6 3h8.5L19 7.5V21H6z"/><path d="M14 3v5h5"/><path d="M9 12.5h7M9 16h7"/>'),
     eh: svg('<circle cx="12" cy="12" r="9"/><path d="M12 7v5.2l3.4 2"/>'),
     add: svg('<rect x="3.5" y="3.5" width="17" height="17" rx="3"/><path d="M12 8v8M8 12h8"/>'),
     syn: svg(pinwheel()),
     admin: svg('<path d="M13.2 3.6l7.2 7.2-3 3-7.2-7.2z"/><path d="M12.2 11.8L4.6 19.4" stroke-width="2.7"/>'),
     col: svg('<path d="M4 4v16"/><path d="M20 12H8.5M12.5 7.5L8 12l4.5 4.5"/>'),
-    x: svg('<path d="M6 6l12 12M18 6L6 18"/>')
+    x: svg('<path d="M6 6l12 12M18 6L6 18"/>'),
+    hb: svg('<path d="M0 4.5h24M0 12h24M0 19.5h24" stroke-width="1.5" stroke-linecap="butt"/>')
   };
+  /* Same order as the real Canvas rail. Account opens Settings, Courses is the tray with every tab, History is the edit history. */
   var ITEMS = [
-    ["online", "Users Online", IC.online], ["dash", "Dashboard", IC.dash], ["tabs", "Tabs", IC.tabs], ["settings", "Settings", IC.gear],
-    ["log", "Changelog", IC.log], ["eh", "Edit History", IC.eh], ["add", "Add Tabs", IC.add], ["syn", "Synergy", IC.syn], ["admin", "Admin Panel", IC.admin]
+    ["account", "Account", ""], ["dash", "Dashboard", IC.dash], ["tabs", "Courses", IC.tabs], ["online", "Users Online", IC.online],
+    ["log", "Changelog", IC.log], ["eh", "History", IC.eh], ["add", "Add Tabs", IC.add], ["syn", "Synergy", IC.syn], ["admin", "Admin Panel", IC.admin]
   ];
 
-  /* ---------- build the rail, the tray and the breadcrumb bar once ---------- */
+  /* ---------- build the rail, the tray, the course header and the course menu once ---------- */
   var nav = d.createElement("nav"); nav.id = "cv-nav"; nav.setAttribute("aria-label", "Global Navigation");
   var ul = d.createElement("ul"), btn = {}, bdg = {};
   ITEMS.forEach(function(it){
-    var li = d.createElement("li"), b = d.createElement("button"); b.type = "button"; b.className = "cv-ni"; b.dataset.k = it[0]; b.title = it[1];
-    b.innerHTML = '<span class="cv-ic">' + it[2] + '</span><span class="cv-lb"></span>'; b.querySelector(".cv-lb").textContent = it[1];
+    var li = d.createElement("li"), b = d.createElement("button"); b.type = "button"; b.className = "cv-ni" + (it[0] === "account" ? " acct" : ""); b.dataset.k = it[0]; b.title = it[1];
+    b.innerHTML = (it[0] === "account" ? '<span class="cv-av" aria-hidden="true"></span>' : '<span class="cv-ic">' + it[2] + '</span>') + '<span class="cv-lb"></span>'; b.querySelector(".cv-lb").textContent = it[1];
     if(it[0] === "online" || it[0] === "log"){ var g = d.createElement("span"); g.className = "cv-badge" + (it[0] === "log" ? " dot" : ""); g.hidden = true; b.appendChild(g); bdg[it[0]] = g; }
     li.appendChild(b); ul.appendChild(li); btn[it[0]] = b; li._k = it[0];
   });
@@ -21124,19 +21201,35 @@ body.lay-canvas #home .cv-grades:focus-visible{outline:2px solid var(--cv-link);
   var sb = $("sb"); B.insertBefore(nav, sb || B.firstChild);
 
   var tray = d.createElement("div"); tray.id = "cv-tray"; tray.setAttribute("role", "dialog"); tray.setAttribute("aria-modal", "false"); tray.setAttribute("aria-hidden", "true");
-  tray.innerHTML = '<div class="cv-th"><h2 id="cv-tt"></h2><button type="button" class="cv-x" title="Close" aria-label="Close tray">' + IC.x.replace('width="26"', "") + '</button></div><div class="cv-body" id="cv-tb"></div>';
+  tray.innerHTML = '<div class="cv-th"><h2 id="cv-tt"></h2><button type="button" class="cv-x" title="Close" aria-label="Close tray">' + IC.x + '</button></div><div class="cv-body" id="cv-tb"></div>';
   B.appendChild(tray);
   var tt = tray.querySelector("#cv-tt"), tb = tray.querySelector("#cv-tb"), xb = tray.querySelector(".cv-x");
   xb.firstChild.setAttribute("width", "16"); xb.firstChild.setAttribute("height", "16");
 
+  /* header on every tab: menu button (shows / hides the course menu) + the tab's name */
   var bar = d.createElement("div"); bar.id = "cv-bar"; bar.setAttribute("role", "navigation"); bar.setAttribute("aria-label", "breadcrumb");
-  var crumbs = d.createElement("span"); crumbs.style.cssText = "display:flex;align-items:center;gap:8px;min-width:0";
+  var hb = d.createElement("button"); hb.type = "button"; hb.id = "cv-hb"; hb.title = "Show/hide course navigation"; hb.setAttribute("aria-label", "Show/hide course navigation"); hb.setAttribute("aria-expanded", "true"); hb.innerHTML = IC.hb;
+  var crumbs = d.createElement("span"); crumbs.className = "cv-name";
   var stat = d.createElement("span"); stat.id = "cv-status"; stat.setAttribute("role", "status");
-  bar.append(crumbs, stat);
+  var ir = d.createElement("button"); ir.type = "button"; ir.id = "cv-ir"; ir.innerHTML = svg('<path d="M3 5.5h7c1 0 2 .6 2 1.8V19c0-1-1-1.5-2-1.5H3z"/><path d="M12 7.3c0-1.2 1-1.8 2-1.8h2"/><path d="M16 12.5v3M18.5 11v6M21 12.5v3" stroke="#2d8fe0"/>') + '<span>Immersive Reader</span>';
+  bar.append(hb, crumbs, stat, ir);
   var main = $("main"); if(main) main.insertBefore(bar, main.firstChild);
 
+  /* right sidebar on every tab: course shortcuts, To Do, Recent Feedback */
+  var rs = d.createElement("aside"); rs.id = "cv-rs"; rs.setAttribute("aria-label", "Course sidebar");
+  var RB = [["View Course Stream", '<path d="M3 20V12M9 20V4M15 20V9M21 20V14"/>', "main"], ["View Course Calendar", '<rect x="3.5" y="4.5" width="17" height="16" rx="1.5"/><path d="M3.5 9h17M8 3v3M16 3v3"/>', ""], ["View Course Notifications", '<path d="M6 17V11a6 6 0 0 1 12 0v6l1.5 2h-15z"/><path d="M10 21h4"/>', ""]];
+  RB.forEach(function(r){ var b = d.createElement("button"); b.type = "button"; b.className = "cv-rb"; b.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + r[1] + '</svg><span></span>'; b.lastChild.textContent = r[0]; if(r[2]) b.onclick = function(){ goChannel(r[2]); }; rs.appendChild(b); });
+  rs.insertAdjacentHTML("beforeend", "<h2>To Do</h2><p>Nothing for now</p><h2>Recent Feedback</h2><p>Nothing for now</p>");
+  if(main) main.appendChild(rs);
+
+  /* course menu (left of the tab, like Course Navigation in Canvas) */
+  var cn = d.createElement("nav"); cn.id = "cv-cn"; cn.setAttribute("aria-label", "Course Navigation");
+  cn.innerHTML = '<div class="cv-tm"></div><ul></ul>';
+  var cnTerm = cn.querySelector(".cv-tm"), cnList = cn.querySelector("ul");
+  if(main) main.appendChild(cn);
+
   /* ---------- helpers ---------- */
-  var isOn = false, sig = "";
+  var isOn = false, sig = "", cnSig = "";
   function tabList(){
     var out = [];
     Array.prototype.forEach.call(d.querySelectorAll("#chtabs button[data-ch]"), function(b, i){
@@ -21166,11 +21259,11 @@ body.lay-canvas #home .cv-grades:focus-visible{outline:2px solid var(--cv-link);
       if(s !== sig){ sig = s; try{ fillRoster(box); }catch(e){ box.textContent = ""; } if(!box.firstChild){ var em = d.createElement("div"); em.className = "cv-empty"; em.textContent = "Nobody is online right now."; box.appendChild(em); } }
       return;
     }
-    tt.textContent = "Tabs";
+    tt.textContent = "Courses";
     var tabs = tabList(), c = cur(), s2 = "t:" + c + "|" + tabs.map(function(t){ return t.k + "=" + t.name; }).join(",");
     if(s2 === sig && tb.firstChild && tb.firstChild.tagName === "UL") return;
     sig = s2; tb.replaceChildren();
-    if(!tabs.length){ var e2 = d.createElement("div"); e2.className = "cv-empty"; e2.textContent = "No tabs yet."; tb.appendChild(e2); return; }
+    if(!tabs.length){ var e2 = d.createElement("div"); e2.className = "cv-empty"; e2.textContent = "No courses yet."; tb.appendChild(e2); return; }
     var list = d.createElement("ul");
     tabs.forEach(function(t){
       var li = d.createElement("li"), a = d.createElement("button"); a.type = "button"; a.className = "cv-link" + (t.k === c ? " cur" : ""); a.textContent = t.name;
@@ -21187,21 +21280,35 @@ body.lay-canvas #home .cv-grades:focus-visible{outline:2px solid var(--cv-link);
   }
   function closeTray(){ if(!tray.classList.contains("on")) return; tray.classList.remove("on"); tray.setAttribute("aria-hidden", "true"); paint(); }
 
-  /* ---------- which rail item is lit + the breadcrumb ---------- */
+  /* ---------- course menu ---------- */
+  function fillCourseNav(){
+    var tabs = tabList(), c = cur(), s = c + "|" + tabs.map(function(t){ return t.k + "=" + t.name; }).join(",");
+    if(s === cnSig) return; cnSig = s;
+    cnTerm.textContent = term(); cnList.replaceChildren();
+    tabs.forEach(function(t){
+      var li = d.createElement("li"), a = d.createElement("button"); a.type = "button"; a.className = "cv-cl"; a.textContent = t.name;
+      if(t.k === c){ li.className = "cur"; a.setAttribute("aria-current", "page"); }
+      a.onclick = function(){ B.classList.remove("cv-cn-open"); t.btn.click(); };
+      li.appendChild(a); cnList.appendChild(li);
+    });
+  }
+  function narrow(){ try{ return window.matchMedia("(max-width:900px)").matches; }catch(e){ return false; } }
+  function setCn(off, keep){ B.classList.toggle("cv-cn-off", !!off); if(keep){ try{ localStorage.setItem(KEY2, off ? "1" : "0"); }catch(e){} } }
+  function syncHb(){ hb.setAttribute("aria-expanded", String(narrow() ? B.classList.contains("cv-cn-open") : !B.classList.contains("cv-cn-off"))); }
+  hb.addEventListener("click", function(){ if(narrow()) B.classList.toggle("cv-cn-open"); else setCn(!B.classList.contains("cv-cn-off"), true); syncHb(); });
+  try{ setCn(localStorage.getItem(KEY2) === "1", false); }catch(e){}
+
+  /* ---------- which rail item is lit + the header ---------- */
   var lastCrumb = "";
   function paint(){
     if(!isOn) return;
     var c = cur(), open = trayMode();
     ITEMS.forEach(function(it){ var on = open ? it[0] === open : (c === "home" ? it[0] === "dash" : it[0] === "tabs"); btn[it[0]].classList.toggle("on", on); if(on) btn[it[0]].setAttribute("aria-current", open ? "true" : "page"); else btn[it[0]].removeAttribute("aria-current"); });
-    var key = c + "|" + (c === "home" ? "" : label(c).name + "|" + label(c).img);
-    if(key === lastCrumb) return; lastCrumb = key; crumbs.replaceChildren();
-    if(c === "home") return;
-    var home = d.createElement("button"); home.type = "button"; home.className = "cv-crumb"; home.textContent = "Dashboard"; home.onclick = function(){ closeTray(); if(typeof setChannel === "function") setChannel("home"); };
-    var sep = d.createElement("span"); sep.className = "cv-sep"; sep.textContent = "›"; sep.setAttribute("aria-hidden", "true");
-    var l = label(c), here = d.createElement("span"); here.className = "cv-cur";
-    if(l.img){ var im = new Image(); im.alt = ""; im.src = l.img; here.appendChild(im); }
-    var nm = d.createElement("span"); nm.textContent = l.name; nm.setAttribute("aria-current", "page"); here.appendChild(nm);
-    crumbs.append(home, sep, here);
+    if(c !== "home") fillCourseNav();
+    var key = c + "|" + (c === "home" ? "" : label(c).name);
+    if(key === lastCrumb) return; lastCrumb = key;
+    B.classList.remove("cv-cn-open"); syncHb();
+    crumbs.textContent = c === "home" ? "" : label(c).name;
   }
 
   /* ---------- things that change by themselves: badges, who may see Add Tabs / Admin Panel ---------- */
@@ -21225,7 +21332,7 @@ body.lay-canvas #home .cv-grades:focus-visible{outline:2px solid var(--cv-link);
     if(k === "online" || k === "tabs"){ if(open === k) closeTray(); else openTray(k); return; }
     closeTray();
     if(k === "dash"){ if(typeof setChannel === "function") setChannel("home"); }
-    else if(k === "settings") press("hdr-set");
+    else if(k === "account") press("hdr-set");
     else if(k === "log") press("hdr-log");
     else if(k === "eh") press("hdr-eh");
     else if(k === "add"){ var p = d.querySelector("#chtabs button.ct-plus"); if(p) p.click(); }
@@ -21239,15 +21346,16 @@ body.lay-canvas #home .cv-grades:focus-visible{outline:2px solid var(--cv-link);
   d.addEventListener("keydown", function(e){ if(e.key === "Escape" && trayMode()){ closeTray(); try{ btn[tray.dataset.mode].focus(); }catch(_){} } });
   d.addEventListener("click", function(e){ if(trayMode() && !tray.contains(e.target) && !nav.contains(e.target)) closeTray(); });
   var grades = d.querySelector("#home .cv-grades"); if(grades) grades.addEventListener("click", function(){ goChannel(GRADES_TAB); });
+  try{ window.matchMedia("(max-width:900px)").addEventListener("change", syncHb); }catch(e){}
 
   /* ---------- turning the layout on / off ---------- */
   function sync(go){
     var on = wanted(); B.classList.toggle("lay-canvas", on);
-    if(on && !isOn && !d.getElementById("cv-lato")){ try{ var l = d.createElement("link"); l.id = "cv-lato"; l.rel = "stylesheet"; l.href = "https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap"; d.head.appendChild(l); }catch(e){} }
+    if(on && !isOn && !d.getElementById("cv-lato")){ try{ var l = d.createElement("link"); l.id = "cv-lato"; l.rel = "stylesheet"; l.href = "https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,400;0,700;1,400&display=swap"; d.head.appendChild(l); }catch(e){} }
     isOn = on;
     try{ if(window.__pbHomeRender) window.__pbHomeRender(); }catch(e){}        // the Dashboard cards differ from the old home icons
-    if(!on){ closeTray(); return; }
-    lastCrumb = ""; vis();
+    if(!on){ closeTray(); B.classList.remove("cv-cn-open"); return; }
+    lastCrumb = ""; cnSig = ""; vis();
     if(go && typeof setChannel === "function"){ try{ setChannel("home"); }catch(e){} }
   }
   window.__pbCanvasSync = sync;
