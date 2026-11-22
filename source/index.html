@@ -13427,7 +13427,7 @@ body.in-home #home{display:flex}
     w.append(mk("cv-code", pref.nick || cvDefNick(n)), mk("cv-ttl", t.n), mk("cv-term", cvTerm()), act);
     return w;
   }
-  const cvDefNick = n => "Los Purebreds PD: " + (n + 1);
+  const cvDefNick = n => { const l = current(); return (l[n] ? l[n].n : "Tab") + " PD: " + (n + 1); };
   function cvKebab(t, n, cell){
     const kb = document.createElement("button"); kb.type = "button"; kb.className = "cv-kb"; kb.setAttribute("aria-label", "Settings for " + t.n); kb.setAttribute("aria-haspopup", "dialog");
     kb.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><circle cx="12" cy="4" r="2.1"/><circle cx="12" cy="12" r="2.1"/><circle cx="12" cy="20" r="2.1"/></svg>';
@@ -21043,7 +21043,13 @@ body.lay-canvas #cv-nav{display:flex;flex:none;flex-direction:column;width:var(-
 #cv-nav .cv-ni,#cv-nav .cv-col{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:6px;width:100%;min-height:62px;margin:0;padding:7px 4px 8px;border:0;border-radius:0;background:transparent;color:#fff;font:inherit;text-align:center;cursor:pointer;-webkit-appearance:none;appearance:none;box-shadow:none;transform:none}
 #cv-nav .cv-ni:hover,#cv-nav .cv-col:hover{background:rgba(255,255,255,.1);transform:none}
 #cv-nav .cv-ni:focus-visible,#cv-nav .cv-col:focus-visible{outline:2px solid #fff;outline-offset:-3px}
+#cv-nav .cv-ic{--cv-sep:#334451}
 #cv-nav .cv-ni.on{background:#fff;color:var(--cv-link)}
+#cv-nav .cv-ni.on .cv-ic{--cv-sep:#fff}
+#cv-nav .cv-ni:hover .cv-ic{--cv-sep:#44535f}
+#cv-nav .cv-ni.on:hover .cv-ic{--cv-sep:#fff}
+#cv-nav .cv-ni[data-k=syn]{min-height:69px}
+#cv-nav .cv-ni[data-k=syn] .cv-ic,#cv-nav .cv-ni[data-k=syn] .cv-ic svg{width:32px;height:32px;margin-top:-3px}
 #cv-nav .cv-ni.on:hover{background:#fff}
 #cv-nav .cv-ni.on .cv-lb{text-decoration:none}
 #cv-nav .cv-ic,#cv-nav .cv-ic svg{display:block;width:26px;height:26px;flex:none}
@@ -21243,9 +21249,9 @@ body.lay-canvas #home .cv-grades:focus-visible{outline:2px solid var(--cv-link);
   /* ---------- icons (outline, 26px, they take the colour of the text) ---------- */
   function svg(inner){ return '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' + inner + '</svg>'; }
   function pinwheel(){
-    var o = "", P = function(a, r){ var t = a * Math.PI / 180; return (12 + r * Math.sin(t)).toFixed(2) + " " + (12 - r * Math.cos(t)).toFixed(2); };
-    for(var i = 0; i < 6; i++){ var a0 = i * 60 + 4, a1 = a0 + 44; o += '<path d="M' + P(a0 + 22, 3.2) + 'L' + P(a0, 10.6) + 'A10.6 10.6 0 0 1 ' + P(a1, 10.6) + 'L' + P(a1 + 22, 3.2) + 'A3.2 3.2 0 0 0 ' + P(a0 + 22, 3.2) + 'Z"/>'; }
-    return '<g fill="currentColor" stroke="none">' + o + '</g>';
+    var o = "";
+    for(var k = 0; k < 5; k++) o += '<ellipse cx="12" cy="6.4" rx="5.8" ry="6.2" transform="rotate(' + (k * 72) + ' 12 12) rotate(-38 12 6.4)"/>';
+    return '<g fill="currentColor" stroke-width="1.2" style="stroke:var(--cv-sep,#334451)">' + o + '</g><circle cx="12" cy="12" r="2.6" fill="var(--cv-sep,#334451)" stroke="none"/>';
   }
   var IC = {
     online: svg('<circle cx="9" cy="8" r="3.2"/><path d="M2.8 19.5c0-3.4 2.8-5.6 6.2-5.6s6.2 2.2 6.2 5.6"/><path d="M15.5 4.9a3.1 3.1 0 0 1 0 6"/><path d="M17.2 13.9c2.4.5 4 2.4 4 5.2"/>'),
