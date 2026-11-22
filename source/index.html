@@ -13377,18 +13377,65 @@ body.in-home #home{display:flex}
     cvIco('<path d="M5 3.5h10.5V10M5 3.5v17h6.5"/><path d="M8 8h5M8 11.5h3M8 15h2"/><path d="M19.8 11.2l-6.3 6.3-.9 3 3-.9 6.3-6.3z"/>') +
     cvIco('<path d="M4 4.5h11v7.5H9.5l-3.2 3v-3H4z"/><path d="M17.5 8.5H20v7.5h-1.8v3l-3.2-3H11.5v-1.5"/>');
   const cvTerm = () => { const n = new Date(), y = n.getFullYear(), m = n.getMonth(); return m >= 7 ? y + "/" + (y + 1) + " S1" : m === 0 ? (y - 1) + "/" + y + " S1" : (y - 1) + "/" + y + " S2"; };
+  /* ---- personal card settings (nickname, colour, order) - kept on this device only ---- */
+  const CV_PAL = ["#b83c14","#e61f2c","#b8187f","#8f3e97","#65499d","#1a4a8a","#1770ab","#2063c1","#06838f","#0a8a64","#0b9444","#9c7a00","#c0611a","#d44d00","#c9439a"];
+  const cvGet = (k, f) => { try{ return JSON.parse(localStorage.getItem(k) || "null") || f; }catch(e){ return f; } };
+  const cvSet = (k, v) => { try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} };
+  const cvPref = t => (cvGet("pb_cv_cards", {}))[t.n] || {};
+  const cvDefColor = n => CV_COLORS[n % CV_COLORS.length];
+  let cvPop = null, cvPopFor = null;
+  function cvClose(focusBack){ if(!cvPop) return; const f = cvPopFor; cvPop.remove(); cvPop = null; cvPopFor = null; document.removeEventListener("mousedown", cvOutside, true); document.removeEventListener("keydown", cvKey, true); if(focusBack && f) try{ f.focus(); }catch(e){} }
+  function cvOutside(e){ if(cvPop && !cvPop.contains(e.target) && !(cvPopFor && cvPopFor.contains(e.target))) cvClose(false); }
+  function cvKey(e){ if(e.key === "Escape"){ e.stopPropagation(); cvClose(true); } }
+  function cvOrderNames(list){ const ord = cvGet("pb_cv_order", []), names = list.map(x => x.n); const first = ord.filter(x => names.includes(x)); return first.concat(names.filter(x => !first.includes(x))); }
+  function cvOpen(t, n, kb, defNick){
+    cvClose(false);
+    const pref = cvPref(t); let color = pref.color || cvDefColor(n);
+    const pop = document.createElement("div"); pop.id = "cv-pop"; pop.setAttribute("role", "dialog"); pop.setAttribute("aria-label", "Settings for " + t.n);
+    pop.innerHTML = '<div class="cvp-tabs" role="tablist"><button type="button" role="tab" class="cvp-t on" data-p="c" aria-selected="true">Color</button><button type="button" role="tab" class="cvp-t" data-p="m" aria-selected="false">Move</button><button type="button" class="cvp-x" aria-label="Close">✕</button></div>' +
+      '<div class="cvp-body" data-p="c"><label for="cvp-nick">Nickname</label><input id="cvp-nick" type="text" maxlength="40"><div class="cvp-sw" role="radiogroup" aria-label="Color"></div><div class="cvp-hex"><span class="cvp-pv"></span><input id="cvp-hex" type="text" maxlength="7" aria-label="Hex color" spellcheck="false"></div><div class="cvp-bt"><button type="button" class="cvp-cancel">Cancel</button><button type="button" class="cvp-apply">Apply</button></div></div>' +
+      '<div class="cvp-body" data-p="m" hidden><button type="button" data-mv="top">Move to top</button><button type="button" data-mv="up">Move earlier</button><button type="button" data-mv="down">Move later</button><button type="button" data-mv="bottom">Move to bottom</button></div>';
+    document.body.appendChild(pop); cvPop = pop; cvPopFor = kb;
+    const nick = pop.querySelector("#cvp-nick"), hex = pop.querySelector("#cvp-hex"), pv = pop.querySelector(".cvp-pv"), sw = pop.querySelector(".cvp-sw"), ap = pop.querySelector(".cvp-apply");
+    nick.value = pref.nick || defNick;
+    const valid = v => /^#?[0-9a-f]{6}$/i.test(v.trim());
+    const norm = v => "#" + v.trim().replace("#", "").toUpperCase();
+    function paintSw(){ sw.querySelectorAll("button").forEach(b => { const on = b.dataset.c.toLowerCase() === color.toLowerCase(); b.classList.toggle("on", on); b.setAttribute("aria-checked", String(on)); }); pv.style.background = color; }
+    CV_PAL.forEach(c => { const b = document.createElement("button"); b.type = "button"; b.dataset.c = c; b.style.background = c; b.setAttribute("role", "radio"); b.setAttribute("aria-label", c); b.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>'; b.onclick = () => { color = c; hex.value = norm(c); hex.classList.remove("bad"); ap.disabled = false; paintSw(); }; sw.appendChild(b); });
+    hex.value = norm(color); paintSw();
+    hex.oninput = () => { const ok = valid(hex.value); hex.classList.toggle("bad", !ok); ap.disabled = !ok; if(ok){ color = norm(hex.value); paintSw(); } };
+    pop.querySelectorAll(".cvp-t").forEach(b => b.onclick = () => { pop.querySelectorAll(".cvp-t").forEach(x => { x.classList.toggle("on", x === b); x.setAttribute("aria-selected", String(x === b)); }); pop.querySelectorAll(".cvp-body").forEach(x => x.hidden = x.dataset.p !== b.dataset.p); });
+    pop.querySelector(".cvp-x").onclick = () => cvClose(true);
+    pop.querySelector(".cvp-cancel").onclick = () => cvClose(true);
+    ap.onclick = () => { const all = cvGet("pb_cv_cards", {}), nk = nick.value.trim(); all[t.n] = { color: color, nick: nk && nk !== defNick ? nk : "" }; cvSet("pb_cv_cards", all); cvClose(false); lastSig = ""; render(); };
+    pop.querySelectorAll("[data-mv]").forEach(b => b.onclick = () => {
+      const names = cvOrderNames(current()), at = names.indexOf(t.n); if(at < 0) return; names.splice(at, 1);
+      const m = b.dataset.mv, to = m === "top" ? 0 : m === "bottom" ? names.length : m === "up" ? Math.max(0, at - 1) : Math.min(names.length, at + 1);
+      names.splice(to, 0, t.n); cvSet("pb_cv_order", names); cvClose(false); lastSig = ""; render();
+    });
+    const r = kb.getBoundingClientRect(), w = 190, h = pop.offsetHeight;
+    pop.style.left = Math.max(8, Math.min(r.left + r.width / 2 - 95, window.innerWidth - w - 8)) + "px";
+    pop.style.top = (r.bottom + 8 + h > window.innerHeight - 8 ? Math.max(8, r.top - h - 8) : r.bottom + 8) + "px";
+    document.addEventListener("mousedown", cvOutside, true); document.addEventListener("keydown", cvKey, true);
+    setTimeout(() => { try{ nick.focus(); nick.select(); }catch(e){} }, 20);
+  }
   function cvCard(t, n, b){
-    b.classList.add("cv-card"); b.style.setProperty("--cv-c", CV_COLORS[n % CV_COLORS.length]);
+    b.classList.add("cv-card"); const pref = cvPref(t), color = pref.color || cvDefColor(n); b.style.setProperty("--cv-c", color);
     const w = document.createElement("span"); w.className = "cv-cb";
     const mk = (cls, txt) => { const x = document.createElement("span"); x.className = cls; x.textContent = txt; return x; };
     const act = document.createElement("span"); act.className = "cv-act"; act.setAttribute("aria-hidden", "true"); act.innerHTML = CV_ACT;
-    w.append(mk("cv-code", "Los Purebreds PD: " + (n + 1)), mk("cv-ttl", t.n), mk("cv-term", cvTerm()), act);
-    const kb = document.createElement("span"); kb.className = "cv-kb"; kb.setAttribute("aria-hidden", "true");
-    kb.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="4" r="2.1"/><circle cx="12" cy="12" r="2.1"/><circle cx="12" cy="20" r="2.1"/></svg>';
-    b.append(kb); return w;
+    w.append(mk("cv-code", pref.nick || cvDefNick(n)), mk("cv-ttl", t.n), mk("cv-term", cvTerm()), act);
+    return w;
+  }
+  const cvDefNick = n => "Los Purebreds PD: " + (n + 1);
+  function cvKebab(t, n, cell){
+    const kb = document.createElement("button"); kb.type = "button"; kb.className = "cv-kb"; kb.setAttribute("aria-label", "Settings for " + t.n); kb.setAttribute("aria-haspopup", "dialog");
+    kb.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><circle cx="12" cy="4" r="2.1"/><circle cx="12" cy="12" r="2.1"/><circle cx="12" cy="20" r="2.1"/></svg>';
+    kb.onclick = e => { e.stopPropagation(); if(cvPop && cvPopFor === kb) cvClose(false); else cvOpen(t, n, kb, cvDefNick(n)); };
+    cell.appendChild(kb);
   }
   function render(){
-    const list = current(), cvOn = document.body.classList.contains("lay-canvas"), sig = JSON.stringify(list) + "|" + editing + "|" + cvOn;
+    const list = current(), cvOn = document.body.classList.contains("lay-canvas"), sig = JSON.stringify(list) + "|" + editing + "|" + cvOn + "|" + (cvOn ? localStorage.getItem("pb_cv_cards") + localStorage.getItem("pb_cv_order") : "");
     const own = isOwner(); $$("hm-ed").classList.toggle("on", own);
     if(!own && editing){ editing = false; working = null; }
     if(sig === lastSig && !(grid.dataset.own !== String(own))) return;
@@ -13397,15 +13444,16 @@ body.in-home #home{display:flex}
     $$("hm-edit").textContent = editing ? "✅ Done" : "✏️ Edit home";
     $$("hm-edit").classList.toggle("go", editing);
     $$("hm-reset").style.display = editing ? "" : "none";
-    grid.replaceChildren();
+    cvClose(false); grid.replaceChildren();
     list.forEach((t, n) => {
       const cell = document.createElement("div"); cell.className = "hm-cell";
       const b = document.createElement("button"); b.type = "button"; b.className = "hm-it";
       const lb = document.createElement("span"); lb.textContent = t.n;
-      if(cvOn){ b.append(iconNode(t), cvCard(t, n, b)); b.setAttribute("aria-label", t.n); }   // Canvas layout: a real Canvas course card
+      if(cvOn){ b.append(iconNode(t), cvCard(t, n, b)); b.setAttribute("aria-label", t.n); cell.style.setProperty("--cv-c", b.style.getPropertyValue("--cv-c")); cell.style.order = String(cvOrderNames(list).indexOf(t.n)); }   // Canvas layout: a real Canvas course card
       else b.append(iconNode(t), lb);
       b.onclick = () => { if(editing) openEditor(n); else go(t); };
       cell.appendChild(b);
+      if(cvOn && !editing) cvKebab(t, n, cell);
       if(editing){
         const tools = document.createElement("div"); tools.className = "hm-tools";
         const mk = (txt, title, fn, cls, dis) => { const x = document.createElement("button"); x.type = "button"; x.textContent = txt; x.title = title; if(cls) x.className = cls; x.disabled = !!dis; x.onclick = e => { e.stopPropagation(); fn(); }; return x; };
@@ -13415,7 +13463,7 @@ body.in-home #home{display:flex}
       grid.appendChild(cell);
     });
     if(editing && list.length < 24){
-      const cell = document.createElement("div"); cell.className = "hm-cell hm-add";
+      const cell = document.createElement("div"); cell.className = "hm-cell hm-add"; cell.style.order = "999";
       const b = document.createElement("button"); b.type = "button"; b.className = "hm-it";
       const i = document.createElement("span"); i.className = "hm-ic"; i.textContent = "+";
       const lb = document.createElement("span"); lb.textContent = "Add icon";
@@ -21104,7 +21152,9 @@ body.lay-canvas #home .hm-it>.hm-ic{flex:none;width:100%;height:146px;border-rad
 body.lay-canvas #home .hm-it:hover>.hm-ic,body.lay-canvas #home .hm-it:focus-visible>.hm-ic{box-shadow:none}
 body.lay-canvas #home .hm-it>.hm-ic img{width:100%;height:100%;border-radius:0;object-fit:cover}
 body.lay-canvas #home .hm-it>.hm-ic.emo{font-size:58px;line-height:1;color:#fff;background:var(--cv-c,#2063c1)}
-body.lay-canvas #home .cv-kb{position:absolute;top:13px;right:12px;display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:50%;background:var(--cv-c,#2063c1);color:#fff}
+body.lay-canvas #home .hm-cell{position:relative}
+body.lay-canvas #home .cv-kb{position:absolute;z-index:2;top:13px;right:12px;display:flex;align-items:center;justify-content:center;width:36px;height:36px;margin:0;padding:0;border:0;border-radius:50%;background:var(--cv-c,#2063c1);color:#fff;cursor:pointer;box-shadow:none;transform:none}
+body.lay-canvas #home .cv-kb:focus-visible{outline:2px solid #fff;outline-offset:-4px;box-shadow:0 0 0 2px var(--cv-link)}
 body.lay-canvas #home .cv-kb svg{display:block;width:24px;height:24px}
 body.lay-canvas #home .cv-cb{display:block;flex:1 1 auto;min-height:0;padding:13px 20px 0;text-align:left}
 body.lay-canvas #home .cv-cb>span{display:block}
@@ -21122,6 +21172,36 @@ body.lay-canvas #home .hm-add .hm-it>span:not(.hm-ic){display:block;font:400 16p
 body.lay-canvas #home .hm-ed{top:14px;right:18px}
 body.lay-canvas #home .hm-ed button{border:1px solid var(--cv-btn);border-radius:4px;background:#fff;color:var(--cv-ink);box-shadow:none}
 body.lay-canvas #home .hm-ed button.go{background:var(--cv-link);border-color:var(--cv-link);color:#fff}
+
+/* the card's ⋮ popup (Color / Move) */
+#cv-pop{position:fixed;z-index:60;width:190px;box-sizing:border-box;background:#fff;border:1px solid #c7cdd1;border-radius:4px;box-shadow:0 2px 8px rgba(0,0,0,.3);color:#273540;font:400 14px/1.3 Lato,"Helvetica Neue",Helvetica,Arial,sans-serif}
+#cv-pop button,#cv-pop input{font:inherit;box-sizing:border-box}
+#cv-pop .cvp-tabs{display:flex;align-items:stretch;height:46px;border-bottom:1px solid #c7cdd1;background:#fff}
+#cv-pop .cvp-t{flex:none;margin:0 0 -1px;padding:0 15px;border:1px solid transparent;border-bottom:0;border-radius:4px 4px 0 0;background:none;color:#273540;font-size:16px;cursor:pointer;box-shadow:none;transform:none}
+#cv-pop .cvp-t.on{background:#fff;border-color:#c7cdd1;border-bottom:1px solid #fff}
+#cv-pop .cvp-t:not(.on){color:#09508c}
+#cv-pop .cvp-x{margin:0 14px 0 auto;padding:0 2px;border:0;background:none;color:#273540;font-size:15px;cursor:pointer;box-shadow:none;transform:none}
+#cv-pop .cvp-body{padding:20px 20px 16px}
+#cv-pop .cvp-body[hidden]{display:none}
+#cv-pop label{display:block;margin:0 0 8px;font-size:16px;font-weight:700}
+#cv-pop input[type=text]{display:block;width:100%;height:28px;margin:0;padding:0 8px;border:1px solid #c7cdd1;border-radius:3px;background:#fff;color:#273540;font-size:14px}
+#cv-pop input.bad{border-color:#e0061f}
+#cv-pop input:focus-visible{outline:2px solid #09508c;outline-offset:1px}
+#cv-pop .cvp-sw{display:grid;grid-template-columns:repeat(5,24px);gap:7px 8px;margin:18px 0 20px}
+#cv-pop .cvp-sw button{display:flex;align-items:center;justify-content:center;width:24px;height:24px;margin:0;padding:0;border:0;border-radius:4px;cursor:pointer;box-shadow:none;transform:none}
+#cv-pop .cvp-sw button svg{display:none;width:16px;height:16px}
+#cv-pop .cvp-sw button.on{box-shadow:0 0 0 2px #fff,0 0 0 4px #273540}
+#cv-pop .cvp-sw button.on svg{display:block}
+#cv-pop .cvp-sw button:focus-visible{outline:2px solid #09508c;outline-offset:2px}
+#cv-pop .cvp-hex{display:flex;align-items:center;gap:8px;margin:0 0 12px}
+#cv-pop .cvp-pv{flex:none;width:24px;height:24px;border-radius:3px;background:#2063c1}
+#cv-pop .cvp-bt{display:flex;justify-content:flex-end;gap:8px}
+#cv-pop .cvp-bt button,#cv-pop [data-mv]{height:30px;margin:0;padding:0 12px;border:1px solid #c7cdd1;border-radius:3px;background:#f2f4f4;color:#273540;font-size:14px;cursor:pointer;box-shadow:none;transform:none}
+#cv-pop .cvp-bt .cvp-apply{background:#09508c;border-color:#09508c;color:#fff}
+#cv-pop .cvp-bt .cvp-apply:disabled{opacity:.5;cursor:default}
+#cv-pop [data-mv]{display:block;width:100%;margin:0 0 8px;text-align:left}
+#cv-pop [data-mv]:last-child{margin-bottom:0}
+#cv-pop button:focus-visible{outline:2px solid #09508c;outline-offset:2px}
 
 /* Dashboard sidebar: To Do, Recent Feedback, View Grades */
 body.lay-canvas #home .cv-side{display:block;flex:none;width:240px;margin:18px 0 0 72px;color:var(--cv-ink)}
@@ -21151,8 +21231,8 @@ body.lay-canvas #home .cv-grades:focus-visible{outline:2px solid var(--cv-link);
 <script id="canvas-js">
 (function(){
   "use strict";
-  /* Where the two "grades" shortcuts go (a tab key: tier, games, polls, draw, gal, main …). Change these two words to point them anywhere. */
-  var SYNERGY_TAB = "tier", GRADES_TAB = "tier";
+  /* Synergy opens this website in a new tab. View Grades goes to a tab key (tier, games, polls, draw, gal, main …). */
+  var SYNERGY_URL = "https://md-mcps-psv.edupoint.com/PXP2_Login.aspx", GRADES_TAB = "tier";
   var d = document, B = d.body, KEY = "pb_cv_collapsed", KEY2 = "pb_cv_cn_off";
   function $(id){ return d.getElementById(id); }
   function wanted(){ try{ return typeof pbLayout === "function" && pbLayout() === "canvas"; }catch(e){ return false; } }
@@ -21336,7 +21416,7 @@ body.lay-canvas #home .cv-grades:focus-visible{outline:2px solid var(--cv-link);
     else if(k === "log") press("hdr-log");
     else if(k === "eh") press("hdr-eh");
     else if(k === "add"){ var p = d.querySelector("#chtabs button.ct-plus"); if(p) p.click(); }
-    else if(k === "syn") goChannel(SYNERGY_TAB);
+    else if(k === "syn") window.open(SYNERGY_URL, "_blank", "noopener,noreferrer");
     else if(k === "admin"){ var a = shown($("admbtn")) ? $("admbtn") : $("modbtn"); if(a) a.click(); }
   });
   function setCollapsed(on, keep){ B.classList.toggle("cv-collapsed", !!on); col.title = on ? "Expand the navigation" : "Minimize the navigation"; col.setAttribute("aria-label", col.title); if(keep){ try{ localStorage.setItem(KEY, on ? "1" : "0"); }catch(e){} } }
