@@ -86,7 +86,8 @@ if(L.getItem("pb_autologin")==="1"&&L.getItem("pb_code")==="lospurebro"&&L.getIt
     var sc = document.createElement("script"); sc.async = true; sc.src = "https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"; document.head.appendChild(sc);
     FONTS.forEach(function(h){ var l = document.createElement("link"); l.rel = "stylesheet"; l.href = h; document.head.appendChild(l); });
   }
-  if(document.readyState === "complete") go(); else window.addEventListener("load", go);
+  var later = function(){ setTimeout(go, 1500); };   // wait a moment after load so a slow device paints the page first
+  if(document.readyState === "complete") later(); else window.addEventListener("load", later);
 })();
 </script>
 <script id="colormode-js">
@@ -2010,6 +2011,7 @@ if(emoLoading){                                          // the full emoji set (
 
 /* ---------- emoji picker (Google Docs style, light) ---------- */
 function insertAtCursor(t){
+  t = t == null ? "" : String(t); if(!t) return;     // never type the word "undefined" into the box
   const i = $("inp"), s = i.selectionStart == null ? i.value.length : i.selectionStart, e = i.selectionEnd == null ? s : i.selectionEnd;
   i.value = i.value.slice(0, s) + t + i.value.slice(e);
   const p = s + t.length; i.focus(); try { i.setSelectionRange(p, p); } catch(x){}
@@ -2441,7 +2443,7 @@ function startEdit(id){
   if(!l || l.img || l.aud || l.fl || l.poll || l.del || !w || ((l.to || l.g) && l.c !== uid)) return;
   const bub = w.querySelector("[data-bubble]"); if(!bub || w.classList.contains("editing")) return;
   const inp = document.createElement("input");
-  inp.type = "text"; inp.className = "editin"; inp.value = l.b; inp.maxLength = 1999;
+  inp.type = "text"; inp.className = "editin"; inp.value = l.b == null ? "" : String(l.b); inp.maxLength = 1999;
   if(l.f && FONT_MAP[l.f]) inp.style.fontFamily = FONT_MAP[l.f];
   w.classList.add("editing"); w.classList.remove("tap");
   bub.style.display = "none"; bub.parentNode.insertBefore(inp, bub);
@@ -6972,12 +6974,12 @@ body.in-draw #box,body.in-draw #typing,body.in-draw #replybar,body.in-draw #tray
   const MAX_FRAME = 900000;      // biggest single WebSocket frame
   const MAX_MSG = 8000000;       // biggest whole message (big GIFs are split into frames and put back together)
   const CHUNK = 600000, rx = new WeakMap();
-  const GHOST_MS = 4000;       // connected, but the host never said a word
+  const GHOST_MS = 12000;      // connected, but the host never said a word
   const HELLO_MS = 6000;       // relay accepted nothing at all
-  const PROBE_MS = 1500;       // looking for a live room next door
+  const PROBE_MS = 4000;       // looking for a live room next door
   const DEAD_MS = 180000;      // remember "this room's host is a ghost" for a while
   const QUIET_MS = 40000;      // client: ping the host after this much silence
-  const PONG_MS = 20000;       // client: host must answer a ping within this long
+  const PONG_MS = 30000;       // client: host must answer a ping within this long
   let ws = null, hostMode = false, clientConn = null, hostConns = new Map(), pingT = 0;
   let slot = 0, tries = 0, helloSeen = false, ghostT = 0, openT = 0, wdT = 0, lastRx = 0, pingAt = 0;
   let tentative = false, early = [], pendingC = null;
@@ -7145,7 +7147,7 @@ body.in-draw #box,body.in-draw #typing,body.in-draw #replybar,body.in-draw #tray
     } else if(tag === "d"){
       if(hostMode){
         const nl = rest.indexOf("\n"); if(nl < 0) return;
-        const c = hostConns.get(rest.slice(0, nl)), d = parse(rest.slice(nl + 1));
+        const c = hostConns.get(rest.slice(0, nl)); let d = parse(rest.slice(nl + 1));   // let: a big picture/GIF arrives in pieces and d is replaced below (it was const, so every big upload from a guest crashed here)
         if(d && d.t === "PG"){ if(c && c.open) c.send({ t: "PO", i: "po" }); return; }    // "are you alive?" - answered right here
         if(d && d.t === "CK"){ if(!(c && c.open)) return; d = unchunk(c, d); }
         if(c && c.open && d) c.emit("data", d);
@@ -7629,9 +7631,10 @@ body[data-theme="terminal"] #box[style*="url("] .msg .bubble,body[data-theme="te
 body[data-theme="terminal"] #box[style*="url("] .msg .lbl{background:transparent}
 </style>
 <style id="applying-css">
-#applying{position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:rgba(0,0,0,.55);color:#fff;font:600 16px system-ui,sans-serif;opacity:0;pointer-events:none;transition:opacity .15s}
-#applying.on{opacity:1;pointer-events:auto}
-#applying .sp{width:38px;height:38px;border:4px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:applyspin .8s linear infinite}
+#applying{position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:rgba(0,0,0,.55);color:#fff;font:600 16px system-ui,sans-serif;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .15s,visibility 0s .15s}
+#applying.on{opacity:1;visibility:visible;pointer-events:auto;transition:opacity .15s}
+#applying .sp{width:38px;height:38px;border:4px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%}
+#applying.on .sp{animation:applyspin .8s linear infinite}   /* only spin while it is showing: a hidden, endlessly spinning overlay kept every device repainting */
 @keyframes applyspin{to{transform:rotate(360deg)}}
 </style>
 <div id="applying" role="status" aria-live="polite"><div class="sp"></div><div>Applying changes…</div></div>
@@ -8793,7 +8796,10 @@ html{-webkit-tap-highlight-color:transparent}
   const showGate = () => d.classList.remove("booting");
   if(!auto){
     const go = () => requestAnimationFrame(showGate);
-    if(document.readyState === "complete") go(); else window.addEventListener("load", go);
+    /* show the sign-in screen as soon as the page itself is built (not after every image and font has finished),
+       and never keep it hidden for more than a couple of seconds: slow laptops used to sit on a blank page */
+    if(document.readyState !== "loading") go(); else document.addEventListener("DOMContentLoaded", go);
+    setTimeout(showGate, 2500);
     return;
   }
   showGate();                                   // the pop-up covers the sign-in screen while we auto join
@@ -13379,8 +13385,20 @@ body.in-home #home{display:flex}
   const cvTerm = () => { const n = new Date(), y = n.getFullYear(), m = n.getMonth(); return m >= 7 ? y + "/" + (y + 1) + " S1" : m === 0 ? (y - 1) + "/" + y + " S1" : (y - 1) + "/" + y + " S2"; };
   /* ---- personal card settings (nickname, colour, order) - kept on this device only ---- */
   const CV_PAL = ["#b83c14","#e61f2c","#b8187f","#8f3e97","#65499d","#1a4a8a","#1770ab","#2063c1","#06838f","#0a8a64","#0b9444","#9c7a00","#c0611a","#d44d00","#c9439a"];
-  const cvGet = (k, f) => { try{ return JSON.parse(localStorage.getItem(k) || "null") || f; }catch(e){ return f; } };
-  const cvSet = (k, v) => { try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} };
+  /* Kept in memory as well as in localStorage: if the browser refuses to store (private window, school-managed Chromebook, full storage)
+     the change still shows and stays for this visit, and you are told it won't be remembered, instead of silently snapping back. */
+  const cvMem = {};
+  const cvGet = (k, f) => {
+    if(k in cvMem) return cvMem[k];
+    try{ const v = JSON.parse(localStorage.getItem(k) || "null"); if(v && typeof v === "object"){ cvMem[k] = v; return v; } }catch(e){}
+    return f;
+  };
+  const cvSet = (k, v) => {
+    cvMem[k] = v;
+    try{ localStorage.setItem(k, JSON.stringify(v)); if(localStorage.getItem(k) === null) throw 0; }
+    catch(e){ toast("Your browser wouldn't save that, so it lasts only until you close this page."); }
+  };
+  const cvSig = () => JSON.stringify(cvGet("pb_cv_cards", {})) + JSON.stringify(cvGet("pb_cv_order", []));
   const cvPref = t => (cvGet("pb_cv_cards", {}))[t.n] || {};
   const cvDefColor = n => CV_COLORS[n % CV_COLORS.length];
   let cvPop = null, cvPopFor = null;
@@ -13435,7 +13453,8 @@ body.in-home #home{display:flex}
     cell.appendChild(kb);
   }
   function render(){
-    const list = current(), cvOn = document.body.classList.contains("lay-canvas"), sig = JSON.stringify(list) + "|" + editing + "|" + cvOn + "|" + (cvOn ? localStorage.getItem("pb_cv_cards") + localStorage.getItem("pb_cv_order") : "");
+    try{ ndRender(); }catch(e){}
+    const list = current(), cvOn = document.body.classList.contains("lay-canvas"), sig = JSON.stringify(list) + "|" + editing + "|" + cvOn + "|" + (cvOn ? cvSig() : "");
     const own = isOwner(); $$("hm-ed").classList.toggle("on", own);
     if(!own && editing){ editing = false; working = null; }
     if(sig === lastSig && !(grid.dataset.own !== String(own))) return;
@@ -13451,7 +13470,7 @@ body.in-home #home{display:flex}
       const lb = document.createElement("span"); lb.textContent = t.n;
       if(cvOn){ b.append(iconNode(t), cvCard(t, n, b)); b.setAttribute("aria-label", t.n); cell.style.setProperty("--cv-c", b.style.getPropertyValue("--cv-c")); cell.style.order = String(cvOrderNames(list).indexOf(t.n)); }   // Canvas layout: a real Canvas course card
       else b.append(iconNode(t), lb);
-      b.onclick = () => { if(editing) openEditor(n); else go(t); };
+      b.onclick = () => { if(editing) openEditor(n); else { cvRecent(t); go(t); } };
       cell.appendChild(b);
       if(cvOn && !editing) cvKebab(t, n, cell);
       if(editing){
@@ -13470,6 +13489,219 @@ body.in-home #home{display:flex}
       b.append(i, lb); b.onclick = () => openEditor(-1); cell.appendChild(b); grid.appendChild(cell);
     }
   }
+  /* ===== Canvas layout: the Dashboard View menu (⋮), List / Recent Activity views, Color Overlay, and the new widget dashboard ===== */
+  const el = (tag, cls, txt) => { const x = document.createElement(tag); if(cls) x.className = cls; if(txt != null) x.textContent = txt; return x; };
+  const svgI = d => '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">' + d + '</svg>';
+  const CK = svgI('<path d="M4.5 12.5l5 5L19.5 7" stroke-width="2.4"/>');
+  const IC_SLIDERS = svgI('<path d="M3 6h9M17 6h4M3 12h3M11 12h10M3 18h11M19 18h2"/><circle cx="14.5" cy="6" r="2.2"/><circle cx="8.5" cy="12" r="2.2"/><circle cx="16.5" cy="18" r="2.2"/>');
+  const IC_TRASH = svgI('<path d="M4 7h16M9 7V4.5h6V7M6.5 7l.8 13h9.4l.8-13M10 11v6M14 11v6"/>');
+  const IC_GRIP = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="currentColor"><circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg>';
+  const IC_EYE = svgI('<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/><path d="M4 20L20 4"/>');
+  const IC_PLUS = svgI('<path d="M12 4.5v15M4.5 12h15"/>');
+  const IC_KB = '<svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><circle cx="12" cy="5" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="12" cy="19" r="1.9"/></svg>';
+  const ago = ms => { const m = Math.max(0, Math.round((Date.now() - ms) / 60000)); return m < 1 ? "just now" : m < 60 ? m + " min ago" : m < 1440 ? Math.round(m / 60) + " hr ago" : Math.round(m / 1440) + " d ago"; };
+
+  /* ---- one small popup menu used by the ⋮, Add widget and Move widget buttons ---- */
+  let cmenu = null, cmenuFor = null;
+  function cmClose(back){
+    if(!cmenu) return; const f = cmenuFor; cmenu.remove(); cmenu = null; cmenuFor = null;
+    document.removeEventListener("mousedown", cmOut, true); document.removeEventListener("keydown", cmKey, true); window.removeEventListener("resize", cmResize);
+    if(f){ try{ f.setAttribute("aria-expanded", "false"); if(back) f.focus(); }catch(e){} }
+  }
+  function cmOut(e){ if(cmenu && !cmenu.contains(e.target) && !(cmenuFor && cmenuFor.contains(e.target))) cmClose(false); }
+  function cmResize(){ cmClose(false); }
+  function cmKey(e){
+    if(!cmenu) return;
+    if(e.key === "Escape"){ e.stopPropagation(); e.preventDefault(); cmClose(true); return; }
+    if(e.key === "Tab"){ cmClose(false); return; }
+    const it = Array.from(cmenu.querySelectorAll("button")), i = it.indexOf(document.activeElement);
+    if(e.key === "ArrowDown" || e.key === "ArrowUp"){ e.preventDefault(); it[(i + (e.key === "ArrowDown" ? 1 : -1) + it.length) % it.length].focus(); }
+    else if(e.key === "Home"){ e.preventDefault(); it[0].focus(); }
+    else if(e.key === "End"){ e.preventDefault(); it[it.length - 1].focus(); }
+  }
+  function cvMenu(anchor, heading, items){
+    if(cmenu && cmenuFor === anchor){ cmClose(false); return; }
+    cmClose(false); cvClose(false);
+    const m = el("div"); m.id = "cv-dm"; m.setAttribute("role", "menu"); if(heading) m.setAttribute("aria-label", heading);
+    if(heading) m.appendChild(el("div", "cvm-h", heading)).setAttribute("role", "presentation");
+    items.forEach(it => {
+      if(it.sep){ const s = el("div", "cvm-sep"); s.setAttribute("role", "separator"); m.appendChild(s); }
+      const b = el("button"); b.type = "button"; b.setAttribute("role", it.kind === "radio" ? "menuitemradio" : it.kind === "check" ? "menuitemcheckbox" : "menuitem");
+      if(it.kind){ b.setAttribute("aria-checked", String(!!it.on)); if(it.on) b.innerHTML = CK; }
+      if(it.kind === "radio" && it.on) b.classList.add("sel");
+      b.appendChild(el("span", "", it.label)); b.onclick = () => { cmClose(false); it.fn(); }; m.appendChild(b);
+    });
+    document.body.appendChild(m); cmenu = m; cmenuFor = anchor; anchor.setAttribute("aria-expanded", "true");
+    const r = anchor.getBoundingClientRect(), w = m.offsetWidth, h = m.offsetHeight;
+    const left = Math.max(8, Math.min(r.left + r.width / 2 - w / 2, window.innerWidth - w - 8));
+    const below = r.bottom + 12 + h <= window.innerHeight - 8;
+    m.classList.toggle("up", !below); m.style.left = left + "px"; m.style.top = (below ? r.bottom + 12 : Math.max(8, r.top - h - 8)) + "px";
+    m.style.setProperty("--cx", Math.max(18, Math.min(w - 18, r.left + r.width / 2 - left)) + "px");
+    document.addEventListener("mousedown", cmOut, true); document.addEventListener("keydown", cmKey, true); window.addEventListener("resize", cmResize);
+    const first = m.querySelector(".sel") || m.querySelector("button"); if(first) setTimeout(() => { try{ first.focus(); }catch(e){} }, 10);
+  }
+
+  /* ---- Dashboard View: Card View / List View / Recent Activity, plus Color Overlay and old / new dashboard ---- */
+  const cvPrefGet = () => Object.assign({ v: "card", ov: false, nd: false }, cvGet("pb_cv_dash", {}));
+  function cvPrefSet(patch){ cvSet("pb_cv_dash", Object.assign(cvPrefGet(), patch)); applyDashPrefs(); }
+  function applyDashPrefs(){
+    const p = cvPrefGet(), b = document.body;
+    ["card", "list", "recent"].forEach(x => b.classList.toggle("cv-v-" + x, p.v === x));
+    b.classList.toggle("cv-ov", !!p.ov); b.classList.toggle("cv-newdash", !!p.nd);
+    if(!p.nd){ ndEdit = false; ndWork = null; }
+    recentRender(); ndRender(true);
+  }
+  const recent = el("div", "cv-recent"); grid.after(recent);
+  const cvRecent = t => { const r = cvGet("pb_cv_recent", { l: [] }); r.l = [{ n: t.n, t: t.t, s: t.s || "", at: Date.now() }].concat((r.l || []).filter(x => x.n !== t.n)).slice(0, 12); cvSet("pb_cv_recent", r); recentRender(); };
+  function recentRender(){
+    const l = (cvGet("pb_cv_recent", { l: [] }).l) || []; recent.replaceChildren(); recent.appendChild(el("h2", "", "Recent Activity"));
+    if(!l.length){ recent.appendChild(el("p", "", "No recent activity yet. Open a course card and it will show up here.")); return; }
+    const ul = el("ul"); l.forEach(x => { const li = el("li"), b = el("button", "cv-rl", x.n); b.type = "button"; b.onclick = () => { cvRecent(x); go(x); }; li.append(b, el("span", "cv-rt", "Opened " + ago(x.at))); ul.appendChild(li); }); recent.appendChild(ul);
+  }
+  const km = view.querySelector(".cv-km"), sw = view.querySelector(".cv-sw");
+  km.setAttribute("aria-haspopup", "menu"); km.setAttribute("aria-expanded", "false");
+  km.onclick = e => {
+    e.stopPropagation(); const p = cvPrefGet();
+    cvMenu(km, "Dashboard View", [
+      { kind: "radio", label: "Card View", on: p.v === "card", fn: () => cvPrefSet({ v: "card" }) },
+      { kind: "radio", label: "List View", on: p.v === "list", fn: () => cvPrefSet({ v: "list" }) },
+      { kind: "radio", label: "Recent Activity", on: p.v === "recent", fn: () => cvPrefSet({ v: "recent" }) },
+      { kind: "check", label: "Color Overlay", on: !!p.ov, sep: true, fn: () => cvPrefSet({ ov: !p.ov }) }
+    ]);
+  };
+  sw.onclick = () => { cmClose(false); cvPrefSet({ nd: true }); setTimeout(() => { const t = nd.querySelector('[data-f="cust"]'); if(t) try{ t.focus(); }catch(e){} }, 30); };
+
+  /* ---- the new dashboard: Hello header, Dashboard / Courses tabs, widgets you can add, move and remove ---- */
+  const WIDGETS = { grades: "Course grades", todo: "To Do", ann: "Announcements", fb: "Recent Feedback" }, NDGRADES = "tier";
+  const wGet = () => { const w = cvGet("pb_cv_widgets", null); return w && Array.isArray(w.l) && Array.isArray(w.r) ? { l: w.l.filter(k => WIDGETS[k]), r: w.r.filter(k => WIDGETS[k]) } : { l: ["grades"], r: ["todo", "ann"] }; };
+  const nd = el("div", "cv-nd"); view.querySelector(".hm-page").insertBefore(nd, view.querySelector(".cv-side"));
+  let ndEdit = false, ndWork = null, ndTab = "dash", ndAll = false, ndFilter = "Incomplete", ndSig = "", ndDrag = null;
+  const fx = (x, id) => { x.dataset.f = id; return x; };
+  function ndRender(force){
+    const B = document.body; if(!B.classList.contains("lay-canvas") || !B.classList.contains("cv-newdash")) return;
+    const list = current(), w = ndEdit ? ndWork : wGet(), todos = cvGet("pb_cv_todos", { l: [] }).l || [];
+    const sig = JSON.stringify([list, w, ndEdit, ndTab, ndAll, ndFilter, cvSig(), todos]);
+    if(sig === ndSig && !force) return; ndSig = sig;
+    const ae = document.activeElement, fk = ae && nd.contains(ae) ? ae.dataset.f : null;
+    cvClose(false); nd.replaceChildren();
+    /* header */
+    const head = el("div", "cvn-head"); head.appendChild(el("h1", "", "Hello, Student!"));
+    const ha = el("div", "cvn-ha");
+    const bt = (txt, cls, fn, id, ico) => { const b = el("button", "cvn-b" + (cls ? " " + cls : "")); b.type = "button"; if(ico) b.innerHTML = ico; b.appendChild(el("span", "", txt)); b.onclick = fn; return fx(b, id); };
+    ha.appendChild(bt("Switch to old dashboard view", "", () => cvPrefSet({ nd: false }), "old"));
+    if(ndEdit){
+      ha.appendChild(bt("Cancel", "", () => { ndEdit = false; ndWork = null; ndRender(true); }, "cancel"));
+      ha.appendChild(bt("Save changes", "pri", () => { cvSet("pb_cv_widgets", { l: ndWork.l.slice(), r: ndWork.r.slice() }); ndEdit = false; ndWork = null; ndRender(true); toast("Dashboard saved"); }, "save"));
+    } else ha.appendChild(bt("Customize dashboard", "out", () => { ndEdit = true; ndWork = wGet(); ndTab = "dash"; ndRender(true); }, "cust", IC_SLIDERS));
+    head.appendChild(ha); nd.appendChild(head);
+    /* tabs */
+    const tabs = el("div", "cvn-tabs"); tabs.setAttribute("role", "tablist");
+    [["dash", "Dashboard"], ["courses", "Courses"]].forEach(([k, l]) => { const b = el("button", ndTab === k ? "on" : "", l); b.type = "button"; b.setAttribute("role", "tab"); b.setAttribute("aria-selected", String(ndTab === k)); b.onclick = () => { ndTab = k; ndRender(true); }; tabs.appendChild(fx(b, "tab-" + k)); });
+    nd.appendChild(tabs);
+    if(ndTab === "courses") nd.appendChild(coursesTab(list)); else nd.appendChild(columns(list, w));
+    if(fk){ const t = nd.querySelector('[data-f="' + fk + '"]'); if(t) try{ t.focus(); }catch(e){} }
+  }
+  function coursesTab(list){
+    const box = el("div", "cvn-cl");
+    list.forEach((t, n) => { const pref = cvPref(t), row = el("div", "cvn-cr"); row.style.setProperty("--cv-c", pref.color || cvDefColor(n));
+      row.appendChild(el("span", "cvn-sq")); const tx = el("div", "cvn-ct"); tx.append(el("b", "", pref.nick || cvDefNick(n)), el("span", "", t.n + " · " + cvTerm()));
+      const g = el("button", "cvn-link", "Go to course"); g.type = "button"; g.onclick = () => { cvRecent(t); go(t); }; row.append(tx, g); box.appendChild(row); });
+    return box;
+  }
+  function columns(list, w){
+    const wrap = el("div", "cvn-cols" + (ndEdit ? " edit" : ""));
+    ["l", "r"].forEach(side => {
+      const col = el("div", "cvn-col"); col.dataset.side = side;
+      if(ndEdit){
+        col.appendChild(addBar(side, 0));
+        col.addEventListener("dragover", e => { if(!ndDrag) return; e.preventDefault(); col.classList.add("over"); });
+        col.addEventListener("dragleave", e => { if(!col.contains(e.relatedTarget)) col.classList.remove("over"); });
+        col.addEventListener("drop", e => {
+          if(!ndDrag) return; e.preventDefault(); const k = ndDrag; ndDrag = null;
+          const ws = Array.from(col.querySelectorAll(".cvn-w")).filter(x => x.dataset.k !== k);
+          let at = ws.findIndex(x => { const r = x.getBoundingClientRect(); return e.clientY < r.top + r.height / 2; }); if(at < 0) at = ws.length;
+          ["l", "r"].forEach(sd => { ndWork[sd] = ndWork[sd].filter(x => x !== k); }); ndWork[side].splice(at, 0, k); ndRender(true);
+        });
+      }
+      w[side].forEach((k, i) => { col.appendChild(widgetEl(k, side, i, list)); if(ndEdit) col.appendChild(addBar(side, i + 1)); });
+      wrap.appendChild(col);
+    });
+    return wrap;
+  }
+  function addBar(side, at){
+    const b = el("button", "cvn-add"); b.type = "button"; b.innerHTML = IC_PLUS + "<span>Add widget</span>"; b.setAttribute("aria-haspopup", "menu"); b.setAttribute("aria-expanded", "false");
+    b.onclick = () => {
+      const used = ndWork.l.concat(ndWork.r), free = Object.keys(WIDGETS).filter(k => !used.includes(k));
+      if(!free.length){ toast("Every widget is already on your dashboard"); return; }
+      cvMenu(b, "Add widget", free.map(k => ({ label: WIDGETS[k], fn: () => { ndWork[side].splice(at, 0, k); ndRender(true); } })));
+    };
+    return b;
+  }
+  function wMove(k, side, i, how){
+    const from = ndWork[side]; from.splice(i, 1); let to = side, at = i;
+    if(how === "up") at = Math.max(0, i - 1); else if(how === "down") at = Math.min(from.length, i + 1);
+    else { to = how === "right" ? "r" : "l"; at = Math.min(ndWork[to].length, i); }
+    ndWork[to].splice(at, 0, k); ndRender(true);
+    const g = nd.querySelector('[data-f="grip-' + k + '"]'); if(g) try{ g.focus(); }catch(e){}
+  }
+  function widgetEl(k, side, i, list){
+    const s = el("section", "cvn-w"); s.dataset.k = k; s.setAttribute("aria-label", WIDGETS[k]);
+    const hd = el("div", "cvn-wh"); hd.appendChild(el("h2", "", WIDGETS[k])); const ex = el("div", "cvn-wx");
+    if(k === "grades"){
+      const lab = el("label", "cvn-sw2"), cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = ndAll; cb.dataset.f = "grades-sw";
+      cb.onchange = () => { ndAll = cb.checked; ndRender(true); }; lab.append(cb, el("span", "cvn-trk"), el("span", "", "Show all grades")); ex.appendChild(lab);
+    }
+    if(k === "todo"){
+      const nb = el("button", "cvn-nb", "+ New To-do"); nb.type = "button"; fx(nb, "new-todo");
+      nb.onclick = () => { const t = prompt("New To-do"); const v = t && t.trim().slice(0, 80); if(!v) return; const r = cvGet("pb_cv_todos", { l: [] }); r.l = (r.l || []).concat([{ id: Date.now(), t: v, d: false }]); cvSet("pb_cv_todos", r); ndRender(true); };
+      ex.appendChild(nb);
+    }
+    if(ndEdit){
+      const gr = el("button", "cvn-ib"); gr.type = "button"; gr.innerHTML = IC_GRIP; gr.setAttribute("aria-label", "Move " + WIDGETS[k] + " widget"); gr.setAttribute("aria-haspopup", "menu"); gr.setAttribute("aria-expanded", "false"); fx(gr, "grip-" + k);
+      gr.onclick = () => { const o = []; if(i > 0) o.push({ label: "Move up", fn: () => wMove(k, side, i, "up") }); if(i < ndWork[side].length - 1) o.push({ label: "Move down", fn: () => wMove(k, side, i, "down") }); o.push(side === "l" ? { label: "Move to right column", fn: () => wMove(k, side, i, "right") } : { label: "Move to left column", fn: () => wMove(k, side, i, "left") }); cvMenu(gr, "Move widget", o); };
+      gr.onkeydown = e => { const m = { ArrowUp: "up", ArrowDown: "down", ArrowLeft: "left", ArrowRight: "right" }[e.key]; if(!m || (e.key === "ArrowLeft" && side === "l") || (e.key === "ArrowRight" && side === "r")) return; e.preventDefault(); wMove(k, side, i, m); };
+      const tr = el("button", "cvn-ib"); tr.type = "button"; tr.innerHTML = IC_TRASH; tr.setAttribute("aria-label", "Remove " + WIDGETS[k] + " widget"); tr.onclick = () => { ndWork[side].splice(i, 1); ndRender(true); };
+      ex.append(gr, tr);
+      s.draggable = true;
+      s.addEventListener("dragstart", e => { ndDrag = k; try{ e.dataTransfer.setData("text/plain", k); e.dataTransfer.effectAllowed = "move"; }catch(_){} s.classList.add("drag"); });
+      s.addEventListener("dragend", () => { ndDrag = null; s.classList.remove("drag"); nd.querySelectorAll(".cvn-col").forEach(c => c.classList.remove("over")); });
+    }
+    hd.appendChild(ex); s.appendChild(hd);
+    if(k === "grades") s.appendChild(gradesBody(list)); else if(k === "todo") s.appendChild(todoBody());
+    else s.appendChild(el("p", "cvn-empty", k === "ann" ? "No announcements" : "Nothing for now"));
+    return s;
+  }
+  function gradesBody(list){
+    const box = el("div", "cvn-gc");
+    list.forEach((t, n) => {
+      const pref = cvPref(t), src = t.im || (t.ic && ICONS[t.ic]) || "", c = el("div", "cvn-gcard"); c.style.setProperty("--cv-c", pref.color || cvDefColor(n));
+      const hd = el("div", "cvn-gh"); if(src) hd.style.backgroundImage = "url(" + JSON.stringify(src) + ")";
+      const pill = el("div", "cvn-pill"); pill.innerHTML = ndAll ? "<b>N/A</b>" : "<i></i><i></i><i></i>" + IC_EYE; pill.setAttribute("role", "img"); pill.setAttribute("aria-label", ndAll ? "Grade not available" : "Grade hidden");
+      const kb = el("button", "cvn-gk"); kb.type = "button"; kb.innerHTML = IC_KB; kb.setAttribute("aria-label", "Settings for " + t.n); kb.setAttribute("aria-haspopup", "dialog"); kb.onclick = e => { e.stopPropagation(); if(cvPop && cvPopFor === kb) cvClose(false); else cvOpen(t, n, kb, cvDefNick(n)); };
+      hd.append(pill, kb);
+      const bd = el("div", "cvn-gb"); bd.append(el("div", "cvn-t", pref.nick || cvDefNick(n)), el("div", "cvn-c", t.n), el("div", "cvn-c", cvTerm()));
+      const lk = el("div", "cvn-lk"); const a = el("button", "cvn-link", "View Gradebook"), b = el("button", "cvn-link", "Go to course"); a.type = b.type = "button";
+      a.onclick = () => go({ t: NDGRADES, s: "" }); b.onclick = () => { cvRecent(t); go(t); }; lk.append(a, el("span", "", "|"), b); bd.appendChild(lk); c.append(hd, bd); box.appendChild(c);
+    });
+    return box;
+  }
+  function todoBody(){
+    const box = el("div", "cvn-td"), lab = el("label", "cvn-fl", "Filter"); lab.htmlFor = "cvn-filter"; box.appendChild(lab);
+    const sel = el("select", "cvn-sel"); sel.id = "cvn-filter"; fx(sel, "filter"); ["Incomplete", "Complete", "All"].forEach(o => { const op = el("option", "", o); op.value = o; sel.appendChild(op); }); sel.value = ndFilter; sel.onchange = () => { ndFilter = sel.value; ndRender(true); };
+    box.append(sel, el("hr"));
+    const todos = cvGet("pb_cv_todos", { l: [] }).l || [], shown = todos.filter(x => ndFilter === "All" || (ndFilter === "Complete") === !!x.d);
+    if(!shown.length){ box.appendChild(el("p", "cvn-empty", ndFilter === "Complete" ? "No completed items" : "No upcoming items")); return box; }
+    const ul = el("ul", "cvn-tl");
+    shown.forEach(x => {
+      const li = el("li"), lb = el("label"), cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = !!x.d; cb.dataset.f = "td-" + x.id;
+      cb.onchange = () => { const r = cvGet("pb_cv_todos", { l: [] }); (r.l || []).forEach(y => { if(y.id === x.id) y.d = cb.checked; }); cvSet("pb_cv_todos", r); ndRender(true); };
+      lb.append(cb, el("span", "", x.t)); const del = el("button", "cvn-ib"); del.type = "button"; del.innerHTML = IC_TRASH; del.setAttribute("aria-label", "Delete " + x.t);
+      del.onclick = () => { const r = cvGet("pb_cv_todos", { l: [] }); r.l = (r.l || []).filter(y => y.id !== x.id); cvSet("pb_cv_todos", r); ndRender(true); };
+      li.append(lb, del); ul.appendChild(li);
+    });
+    box.appendChild(ul); return box;
+  }
+  applyDashPrefs();
   window.__pbHomeRender = render;
   /* ---- saving (the host shares it with everybody) ---- */
   function commit(list){
@@ -20845,7 +21077,7 @@ body.lm-edit .lm-btn{pointer-events:none}
     var b = e.currentTarget._b; if(!b) return;
     try{
       if(b.act === "link" && /^https?:\/\//i.test(b.val)) window.open(b.val, "_blank", "noopener,noreferrer");
-      else if(b.act === "text"){ var i = $("inp"); if(i){ i.focus(); try{ i.setRangeText(b.val, i.selectionStart, i.selectionEnd, "end"); }catch(_){ i.value += b.val; } i.dispatchEvent(new Event("input", {bubbles:true})); } }
+      else if(b.act === "text"){ var i = $("inp"), tv = b.val == null ? "" : String(b.val); if(i && tv){ i.focus(); try{ i.setRangeText(tv, i.selectionStart, i.selectionEnd, "end"); }catch(_){ i.value += tv; } i.dispatchEvent(new Event("input", {bubbles:true})); } }
       else if(b.act === "tab"){ var t = document.querySelector('#chtabs button[data-ch="' + b.val + '"]'); if(t) t.click(); }
       else if(b.act === "settings"){ var s = $("hdr-set"); if(s) s.click(); }
     }catch(_){}
@@ -21233,6 +21465,121 @@ body.lay-canvas #home .cv-grades:focus-visible{outline:2px solid var(--cv-link);
   body.lay-canvas #home .cv-act{gap:24px}
   body.lay-canvas #home .cv-kb{top:8px;right:8px;width:30px;height:30px}
 }
+
+/* ===== Dashboard View menu (⋮), List / Recent Activity views, Color Overlay ===== */
+#cv-dm{position:fixed;z-index:1200;min-width:236px;box-sizing:border-box;padding:0 0 6px;background:#fff;border:1px solid #9ea6ad;border-radius:4px;box-shadow:0 1px 4px rgba(0,0,0,.25);color:#273540;font:400 16px/1.3 Lato,"Helvetica Neue",Helvetica,Arial,sans-serif}
+#cv-dm::before,#cv-dm::after{content:"";position:absolute;left:var(--cx,50%);width:0;height:0;border:8px solid transparent;transform:translateX(-50%)}
+#cv-dm::before{top:-16px;border-bottom-color:#9ea6ad}
+#cv-dm::after{top:-15px;border-bottom-color:#fff}
+#cv-dm.up::before,#cv-dm.up::after{display:none}
+#cv-dm .cvm-h{padding:16px 16px 10px;font-weight:700}
+#cv-dm button{position:relative;display:block;width:100%;height:42px;margin:0;padding:0 16px 0 40px;border:0;border-radius:0;background:none;color:#273540;font:inherit;text-align:left;cursor:pointer;box-shadow:none;transform:none}
+#cv-dm button:hover{background:#f2f4f4}
+#cv-dm button:focus-visible{outline:none;background:#f2f4f4;box-shadow:inset 0 0 0 2px #09508c}
+#cv-dm button.sel,#cv-dm button.sel:hover,#cv-dm button.sel:focus-visible{background:#0b5a9c;color:#fff}
+#cv-dm button svg{position:absolute;left:14px;top:50%;width:16px;height:16px;margin-top:-8px}
+#cv-dm .cvm-sep{height:0;margin:6px 16px;border-top:1px solid #5c6a73}
+body.lay-canvas #home .cv-km[aria-expanded=true]{background:#f2f4f4}
+body.lay-canvas #home .cv-recent{display:none;max-width:760px;color:var(--cv-ink)}
+body.lay-canvas #home .cv-recent h2{margin:0 0 12px;font:700 22px/28px var(--cv-font)}
+body.lay-canvas #home .cv-recent p{margin:0;font:400 16px/22px var(--cv-font)}
+body.lay-canvas #home .cv-recent ul{list-style:none;margin:0;padding:0;border-top:1px solid var(--cv-line)}
+body.lay-canvas #home .cv-recent li{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 0;border-bottom:1px solid var(--cv-line)}
+body.lay-canvas #home .cv-rl{margin:0;padding:0;border:0;background:none;box-shadow:none;transform:none;color:var(--cv-link);font:400 16px/1.3 var(--cv-font);text-decoration:underline;cursor:pointer;text-align:left}
+body.lay-canvas #home .cv-rt{flex:none;font-size:14px;color:#59646c}
+body.lay-canvas.cv-v-recent #home .cv-recent{display:block}
+body.lay-canvas.cv-v-recent #home .hm-grid,body.lay-canvas.cv-v-recent #home .hm-hint{display:none}
+body.lay-canvas.cv-v-list #home .hm-grid{grid-template-columns:1fr;gap:0;border-top:1px solid var(--cv-line)}
+body.lay-canvas.cv-v-list #home .hm-cell{width:100%}
+body.lay-canvas.cv-v-list #home .hm-it{width:100%;height:76px;flex-direction:row;align-items:center;border-radius:0;box-shadow:none;border-bottom:1px solid var(--cv-line)}
+body.lay-canvas.cv-v-list #home .hm-it:hover,body.lay-canvas.cv-v-list #home .hm-it:focus-visible{box-shadow:none;background:#f7f8f8}
+body.lay-canvas.cv-v-list #home .hm-it>.hm-ic{width:76px;height:76px;flex:none}
+body.lay-canvas.cv-v-list #home .hm-it>.hm-ic.emo{font-size:30px}
+body.lay-canvas.cv-v-list #home .cv-cb{display:flex;align-items:center;gap:24px;padding:0 72px 0 20px;height:100%}
+body.lay-canvas.cv-v-list #home .cv-cb>span{margin:0}
+body.lay-canvas.cv-v-list #home .cv-code{flex:0 1 200px}
+body.lay-canvas.cv-v-list #home .cv-ttl{flex:1 1 auto;min-width:0}
+body.lay-canvas.cv-v-list #home .cv-term{flex:none}
+body.lay-canvas.cv-v-list #home .cv-act{flex:none;height:20px;gap:22px;margin:0}
+body.lay-canvas.cv-v-list #home .cv-kb{top:20px;right:14px}
+body.lay-canvas.cv-ov #home .hm-it>.hm-ic,body.lay-canvas.cv-ov .cvn-gh{position:relative}
+body.lay-canvas.cv-ov #home .hm-it>.hm-ic::after,body.lay-canvas.cv-ov .cvn-gh::after{content:"";position:absolute;inset:0;background:var(--cv-c,#2063c1);opacity:.6;pointer-events:none}
+@media(max-width:700px){body.lay-canvas.cv-v-list #home .cv-term,body.lay-canvas.cv-v-list #home .cv-act{display:none !important}}
+
+/* ===== the new dashboard (widgets) ===== */
+body.lay-canvas #home .cv-nd{display:none}
+body.lay-canvas.cv-newdash #home .cv-nd{display:block;flex:1 1 auto;min-width:0;color:var(--cv-ink)}
+body.lay-canvas.cv-newdash #home .hm-wrap,body.lay-canvas.cv-newdash #home .cv-side,body.lay-canvas.cv-newdash #home .hm-ed{display:none !important}
+.cvn-head{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin:0 0 22px}
+.cvn-head h1{margin:0;font:700 36px/44px var(--cv-font);color:var(--cv-ink)}
+.cvn-ha{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.cvn-b{display:inline-flex;align-items:center;gap:8px;height:38px;margin:0;padding:0 12px;box-sizing:border-box;border:1px solid var(--cv-btn);border-radius:4px;background:#f2f4f4;color:var(--cv-ink);font:400 16px/1 var(--cv-font);cursor:pointer;box-shadow:none;transform:none;white-space:nowrap}
+.cvn-b:hover{background:#e8eaec}
+.cvn-b.out{background:#fff;border-color:#0b5a9c;color:#0b5a9c}
+.cvn-b.out:hover{background:#f2f8fd}
+.cvn-b.pri{background:#0b5a9c;border-color:#0b5a9c;color:#fff}
+.cvn-b.pri:hover{background:#094a82}
+.cvn-b svg{display:block;width:20px;height:20px}
+.cvn-b:focus-visible,.cvn-tabs button:focus-visible,.cvn-add:focus-visible,.cvn-ib:focus-visible,.cvn-nb:focus-visible,.cvn-link:focus-visible,.cvn-gk:focus-visible,.cvn-sel:focus-visible{outline:2px solid #0b5a9c;outline-offset:2px}
+.cvn-tabs{display:flex;margin:0 0 40px;border-bottom:1px solid #8d959b}
+.cvn-tabs button{height:50px;margin:0 0 -1px;padding:0 25px;border:0;border-bottom:4px solid transparent;border-radius:0;background:none;color:var(--cv-ink);font:400 18px/1 var(--cv-font);cursor:pointer;box-shadow:none;transform:none}
+.cvn-tabs button.on{border-bottom-color:#0b5a9c}
+.cvn-cols{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:30px;padding:0 45px 40px}
+.cvn-col{min-width:0;border-radius:4px}
+.cvn-col.over{outline:2px dashed #0b5a9c;outline-offset:6px}
+.cvn-w{position:relative;margin:0 0 50px;padding:30px;box-sizing:border-box;border-radius:4px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.cvn-cols:not(.edit) .cvn-w{margin-bottom:30px}
+.cvn-w.drag{opacity:.45}
+.cvn-wh{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:0 0 22px}
+.cvn-wh h2{margin:0;font:700 32px/40px var(--cv-font);color:var(--cv-ink)}
+.cvn-wx{display:flex;align-items:center;gap:14px}
+.cvn-ib{display:flex;align-items:center;justify-content:center;width:28px;height:28px;margin:0;padding:0;border:0;border-radius:4px;background:none;color:#3e5466;cursor:pointer;box-shadow:none;transform:none}
+.cvn-ib:hover{background:#f2f4f4}
+.cvn-ib svg{display:block;width:20px;height:20px}
+.cvn-w[draggable=true] .cvn-ib:first-of-type{cursor:grab}
+.cvn-nb{height:34px;margin:0;padding:0 12px;border:1px solid var(--cv-btn);border-radius:4px;background:#f2f4f4;color:var(--cv-ink);font:400 16px/1 var(--cv-font);cursor:pointer;box-shadow:none;transform:none;white-space:nowrap}
+.cvn-nb:hover{background:#e8eaec}
+.cvn-add{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:46px;margin:0 0 50px;padding:0;box-sizing:border-box;border:1px dotted #0b5a9c;border-radius:4px;background:#fff;color:#09508c;font:400 16px/1 var(--cv-font);cursor:pointer;box-shadow:none;transform:none}
+.cvn-add:hover{background:#f2f8fd}
+.cvn-add svg{display:block;width:20px;height:20px}
+.cvn-sw2{position:relative;display:inline-flex;align-items:center;gap:12px;font:400 18px/1 var(--cv-font);cursor:pointer;white-space:nowrap}
+.cvn-sw2 input{position:absolute;opacity:0;width:52px;height:30px;margin:0;cursor:pointer}
+.cvn-trk{position:relative;flex:none;width:52px;height:30px;box-sizing:border-box;border:2px solid #8d959b;border-radius:15px;background:#fff;transition:background .15s}
+.cvn-trk::after{content:"\2715";position:absolute;left:1px;top:1px;width:24px;height:24px;border-radius:50%;box-sizing:border-box;border:2px solid #273540;background:#fff;color:#273540;font:700 12px/20px var(--cv-font);text-align:center;transition:left .15s}
+.cvn-sw2 input:checked + .cvn-trk{background:#0b5a9c;border-color:#0b5a9c}
+.cvn-sw2 input:checked + .cvn-trk::after{content:"\2713";left:23px;border-color:#fff;color:#0b5a9c}
+.cvn-sw2 input:focus-visible + .cvn-trk{outline:2px solid #0b5a9c;outline-offset:2px}
+.cvn-gc{display:flex;flex-wrap:wrap;gap:20px}
+.cvn-gcard{display:flex;flex-direction:column;width:328px;max-width:100%;min-height:430px;background:#f2f4f4;box-shadow:0 1px 4px rgba(0,0,0,.28)}
+.cvn-gh{position:relative;flex:none;height:182px;background:var(--cv-c,#2063c1) center/cover no-repeat}
+.cvn-pill{position:absolute;z-index:1;left:15px;top:15px;display:flex;align-items:center;gap:6px;height:62px;padding:0 18px;box-sizing:border-box;border-radius:16px;background:#0b2340;color:#fff}
+.cvn-pill i{display:block;width:15px;height:15px;border-radius:50%;background:#fff}
+.cvn-pill b{font:700 20px/1 var(--cv-font)}
+.cvn-pill svg{display:block;width:22px;height:22px;margin-left:8px}
+.cvn-gk{position:absolute;z-index:1;top:10px;right:8px;display:flex;align-items:center;justify-content:center;width:30px;height:34px;margin:0;padding:0;border:0;border-radius:4px;background:none;color:#fff;cursor:pointer;box-shadow:none;transform:none}
+.cvn-gk svg{display:block;width:22px;height:22px}
+.cvn-gb{display:flex;flex:1 1 auto;flex-direction:column;padding:16px 15px 20px}
+.cvn-t{font:700 20px/26px var(--cv-font);color:var(--cv-ink)}
+.cvn-c{margin-top:14px;font:400 16px/22px var(--cv-font);color:#586874}
+.cvn-lk{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:auto;padding-top:24px;color:#586874}
+.cvn-link{margin:0;padding:0;border:0;background:none;box-shadow:none;transform:none;color:#09508c;font:400 16px/1.3 var(--cv-font);text-decoration:underline;cursor:pointer}
+.cvn-td .cvn-fl{display:block;margin:0 0 8px;font:700 18px/24px var(--cv-font)}
+.cvn-sel{display:block;width:250px;max-width:100%;height:46px;margin:0;padding:0 14px;box-sizing:border-box;border:1px solid #8d959b;border-radius:4px;background:#fff;color:var(--cv-ink);font:400 18px/1 var(--cv-font)}
+.cvn-td hr{margin:18px 0;border:0;border-top:1px solid #c7cdd1}
+.cvn-empty{margin:0;padding:34px 0 40px;text-align:center;font:400 18px/24px var(--cv-font);color:#586874}
+.cvn-tl{list-style:none;margin:0;padding:0}
+.cvn-tl li{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--cv-line)}
+.cvn-tl label{display:flex;align-items:center;gap:10px;min-width:0;font:400 16px/22px var(--cv-font);cursor:pointer;overflow-wrap:anywhere}
+.cvn-tl input{flex:none;width:18px;height:18px;margin:0}
+.cvn-cl{border-top:1px solid var(--cv-line)}
+.cvn-cr{display:flex;align-items:center;gap:16px;padding:14px 0;border-bottom:1px solid var(--cv-line)}
+.cvn-sq{flex:none;width:48px;height:48px;border-radius:4px;background:var(--cv-c,#2063c1)}
+.cvn-ct{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:2px}
+.cvn-ct b{font:700 18px/24px var(--cv-font)}
+.cvn-ct span{font:400 14px/20px var(--cv-font);color:#586874}
+@media(max-width:1000px){.cvn-cols{grid-template-columns:minmax(0,1fr);padding:0 0 30px}.cvn-gcard{width:100%}}
+@media(max-width:600px){.cvn-head h1{font-size:28px}.cvn-wh h2{font-size:26px}.cvn-w{padding:20px}}
+@media(prefers-reduced-motion:reduce){.cvn-trk,.cvn-trk::after{transition:none}}
 </style>
 <script id="canvas-js">
 (function(){
@@ -21254,11 +21601,11 @@ body.lay-canvas #home .cv-grades:focus-visible{outline:2px solid var(--cv-link);
     return '<g fill="currentColor" stroke-width="1.2" style="stroke:var(--cv-sep,#334451)">' + o + '</g><circle cx="12" cy="12" r="2.6" fill="var(--cv-sep,#334451)" stroke="none"/>';
   }
   var IC = {
-    online: svg('<circle cx="9" cy="8" r="3.2"/><path d="M2.8 19.5c0-3.4 2.8-5.6 6.2-5.6s6.2 2.2 6.2 5.6"/><path d="M15.5 4.9a3.1 3.1 0 0 1 0 6"/><path d="M17.2 13.9c2.4.5 4 2.4 4 5.2"/>'),
-    dash: svg('<path d="M3.2 17.5A9.4 9.4 0 1 1 20.8 17.5"/><path d="M12 17.5l4.2-6.2"/><circle cx="12" cy="17.5" r="1.3" fill="currentColor"/><path d="M12 6v1.8M6.2 8.6l1.2 1.2M17.8 8.6l-1.2 1.2"/>'),
-    tabs: svg('<path d="M6 3.5h11.5A1.5 1.5 0 0 1 19 5v14.5H7.5A1.5 1.5 0 0 1 6 18z"/><path d="M6 18a1.5 1.5 0 0 1 1.5-1.5H19"/><path d="M9.5 7.5h6"/>'),
+    online: svg('<circle cx="8" cy="7.6" r="3.1"/><path d="M2.5 19.5c0-3.5 2.4-5.5 5.5-5.5s5.5 2 5.5 5.5z"/><circle cx="16.6" cy="8.4" r="2.1"/><path d="M15.4 13.5c3.2-.5 5.6 1.2 5.6 4.2v1.8h-4.6"/>'),
+    dash: svg('<path d="M3.3 17.3a8.7 8.7 0 1 1 17.4 0"/><path d="M3.3 17.3H7M17 17.3h3.7"/><path d="M6.7 10.1l.9.9M12 6.1v1.3M17.3 10.1l-.9.9"/><path d="M10.1 9.6l3.1 5.7a1.8 1.8 0 1 1-3.1.3z"/>'),
+    tabs: svg('<path d="M18 3.2v13.1H7.5A1.5 1.5 0 0 0 6 17.8V4.7a1.5 1.5 0 0 1 1.5-1.5z"/><path d="M6 17.8a1.5 1.5 0 0 0 1.5 1.5H19"/><path d="M19 19.3h-1.2M7.5 19.3v1.3H19v-1.3"/><rect x="9" y="6.2" width="6.8" height="3.4" rx=".4"/><path d="M9 12h6.8"/>'),
     log: svg('<path d="M6 3h8.5L19 7.5V21H6z"/><path d="M14 3v5h5"/><path d="M9 12.5h7M9 16h7"/>'),
-    eh: svg('<circle cx="12" cy="12" r="9"/><path d="M12 7v5.2l3.4 2"/>'),
+    eh: svg('<circle cx="12" cy="12" r="9.2"/><path d="M12 6.3v6l3.7 3.1"/>'),
     add: svg('<rect x="3.5" y="3.5" width="17" height="17" rx="3"/><path d="M12 8v8M8 12h8"/>'),
     syn: svg(pinwheel()),
     admin: svg('<path d="M13.2 3.6l7.2 7.2-3 3-7.2-7.2z"/><path d="M12.2 11.8L4.6 19.4" stroke-width="2.7"/>'),
@@ -21266,6 +21613,11 @@ body.lay-canvas #home .cv-grades:focus-visible{outline:2px solid var(--cv-link);
     x: svg('<path d="M6 6l12 12M18 6L6 18"/>'),
     hb: svg('<path d="M0 4.5h24M0 12h24M0 19.5h24" stroke-width="1.5" stroke-linecap="butt"/>')
   };
+  /* Rail icons traced 1:1 from the real Canvas rail; filled shapes that take the text colour. */
+  function fs(p){ return '<svg viewBox="0 0 33 33" aria-hidden="true" focusable="false" fill="currentColor" fill-rule="evenodd" stroke="none" style="overflow:visible"><path d="' + p + '"/></svg>'; }
+  IC.dash = fs("M12.81 14.94L12.44 15.81L12.69 18.44L13.81 24.06L14.56 25.69L15.69 26.81L17.69 27.56L19.69 26.81L20.56 25.81L21.19 24.44L21.19 22.94L20.44 21.44L19.44 20.19L14.06 14.94ZM15.19 19.19L16.19 19.69L19.31 23.19L19.31 24.44L18.56 25.19L18.06 25.44L16.94 25.31L15.69 23.94L15.31 21.56L14.81 19.56ZM7.06 12.19L6.81 12.44L6.81 13.31L7.81 14.31L8.44 14.31L9.19 13.69L9.19 13.19L8.31 12.19ZM26.31 12.06L25.44 12.06L24.69 12.69L24.44 13.19L24.44 13.81L24.69 14.19L25.44 14.31L26.44 13.69L26.69 12.81ZM16.56 8.31L15.94 8.69L15.81 10.44L16.44 10.94L17.06 10.94L17.56 10.56L17.56 8.94L17.19 8.44ZM0.94 18.06L0.69 20.44L0.81 23.56L1.19 24.81L1.81 25.69L10.31 25.69L10.69 25.44L10.94 24.69L10.56 24.06L9.94 23.81L3.44 23.81L2.81 23.44L2.44 21.94L2.56 18.94L3.44 15.94L4.69 13.56L5.31 12.69L6.44 11.69L6.56 11.31L8.19 9.81L10.81 8.19L13.31 7.19L14.56 6.94L17.81 6.94L19.31 7.19L22.56 8.06L25.81 10.06L28.56 13.06L29.56 14.94L30.56 17.56L30.81 19.44L30.69 23.19L30.06 23.81L24.06 23.81L23.56 24.31L23.69 25.19L24.06 25.44L31.56 25.44L31.94 25.31L32.44 24.56L32.69 22.69L32.44 17.94L31.56 15.56L31.44 14.69L30.19 12.31L28.19 9.94L26.06 8.06L22.81 6.19L21.19 5.81L20.56 5.06L12.94 5.06L12.44 5.69L10.69 6.19L8.31 7.44L6.19 9.06L3.69 11.69L1.81 15.06Z"); IC.tabs = fs("M10.19 16.56L10.31 17.44L10.81 17.69L21.44 17.69L22.19 17.06L22.06 16.44L21.56 16.06L10.69 16.06ZM9.19 8.06L9.19 13.44L9.31 13.81L9.81 14.19L22.19 14.31L22.81 14.06L23.06 13.56L23.19 8.56L22.94 7.69L22.31 7.31L10.44 7.31L9.69 7.44ZM10.94 9.81L11.06 9.44L11.69 8.94L20.44 8.94L20.81 9.06L21.44 9.81L21.56 11.69L21.19 12.31L20.56 12.56L11.56 12.56L10.94 11.94ZM5.81 2.81L4.19 4.94L3.94 7.56L4.06 28.06L4.56 29.31L5.69 30.56L6.56 31.19L8.56 31.69L26.44 31.69L27.19 31.44L27.44 31.19L27.44 30.56L27.06 30.19L25.69 30.06L25.06 29.56L24.94 25.44L25.56 24.69L27.81 24.56L28.44 23.94L28.44 3.06L28.19 2.56L27.31 1.81L8.56 1.81ZM5.69 27.06L5.94 26.06L6.69 25.31L8.31 24.69L22.56 24.69L23.19 25.31L23.19 25.94L22.56 26.56L8.44 26.56L7.81 27.06L7.81 27.69L8.19 28.06L9.06 28.31L22.31 28.19L23.06 28.69L23.19 29.31L22.44 30.06L8.31 30.06L7.19 29.69L6.06 28.69ZM6.06 4.94L6.94 4.19L8.06 3.69L26.31 3.81L26.81 4.56L26.69 22.44L26.19 22.94L25.69 23.06L8.19 23.06L6.81 23.56L6.06 23.44L5.69 22.94L5.69 6.06Z"); IC.online = fs("M23.56 8.56L22.31 9.94L21.94 11.19L22.06 14.31L22.31 14.94L22.81 15.44L22.94 16.06L22.44 16.56L20.94 17.19L19.94 17.94L19.81 18.56L20.06 19.06L21.19 19.81L22.56 21.19L23.31 23.69L23.94 24.31L31.56 24.44L32.06 24.19L32.31 23.81L32.44 22.56L31.81 18.81L30.94 17.81L28.31 16.56L27.94 15.94L28.94 13.81L28.94 11.06L28.56 10.06L27.44 8.69L26.19 8.19L25.19 8.06ZM24.69 9.94L25.81 9.81L26.31 10.06L27.06 10.94L27.19 13.19L26.94 14.06L26.19 15.06L26.06 16.69L26.56 17.56L29.31 18.69L30.06 19.44L30.44 20.19L30.69 21.94L29.94 22.69L25.81 22.81L25.19 22.56L24.81 22.19L24.06 20.19L23.19 18.81L23.19 18.19L24.31 17.31L24.69 16.69L24.69 15.06L24.06 14.19L23.69 13.06L23.69 11.19ZM9.31 5.56L9.31 5.81L7.06 7.81L6.19 9.81L6.19 14.44L7.56 17.19L7.56 17.81L6.56 18.81L3.44 20.06L1.94 20.94L1.19 21.69L0.44 23.19L0.19 24.19L0.06 26.81L0.31 27.31L1.69 27.69L20.31 27.69L21.31 27.44L21.81 26.81L21.81 25.69L21.44 23.56L20.69 21.69L19.31 20.56L17.69 19.69L15.31 18.81L14.31 17.94L14.31 17.06L14.94 16.19L15.69 14.44L15.69 10.06L14.81 7.81L13.56 6.56L12.81 6.19L12.44 5.56ZM9.44 7.81L10.56 7.44L11.56 7.56L12.44 7.94L13.44 9.06L13.94 10.94L13.94 13.31L13.69 14.56L12.56 16.81L12.56 18.81L13.81 20.06L17.81 21.69L19.44 23.06L19.94 24.31L19.94 25.31L19.56 25.94L2.56 26.06L2.06 25.56L2.06 23.44L3.44 21.81L7.81 20.06L8.44 19.69L9.06 18.94L9.06 16.56L7.94 14.56L7.94 9.56L8.19 8.94Z"); IC.log = fs("M11.31 19.94L11.44 20.56L11.94 20.94L19.94 20.94L20.44 20.19L20.31 19.69L19.81 19.31L12.06 19.31L11.69 19.44ZM11.31 14.31L11.31 15.06L11.94 15.44L21.81 15.44L22.31 14.94L22.19 14.06L21.19 13.69L12.19 13.69L11.56 13.94ZM11.31 8.69L11.31 9.31L11.94 9.94L19.94 9.94L20.44 9.19L20.31 8.44L19.94 8.06L11.94 8.06ZM6.81 2.69L6.56 3.06L6.44 13.44L5.81 14.06L3.56 14.06L1.94 14.69L1.56 15.06L0.94 16.44L0.81 28.94L0.94 30.06L1.56 31.31L2.44 32.19L4.19 32.69L29.06 32.69L30.56 32.44L31.19 32.06L32.19 31.06L32.56 29.81L32.56 20.06L31.94 19.56L31.06 19.69L30.69 20.19L30.81 21.81L30.44 22.94L28.44 24.31L27.44 24.44L26.94 23.81L27.06 16.94L26.44 15.94L25.94 15.56L25.31 15.56L25.19 15.81L25.31 23.69L25.19 24.56L24.69 25.19L8.94 25.31L8.44 24.81L8.31 5.69L8.44 5.19L9.31 4.56L21.81 4.69L22.69 4.44L29.94 4.44L30.56 5.06L30.56 14.94L31.06 15.44L31.94 15.44L32.44 14.94L32.31 2.81L31.94 2.56ZM2.56 26.31L2.94 25.56L3.56 25.44L5.19 26.44L6.56 26.94L26.94 26.94L28.56 26.31L29.44 25.56L30.19 25.44L30.69 25.81L30.81 26.19L30.81 29.31L30.56 30.19L30.06 30.69L29.56 30.81L4.31 30.81L3.19 30.44L2.69 29.81ZM3.81 15.69L5.94 15.69L6.31 15.94L6.56 16.56L6.56 24.06L5.94 24.69L3.69 23.44L2.69 22.19L2.69 16.69L3.44 15.81Z");
+  IC.eh = fs("M15.81 7.44L15.31 7.94L15.44 17.06L16.69 18.31L22.19 22.44L23.06 22.81L23.69 22.69L24.06 22.06L23.94 21.56L23.06 20.69L18.44 17.31L17.19 16.06L17.19 8.44L16.81 7.56ZM12.31 0.56L11.94 1.19L10.06 1.69L6.44 3.81L4.19 5.94L2.19 8.69L1.81 9.69L1.19 10.56L0.19 14.06L0.06 17.69L0.31 19.94L0.94 21.44L1.31 23.06L2.94 25.94L4.31 27.69L6.94 30.06L8.81 31.19L10.19 31.69L10.69 32.19L10.69 32.44L21.56 32.44L21.81 31.94L25.19 30.31L27.31 28.56L29.81 25.56L30.06 24.81L30.56 24.19L31.81 21.19L32.44 17.19L31.81 12.44L30.94 10.06L29.31 7.31L26.69 4.44L24.56 2.81L23.31 2.31L22.44 1.69L20.56 1.19L20.19 0.56ZM15.31 2.44L18.69 2.56L21.69 3.56L23.81 4.69L26.06 6.44L27.69 8.19L29.06 10.31L29.94 12.44L30.56 15.94L30.44 18.94L29.81 21.69L28.06 24.94L26.56 26.81L24.56 28.56L23.19 29.44L21.19 30.31L16.69 31.06L11.56 30.44L8.81 29.19L7.19 28.06L5.44 26.31L4.06 24.44L2.94 22.31L2.56 20.81L2.19 20.19L1.94 18.56L2.06 13.94L2.81 12.06L2.94 11.19L4.31 8.69L6.94 5.94L8.56 4.69L10.81 3.56L12.31 3.19L12.94 2.81Z"); IC.add = fs("M1.06 3.31L0.94 27.56L1.31 28.69L2.19 29.56L2.19 29.94L30.19 29.94L30.19 29.69L31.06 28.69L31.69 27.06L31.69 8.69L31.44 8.31L30.81 8.06L16.81 7.94L16.06 7.19L13.31 3.19L12.31 2.81L1.81 2.81ZM2.81 5.06L3.56 4.44L11.44 4.44L12.31 4.81L14.06 7.06L14.06 7.69L13.56 8.06L5.31 8.06L4.94 8.19L4.44 8.81L4.56 9.44L5.31 9.94L29.19 9.94L29.69 10.19L29.94 10.56L29.81 27.44L28.94 28.06L3.19 27.94L2.69 27.31L2.56 8.81Z"); IC.syn = fs("M10.06 -3.44L10.06 -3.19L9.44 -2.56L7.81 -1.94L6.19 -0.69L4.31 1.31L2.81 3.94L1.81 7.19L-0.81 9.94L-1.94 11.44L-3.06 13.94L-3.31 15.06L-3.44 17.44L-3.19 19.69L-1.81 22.69L-0.81 24.06L1.19 26.19L4.06 28.19L5.44 31.06L7.69 33.69L9.44 34.94L11.31 35.81L11.56 36.44L18.19 36.44L18.19 36.19L18.69 35.69L21.06 34.81L23.81 32.69L24.56 32.44L27.06 32.31L30.81 30.94L32.44 29.81L34.94 26.94L36.19 24.06L36.44 21.44L36.19 17.69L34.94 15.06L34.94 13.69L35.44 11.19L35.06 7.31L33.69 4.44L32.56 2.94L31.19 1.69L28.81 0.31L26.69 -0.44L24.81 -0.81L22.94 -0.81L21.94 -0.56L20.94 -0.69L19.19 -1.81L17.19 -2.69L16.69 -3.19L16.69 -3.44ZM23.94 1.44L25.06 1.94L26.31 3.56L26.69 4.69L26.81 6.69L26.31 8.94L23.31 12.94L22.69 14.31L22.56 16.81L23.06 18.31L24.31 19.81L26.94 21.06L28.69 20.94L30.94 19.94L33.06 17.56L33.44 17.56L33.81 17.94L33.81 18.81L33.06 20.19L32.06 21.31L30.06 22.44L29.19 22.69L26.19 22.56L24.81 21.81L21.56 20.56L20.06 20.69L17.69 21.81L16.56 23.31L15.94 25.19L15.94 26.69L16.94 29.06L17.81 29.94L19.94 31.31L20.69 31.56L21.06 32.06L20.56 32.56L19.19 32.69L18.56 32.56L16.81 31.56L15.19 29.81L14.31 27.94L14.06 26.69L14.06 21.44L13.56 20.31L12.81 19.31L11.44 18.19L10.44 17.81L8.56 17.69L7.19 17.94L6.06 18.69L4.19 20.94L3.81 24.06L3.31 24.81L2.81 24.69L2.31 23.94L2.06 23.19L2.06 21.56L3.19 19.06L5.56 16.94L6.44 16.44L9.56 15.81L11.81 14.69L12.81 13.44L13.69 11.31L13.31 8.94L12.56 7.56L11.94 6.94L9.94 5.69L8.81 5.44L7.31 5.44L5.06 5.94L4.81 5.56L5.94 4.19L7.06 3.81L9.31 3.81L10.94 4.31L12.81 5.81L15.56 9.81L16.56 10.81L18.06 11.56L20.69 11.69L21.94 11.31L23.44 10.06L24.69 7.69L24.81 5.56L23.94 3.19L23.31 2.19L23.31 1.69L23.56 1.44Z"); IC.col = fs("M5.31 16.44L5.69 17.31L14.19 25.94L14.81 26.31L15.19 26.31L15.94 25.56L15.81 24.94L9.56 18.69L9.44 17.81L9.69 17.56L31.94 17.44L32.44 16.69L32.31 15.94L31.94 15.56L9.69 15.44L9.44 15.19L9.44 14.56L15.56 8.44L15.81 7.31L15.31 6.94L14.69 6.94L6.81 14.56ZM1.19 5.06L0.94 6.19L0.94 26.81L1.19 27.94L2.44 27.94L2.69 26.81L2.69 6.19L2.44 5.06Z"); IC.cal = fs("M21.31 21.69L21.06 22.06L21.19 26.94L21.69 27.31L25.31 27.31L26.19 27.06L26.56 26.69L26.69 25.94L26.56 21.94L25.81 21.56ZM23.19 23.56L24.19 23.44L24.81 23.94L24.81 24.69L24.44 25.19L23.44 25.31L22.94 24.81L22.81 24.19ZM13.81 21.69L13.44 22.06L13.44 26.31L13.69 26.94L14.69 27.31L18.56 27.19L18.94 26.69L19.06 25.56L18.94 21.94L18.44 21.56ZM15.19 24.06L15.94 23.44L16.56 23.44L17.19 23.94L17.19 24.69L16.81 25.19L15.94 25.31L15.31 24.81ZM6.06 21.81L6.06 26.81L6.69 27.31L10.31 27.31L11.06 27.06L11.44 26.44L11.44 22.06L10.69 21.56L6.44 21.56ZM8.44 23.44L9.31 23.56L9.69 24.06L9.69 24.69L9.06 25.31L8.19 25.19L7.69 24.56L7.81 23.94ZM21.19 14.44L21.06 18.94L21.31 19.31L25.81 19.44L26.56 19.06L26.69 15.19L26.56 14.69L26.06 14.19L21.56 14.06ZM23.44 15.69L24.19 15.69L24.81 16.31L24.81 17.19L24.31 17.69L23.44 17.69L22.81 16.94L22.94 16.19ZM13.81 14.31L13.44 14.94L13.44 18.81L13.81 19.31L18.44 19.44L18.94 19.06L19.06 15.31L18.94 14.69L18.44 14.06L14.31 14.06ZM15.94 15.69L16.56 15.69L17.19 16.31L17.19 17.06L16.69 17.69L15.81 17.69L15.19 16.94L15.31 16.19ZM6.31 14.19L5.94 14.94L6.06 19.19L6.44 19.44L11.06 19.31L11.44 18.94L11.31 14.56L10.56 14.06ZM8.44 15.69L9.19 15.81L9.69 16.44L9.69 17.06L9.06 17.69L8.31 17.69L7.69 16.94L7.81 16.19ZM3.31 3.06L2.44 4.06L2.06 5.44L2.19 32.19L2.94 32.69L29.19 32.69L29.94 32.44L30.44 31.69L30.44 6.06L29.81 3.69L28.94 2.94L28.06 2.56L25.19 2.44L24.31 1.19L24.19 0.56L23.31 0.56L22.94 2.06L22.19 2.56L10.44 2.56L9.56 1.94L9.06 0.56L8.19 0.56L7.94 1.81L7.56 2.31L6.94 2.56L4.56 2.56ZM4.06 10.69L4.81 10.19L27.19 10.19L28.06 10.44L28.69 11.31L28.69 29.69L28.44 30.44L27.56 31.06L4.44 30.94L3.94 30.19ZM3.94 5.19L4.69 4.44L6.94 4.44L7.69 4.81L8.06 5.81L8.44 6.19L8.81 6.19L9.31 5.81L9.69 4.94L10.44 4.44L22.19 4.44L22.94 4.94L23.31 6.06L24.06 6.19L24.44 5.94L24.81 4.94L25.19 4.56L27.56 4.44L28.06 4.69L28.56 5.44L28.69 6.81L28.44 7.81L27.81 8.31L4.81 8.44L4.44 8.31L3.94 7.56Z");
+
   /* Same order as the real Canvas rail. Account opens Settings, Courses is the tray with every tab, History is the edit history. */
   var ITEMS = [
     ["account", "Account", ""], ["dash", "Dashboard", IC.dash], ["tabs", "Courses", IC.tabs], ["online", "Users Online", IC.online],
