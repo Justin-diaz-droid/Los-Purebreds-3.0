@@ -13401,6 +13401,20 @@ body.in-home #home{display:flex}
   const cvSig = () => JSON.stringify(cvGet("pb_cv_cards", {})) + JSON.stringify(cvGet("pb_cv_order", []));
   const cvPref = t => (cvGet("pb_cv_cards", {}))[t.n] || {};
   const cvDefColor = n => CV_COLORS[n % CV_COLORS.length];
+  /* ---- personal card icon: an emoji or an uploaded picture chosen in the card's Color popup (this device only) ---- */
+  const CV_EMO = ["📚","🎓","✏️","📝","🧪","🔬","🧮","📐","🌎","🎨","🎵","⚽","🏀","💻","🎮","🤖","🚀","🌟","🔥","⚡","🍕","🐶","🐱","🦊","🐸","👑","💎","🎯","🧠","❤️"];
+  const cvIc = t => { const p = cvPref(t); return p.img ? Object.assign({}, t, { im: p.img, ic: "" }) : p.icon ? Object.assign({}, t, { im: "", ic: "", i: p.icon }) : t; };
+  function cvPhoto(file, done){
+    if(!file || !/^image\//.test(file.type)){ toast("Please choose a picture file"); return; }
+    const rd = new FileReader();
+    rd.onerror = () => toast("Couldn't read that picture");
+    rd.onload = () => { const im = new Image(); im.onerror = () => toast("Couldn't open that picture"); im.onload = () => {
+      const S = 192, c = document.createElement("canvas"); c.width = c.height = S; const x = c.getContext("2d"), m = Math.min(im.width, im.height);
+      x.fillStyle = "#fff"; x.fillRect(0, 0, S, S); x.drawImage(im, (im.width - m) / 2, (im.height - m) / 2, m, m, 0, 0, S, S);
+      try{ done(c.toDataURL("image/jpeg", .85)); }catch(e){ toast("Couldn't use that picture"); }
+    }; im.src = rd.result; };
+    rd.readAsDataURL(file);
+  }
   let cvPop = null, cvPopFor = null;
   function cvClose(focusBack){ if(!cvPop) return; const f = cvPopFor; cvPop.remove(); cvPop = null; cvPopFor = null; document.removeEventListener("mousedown", cvOutside, true); document.removeEventListener("keydown", cvKey, true); if(focusBack && f) try{ f.focus(); }catch(e){} }
   function cvOutside(e){ if(cvPop && !cvPop.contains(e.target) && !(cvPopFor && cvPopFor.contains(e.target))) cvClose(false); }
@@ -13408,10 +13422,11 @@ body.in-home #home{display:flex}
   function cvOrderNames(list){ const ord = cvGet("pb_cv_order", []), names = list.map(x => x.n); const first = ord.filter(x => names.includes(x)); return first.concat(names.filter(x => !first.includes(x))); }
   function cvOpen(t, n, kb, defNick){
     cvClose(false);
-    const pref = cvPref(t); let color = pref.color || cvDefColor(n);
+    const pref = cvPref(t); let color = pref.color || cvDefColor(n); let ico = { i: pref.icon || "", im: pref.img || "" };
     const pop = document.createElement("div"); pop.id = "cv-pop"; pop.setAttribute("role", "dialog"); pop.setAttribute("aria-label", "Settings for " + t.n);
     pop.innerHTML = '<div class="cvp-tabs" role="tablist"><button type="button" role="tab" class="cvp-t on" data-p="c" aria-selected="true">Color</button><button type="button" role="tab" class="cvp-t" data-p="m" aria-selected="false">Move</button><button type="button" class="cvp-x" aria-label="Close">✕</button></div>' +
-      '<div class="cvp-body" data-p="c"><label for="cvp-nick">Nickname</label><input id="cvp-nick" type="text" maxlength="40"><div class="cvp-sw" role="radiogroup" aria-label="Color"></div><div class="cvp-hex"><span class="cvp-pv"></span><input id="cvp-hex" type="text" maxlength="7" aria-label="Hex color" spellcheck="false"></div><div class="cvp-bt"><button type="button" class="cvp-cancel">Cancel</button><button type="button" class="cvp-apply">Apply</button></div></div>' +
+      '<div class="cvp-body" data-p="c"><label for="cvp-nick">Nickname</label><input id="cvp-nick" type="text" maxlength="40"><div class="cvp-sw" role="radiogroup" aria-label="Color"></div><div class="cvp-hex"><span class="cvp-pv"></span><input id="cvp-hex" type="text" maxlength="7" aria-label="Hex color" spellcheck="false"></div><button type="button" class="cvp-ic"><span class="cvp-icp" aria-hidden="true"></span><span>Change icon</span></button><div class="cvp-bt"><button type="button" class="cvp-cancel">Cancel</button><button type="button" class="cvp-apply">Apply</button></div></div>' +
+      '<div class="cvp-body" data-p="i" hidden><label>Icon</label><div class="cvp-em" role="radiogroup" aria-label="Icon"></div><button type="button" class="cvp-up">Upload picture…</button><input type="file" accept="image/*" class="cvp-file" hidden><button type="button" class="cvp-def">Use default icon</button><div class="cvp-bt"><button type="button" class="cvp-back">Back</button></div></div>' +
       '<div class="cvp-body" data-p="m" hidden><button type="button" data-mv="top">Move to top</button><button type="button" data-mv="up">Move earlier</button><button type="button" data-mv="down">Move later</button><button type="button" data-mv="bottom">Move to bottom</button></div>';
     document.body.appendChild(pop); cvPop = pop; cvPopFor = kb;
     const nick = pop.querySelector("#cvp-nick"), hex = pop.querySelector("#cvp-hex"), pv = pop.querySelector(".cvp-pv"), sw = pop.querySelector(".cvp-sw"), ap = pop.querySelector(".cvp-apply");
@@ -13422,18 +13437,37 @@ body.in-home #home{display:flex}
     CV_PAL.forEach(c => { const b = document.createElement("button"); b.type = "button"; b.dataset.c = c; b.style.background = c; b.setAttribute("role", "radio"); b.setAttribute("aria-label", c); b.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>'; b.onclick = () => { color = c; hex.value = norm(c); hex.classList.remove("bad"); ap.disabled = false; paintSw(); }; sw.appendChild(b); });
     hex.value = norm(color); paintSw();
     hex.oninput = () => { const ok = valid(hex.value); hex.classList.toggle("bad", !ok); ap.disabled = !ok; if(ok){ color = norm(hex.value); paintSw(); } };
-    pop.querySelectorAll(".cvp-t").forEach(b => b.onclick = () => { pop.querySelectorAll(".cvp-t").forEach(x => { x.classList.toggle("on", x === b); x.setAttribute("aria-selected", String(x === b)); }); pop.querySelectorAll(".cvp-body").forEach(x => x.hidden = x.dataset.p !== b.dataset.p); });
+    function place(){
+      const r = kb.getBoundingClientRect(), w = 190, h = pop.offsetHeight;
+      pop.style.left = Math.max(8, Math.min(r.left + r.width / 2 - 95, window.innerWidth - w - 8)) + "px";
+      pop.style.top = (r.bottom + 8 + h > window.innerHeight - 8 ? Math.max(8, r.top - h - 8) : r.bottom + 8) + "px";
+    }
+    function showP(p){ const tp = p === "i" ? "c" : p; pop.querySelectorAll(".cvp-t").forEach(x => { const on = x.dataset.p === tp; x.classList.toggle("on", on); x.setAttribute("aria-selected", String(on)); }); pop.querySelectorAll(".cvp-body").forEach(x => x.hidden = x.dataset.p !== p); place(); }
+    pop.querySelectorAll(".cvp-t").forEach(b => b.onclick = () => showP(b.dataset.p));
+    /* icon picker */
+    const em = pop.querySelector(".cvp-em"), icp = pop.querySelector(".cvp-icp"), file = pop.querySelector(".cvp-file");
+    function paintIc(){
+      const src = ico.im || (!ico.i && ((t.im) || (t.ic && ICONS[t.ic]))) || "";
+      icp.textContent = ""; icp.style.backgroundImage = "";
+      if(src){ icp.style.backgroundImage = "url(" + JSON.stringify(src) + ")"; } else { icp.textContent = ico.i || t.i || "⭐"; }
+      em.querySelectorAll("button").forEach(b => { const on = !ico.im && b.dataset.e === ico.i; b.classList.toggle("on", on); b.setAttribute("aria-checked", String(on)); });
+    }
+    CV_EMO.forEach(e => { const b = document.createElement("button"); b.type = "button"; b.dataset.e = e; b.textContent = e; b.setAttribute("role", "radio"); b.setAttribute("aria-label", e); b.onclick = () => { ico = { i: e, im: "" }; paintIc(); }; em.appendChild(b); });
+    paintIc();
+    pop.querySelector(".cvp-ic").onclick = () => showP("i");
+    pop.querySelector(".cvp-back").onclick = () => showP("c");
+    pop.querySelector(".cvp-def").onclick = () => { ico = { i: "", im: "" }; paintIc(); };
+    pop.querySelector(".cvp-up").onclick = () => file.click();
+    file.onchange = () => { const f = file.files && file.files[0]; file.value = ""; cvPhoto(f, d => { ico = { i: "", im: d }; paintIc(); }); };
     pop.querySelector(".cvp-x").onclick = () => cvClose(true);
     pop.querySelector(".cvp-cancel").onclick = () => cvClose(true);
-    ap.onclick = () => { const all = cvGet("pb_cv_cards", {}), nk = nick.value.trim(); all[t.n] = { color: color, nick: nk && nk !== defNick ? nk : "" }; cvSet("pb_cv_cards", all); cvClose(false); lastSig = ""; render(); };
+    ap.onclick = () => { const all = cvGet("pb_cv_cards", {}), nk = nick.value.trim(); all[t.n] = { color: color, nick: nk && nk !== defNick ? nk : "" }; if(ico.im) all[t.n].img = ico.im; else if(ico.i) all[t.n].icon = ico.i; cvSet("pb_cv_cards", all); cvClose(false); lastSig = ""; render(); };
     pop.querySelectorAll("[data-mv]").forEach(b => b.onclick = () => {
       const names = cvOrderNames(current()), at = names.indexOf(t.n); if(at < 0) return; names.splice(at, 1);
       const m = b.dataset.mv, to = m === "top" ? 0 : m === "bottom" ? names.length : m === "up" ? Math.max(0, at - 1) : Math.min(names.length, at + 1);
       names.splice(to, 0, t.n); cvSet("pb_cv_order", names); cvClose(false); lastSig = ""; render();
     });
-    const r = kb.getBoundingClientRect(), w = 190, h = pop.offsetHeight;
-    pop.style.left = Math.max(8, Math.min(r.left + r.width / 2 - 95, window.innerWidth - w - 8)) + "px";
-    pop.style.top = (r.bottom + 8 + h > window.innerHeight - 8 ? Math.max(8, r.top - h - 8) : r.bottom + 8) + "px";
+    place();
     document.addEventListener("mousedown", cvOutside, true); document.addEventListener("keydown", cvKey, true);
     setTimeout(() => { try{ nick.focus(); nick.select(); }catch(e){} }, 20);
   }
@@ -13468,7 +13502,7 @@ body.in-home #home{display:flex}
       const cell = document.createElement("div"); cell.className = "hm-cell";
       const b = document.createElement("button"); b.type = "button"; b.className = "hm-it";
       const lb = document.createElement("span"); lb.textContent = t.n;
-      if(cvOn){ b.append(iconNode(t), cvCard(t, n, b)); b.setAttribute("aria-label", t.n); cell.style.setProperty("--cv-c", b.style.getPropertyValue("--cv-c")); cell.style.order = String(cvOrderNames(list).indexOf(t.n)); }   // Canvas layout: a real Canvas course card
+      if(cvOn){ b.append(iconNode(cvIc(t)), cvCard(t, n, b)); b.setAttribute("aria-label", t.n); cell.style.setProperty("--cv-c", b.style.getPropertyValue("--cv-c")); cell.style.order = String(cvOrderNames(list).indexOf(t.n)); }   // Canvas layout: a real Canvas course card
       else b.append(iconNode(t), lb);
       b.onclick = () => { if(editing) openEditor(n); else { cvRecent(t); go(t); } };
       cell.appendChild(b);
@@ -13674,8 +13708,8 @@ body.in-home #home{display:flex}
   function gradesBody(list){
     const box = el("div", "cvn-gc");
     list.forEach((t, n) => {
-      const pref = cvPref(t), src = t.im || (t.ic && ICONS[t.ic]) || "", c = el("div", "cvn-gcard"); c.style.setProperty("--cv-c", pref.color || cvDefColor(n));
-      const hd = el("div", "cvn-gh"); if(src) hd.style.backgroundImage = "url(" + JSON.stringify(src) + ")";
+      const pref = cvPref(t), ti = cvIc(t), src = ti.im || (ti.ic && ICONS[ti.ic]) || "", c = el("div", "cvn-gcard"); c.style.setProperty("--cv-c", pref.color || cvDefColor(n));
+      const hd = el("div", "cvn-gh"); if(src) hd.style.backgroundImage = "url(" + JSON.stringify(src) + ")"; else if(ti.i) hd.appendChild(el("span", "cvn-ge", ti.i));
       const pill = el("div", "cvn-pill"); pill.innerHTML = ndAll ? "<b>N/A</b>" : "<i></i><i></i><i></i>" + IC_EYE; pill.setAttribute("role", "img"); pill.setAttribute("aria-label", ndAll ? "Grade not available" : "Grade hidden");
       const kb = el("button", "cvn-gk"); kb.type = "button"; kb.innerHTML = IC_KB; kb.setAttribute("aria-label", "Settings for " + t.n); kb.setAttribute("aria-haspopup", "dialog"); kb.onclick = e => { e.stopPropagation(); if(cvPop && cvPopFor === kb) cvClose(false); else cvOpen(t, n, kb, cvDefNick(n)); };
       hd.append(pill, kb);
@@ -21434,6 +21468,15 @@ body.lay-canvas #home .hm-ed button.go{background:var(--cv-link);border-color:va
 #cv-pop .cvp-hex{display:flex;align-items:center;gap:8px;margin:0 0 12px}
 #cv-pop .cvp-pv{flex:none;width:24px;height:24px;border-radius:3px;background:#2063c1}
 #cv-pop .cvp-bt{display:flex;justify-content:flex-end;gap:8px}
+#cv-pop .cvp-ic,#cv-pop .cvp-up,#cv-pop .cvp-def{display:flex;align-items:center;gap:8px;width:100%;height:30px;margin:0 0 12px;padding:0 8px;border:1px solid #c7cdd1;border-radius:3px;background:#f2f4f4;color:#09508c;font-size:14px;cursor:pointer;box-shadow:none;transform:none;text-align:left}
+#cv-pop .cvp-up,#cv-pop .cvp-def{margin:0 0 8px;color:#273540}
+#cv-pop .cvp-def{margin-bottom:12px}
+#cv-pop .cvp-icp{flex:none;display:flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:3px;background:#e8eaec center/cover no-repeat;font-size:13px;line-height:1}
+#cv-pop .cvp-em{display:grid;grid-template-columns:repeat(5,28px);gap:4px;margin:0 0 12px;justify-content:space-between}
+#cv-pop .cvp-em button{width:28px;height:28px;margin:0;padding:0;border:1px solid transparent;border-radius:4px;background:none;font-size:17px;line-height:1;cursor:pointer;box-shadow:none;transform:none}
+#cv-pop .cvp-em button:hover{background:#f2f4f4}
+#cv-pop .cvp-em button.on{border-color:#09508c;background:#e5f0f8}
+.cvn-ge{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:58px;line-height:1;color:#fff}
 #cv-pop .cvp-bt button,#cv-pop [data-mv]{height:30px;margin:0;padding:0 12px;border:1px solid #c7cdd1;border-radius:3px;background:#f2f4f4;color:#273540;font-size:14px;cursor:pointer;box-shadow:none;transform:none}
 #cv-pop .cvp-bt .cvp-apply{background:#09508c;border-color:#09508c;color:#fff}
 #cv-pop .cvp-bt .cvp-apply:disabled{opacity:.5;cursor:default}
