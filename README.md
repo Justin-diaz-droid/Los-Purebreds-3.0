@@ -28,6 +28,35 @@ The **Canvas** layout copies the school Canvas look: a dark navigation rail on t
 - Synergy and the **View Grades** button both open the Tier List. To point them somewhere else, change `SYNERGY_TAB` and `GRADES_TAB` at the top of `<script id="canvas-js">` in `source/index.html` (use a tab key such as `tier`, `games`, `polls`, `draw`, `gal` or `main`).
 - Until an owner edits the homepage icons, the Dashboard shows six cards: Chat Room, Games & Media, Drawing Board, Polls tab, Image gallery, Tier list. Once the owner edits them (✏️ Edit home), those icons are used everywhere.
 
+## Start screens and Settings (3.0)
+
+All of this lives in `<style id="v3-css">` / `<script id="v3-js">` at the end of `source/index.html`.
+
+- **Welcome back** card: shown when this device already has the room code, a name and a saved password. Continue signs in, the checkbox is the same setting as Settings → Account → Sign me in automatically (`pb_autologin`), **Switch account** forgets the saved login and opens the setup. The layout chips switch the layout.
+- **First-run setup** (3 steps): room code, account, **Pick a look** (theme + layout, then Finish signs in). Settings → About → **Redo first-time setup** runs it again.
+- **Settings** pages: Account, Appearance, Chat, Home & Dashboard, Privacy & Safety, Sound, Devices & Sync, Advanced, About. Every old setting is still there, just sorted into a page (see `catOf` in `<script id="sx-js">`). Scope badges (Syncs to my devices / Everyone sees this / This device only) are added from each label's text, and the Cancel/Save footer becomes the **unsaved changes** bar.
+- `public/index.html` was copied from `source/index.html` without minifying; run `node tools/build.mjs` to shrink it.
+
+## Los Purebreds layout look
+
+`<style id="lp-v3-css">` restyles the Los Purebreds layout like the new Settings and setup: Inter font, flat rounded cards instead of the glossy grey plates, rounded-square tab and home icons, and an accent pill on the open tab. It only applies while the layout is Los Purebreds (`<html data-lay="lp">`) and still uses the theme's colors.
+
+## Loading and sign-in screens
+
+The loading screen (LP circle, progress bar, percent, Cancel) and the rest of the old Pixel-style sign-in screens (Get started, login, errors) now use the same dark look as Welcome back. It is the `.root[data-ld]` block in the `px-flow` script's CSS; the iOS 6, Win95 and WinXP themes still use their own setup skins.
+
+## Themes in the Canvas layout
+
+Canvas keeps its classic look until you pick a theme in Settings → Appearance → Theme and press Save (**Default** / "Canvas (default colors)" goes back). `<script id="cv-theme-js">` reads the theme's colors from its CSS and re-points Canvas's stylesheet at them (page, cards, rail, links, borders). The choice is saved on that device (`pb_cv_theme`).
+
+## Canvas Account picture
+
+`<script id="cv-pfp-js">` puts your profile picture (Settings → Account) in the round Account button of the Canvas rail. With no picture it keeps the blue ball.
+
+## Browser tab per layout
+
+`<script id="tab-v3-js">` sets the tab title and icon from the layout: **Canvas** = "Dashboard" + `assets/favicon_canvas.png`, **Google Docs** = "Los Purebreds - Google Docs" + `assets/favicon_docs.png`, **Los Purebreds** = "Los Purebreds" + `assets/favicon.png`. To change a name, edit the `T` table at the top of that script.
+
 ## Changing images and icons
 
 Every image the site uses is a normal file in `public/assets/`. To change one:

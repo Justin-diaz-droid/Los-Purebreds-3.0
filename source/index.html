@@ -10022,6 +10022,32 @@ background:radial-gradient(ellipse 80% 70% at 18% 50%,rgba(255,255,255,.3),rgba(
 .root[data-skin=winxp] .bar .link:hover{background:rgba(255,255,255,.18)}
 .root[data-skin=winxp] .prog{height:20px;margin:16px 0 8px;background:#fff;border:1px solid #686868;border-radius:4px;box-shadow:inset 0 1px 2px rgba(0,0,0,.3);padding:2px}
 .root[data-skin=winxp] .prog i{border-radius:2px;background:linear-gradient(rgba(255,255,255,.55),transparent 55%),repeating-linear-gradient(90deg,#37d033 0 8px,transparent 8px 11px)}
+
+/* ---- loading screen: same look as the Welcome back / setup screens ---- */
+.root[data-ld]{background:radial-gradient(120% 60% at 50% 0,#16213a,#0e0e10 60%) #0e0e10;color:#f2f2f4;font-family:Inter,-apple-system,"Segoe UI",Roboto,system-ui,sans-serif}
+.root[data-ld] .app{max-width:560px}
+.root[data-ld] .ld{align-items:center;justify-content:center;text-align:center;padding:24px}
+.root[data-ld] .ldlg{flex:none;width:96px;height:96px;border-radius:50%;background:#1f6feb;display:grid;place-items:center;font-size:36px;font-weight:700;margin-bottom:20px;animation:ldpulse 1.8s ease-in-out infinite}
+.root[data-ld] .ld h1{font-size:2rem;font-weight:700;margin:0}
+.root[data-ld] .ldsub{color:#9a9aa3;font-size:1rem;margin:8px 0 28px}
+.root[data-ld] .ldcd{width:100%;background:#1b1b1d;border:1px solid #2c2c30;border-radius:28px;padding:30px 32px;display:flex;flex-direction:column;align-items:center;gap:6px}
+.root[data-ld] .prog{width:100%;height:10px;margin:0 0 14px;background:#26262a;border:0;border-radius:9px;box-shadow:none;padding:0}
+.root[data-ld] .prog i{background:#1f6feb;border-radius:9px}
+.root[data-ld] .ldcd p{margin:0;color:#c9c9d0}.root[data-ld] #pc{font-size:1.6rem;font-weight:700;color:#f2f2f4}
+.root[data-ld] .ldbtn{margin-top:16px;border:2px solid #34343a;background:none;color:#f2f2f4;font:inherit;font-weight:600;padding:12px 30px;border-radius:16px;cursor:pointer}
+.root[data-ld] .ldbtn:hover{background:#26262a}
+.root[data-ld] .tb{display:none}
+.root[data-ld] .icon:not(.mascot){color:#8ab4ff}
+.root[data-ld] h1{font-weight:700;letter-spacing:-.3px}
+.root[data-ld] .dim,.root[data-ld] p{color:#c9c9d0}
+.root[data-ld] .pill{background:#1f6feb;color:#fff;border-radius:16px;font-weight:700;padding:14px 28px}.root[data-ld] .pill:hover{background:#3b82f6}
+.root[data-ld] .link{color:#8ab4ff}
+.root[data-ld] .f{background:#151517;border:1px solid #34343a;border-radius:16px;color:#fff}.root[data-ld] .f:focus{border-color:#1f6feb;box-shadow:0 0 0 1px #1f6feb}
+.root[data-ld] select.f{background:#151517}.root[data-ld] .err{color:#ff9a9a}
+.root[data-ld] .drawer{background:#1b1b1d;border:1px solid #2c2c30;border-radius:20px}
+.root[data-ld] .row{color:#f2f2f4}.root[data-ld] .row svg,.root[data-ld] .cd,.root[data-ld] .ct .cc{color:#8ab4ff}
+.root[data-ld] .tg input{accent-color:#1f6feb}
+@keyframes ldpulse{0%,100%{box-shadow:0 0 0 0 rgba(31,111,235,.45)}50%{box-shadow:0 0 0 18px rgba(31,111,235,0)}}
 `;
 var host=D.createElement("div"); host.id="px-host";
 host.style.cssText="position:fixed;inset:0;z-index:2147483001;display:block";
@@ -10040,7 +10066,7 @@ function lum(a){return(.299*a[0]+.587*a[1]+.114*a[2])/255}
 function rgbs(a){return"rgb("+Math.round(a[0])+","+Math.round(a[1])+","+Math.round(a[2])+")"}
 function skin(){
  var b=D.body,t=b.dataset.theme||"imessage",cs=getComputedStyle(b),st=root.style;
- root.setAttribute("data-skin",t);
+ root.setAttribute("data-skin",t);if(CUSTOM[t])root.removeAttribute("data-ld");else root.setAttribute("data-ld","1");
  if(ROUND[t])root.setAttribute("data-round","1");else root.removeAttribute("data-round");
  var names=["--a","--on-a","--bg","--tx","--mu"];
  if(CUSTOM[t]){names.forEach(function(n){st.removeProperty(n)});st.removeProperty("color-scheme");return}
@@ -10065,6 +10091,7 @@ var CONN_RE=/couldn.t (connect|join)|can.t reach|isn.t responding|not responding
 function addOfflineBtn(){var s=app.querySelector(".screen");if(!s||s.querySelector("#offl"))return;var p=D.createElement("p");p.className="dim";p.textContent="Can\u2019t get in? You can still look around. Anything that needs the chat room stays locked.";var b=D.createElement("button");b.className="link";b.id="offl";b.type="button";b.textContent="Continue without chat (view only)";b.onclick=function(){clearInterval(tm);if(window.__enterOffline)window.__enterOffline();hideOv()};s.appendChild(p);s.appendChild(b)}
 window.__pbHideOv=function(){hideOv()};
 window.__pbSignIn=function(){S.err="";S.pass="";S.fresh=false;S.user=savedName()||S.user;showOv();if(S.user)join(S.user,"");else login()};
+window.__pbJoin=function(u,p){S.user=u;S.pass=p;S.err="";S.fresh=false;showOv();join(u,p)};
 function welcome(){
  var gb=D.querySelector(".goback"),href=gb?gb.href:"";
  app.innerHTML='<div class="screen"><div class="hero"><svg class="aclk" viewBox="0 0 200 200" role="img" aria-label="Analog clock"><defs><path id="datearc" d="M100 100 m-62 0 a62 62 0 1 1 124 0 a62 62 0 1 1 -124 0"/></defs><path class="sc" d="M100.0,6.0 L103.3,6.6 L106.4,8.2 L109.4,10.6 L112.2,13.5 L114.8,16.3 L117.3,18.7 L119.9,20.3 L122.6,21.1 L125.7,20.9 L129.1,20.1 L132.7,19.0 L136.5,17.9 L140.3,17.3 L143.9,17.5 L147.0,18.6 L149.5,20.7 L151.5,23.7 L152.8,27.3 L153.8,31.1 L154.6,34.9 L155.6,38.2 L157.1,40.9 L159.1,42.9 L161.8,44.4 L165.1,45.4 L168.9,46.2 L172.7,47.2 L176.3,48.5 L179.3,50.5 L181.4,53.0 L182.5,56.1 L182.7,59.7 L182.1,63.5 L181.0,67.3 L179.9,70.9 L179.1,74.3 L178.9,77.4 L179.7,80.1 L181.3,82.7 L183.7,85.2 L186.5,87.8 L189.4,90.6 L191.8,93.6 L193.4,96.7 L194.0,100.0 L193.4,103.3 L191.8,106.4 L189.4,109.4 L186.5,112.2 L183.7,114.8 L181.3,117.3 L179.7,119.9 L178.9,122.6 L179.1,125.7 L179.9,129.1 L181.0,132.7 L182.1,136.5 L182.7,140.3 L182.5,143.9 L181.4,147.0 L179.3,149.5 L176.3,151.5 L172.7,152.8 L168.9,153.8 L165.1,154.6 L161.8,155.6 L159.1,157.1 L157.1,159.1 L155.6,161.8 L154.6,165.1 L153.8,168.9 L152.8,172.7 L151.5,176.3 L149.5,179.3 L147.0,181.4 L143.9,182.5 L140.3,182.7 L136.5,182.1 L132.7,181.0 L129.1,179.9 L125.7,179.1 L122.6,178.9 L119.9,179.7 L117.3,181.3 L114.8,183.7 L112.2,186.5 L109.4,189.4 L106.4,191.8 L103.3,193.4 L100.0,194.0 L96.7,193.4 L93.6,191.8 L90.6,189.4 L87.8,186.5 L85.2,183.7 L82.7,181.3 L80.1,179.7 L77.4,178.9 L74.3,179.1 L70.9,179.9 L67.3,181.0 L63.5,182.1 L59.7,182.7 L56.1,182.5 L53.0,181.4 L50.5,179.3 L48.5,176.3 L47.2,172.7 L46.2,168.9 L45.4,165.1 L44.4,161.8 L42.9,159.1 L40.9,157.1 L38.2,155.6 L34.9,154.6 L31.1,153.8 L27.3,152.8 L23.7,151.5 L20.7,149.5 L18.6,147.0 L17.5,143.9 L17.3,140.3 L17.9,136.5 L19.0,132.7 L20.1,129.1 L20.9,125.7 L21.1,122.6 L20.3,119.9 L18.7,117.3 L16.3,114.8 L13.5,112.2 L10.6,109.4 L8.2,106.4 L6.6,103.3 L6.0,100.0 L6.6,96.7 L8.2,93.6 L10.6,90.6 L13.5,87.8 L16.3,85.2 L18.7,82.7 L20.3,80.1 L21.1,77.4 L20.9,74.3 L20.1,70.9 L19.0,67.3 L17.9,63.5 L17.3,59.7 L17.5,56.1 L18.6,53.0 L20.7,50.5 L23.7,48.5 L27.3,47.2 L31.1,46.2 L34.9,45.4 L38.2,44.4 L40.9,42.9 L42.9,40.9 L44.4,38.2 L45.4,34.9 L46.2,31.1 L47.2,27.3 L48.5,23.7 L50.5,20.7 L53.0,18.6 L56.1,17.5 L59.7,17.3 L63.5,17.9 L67.3,19.0 L70.9,20.1 L74.3,20.9 L77.4,21.1 L80.1,20.3 L82.7,18.7 L85.2,16.3 L87.8,13.5 L90.6,10.6 L93.6,8.2 L96.7,6.6 L100.0,6.0Z"/><g class="rd"><circle class="rim" cx="100" cy="100" r="95"/><circle class="rf" cx="100" cy="100" r="87"/><line class="tk" x1="100.0" y1="32.0" x2="100.0" y2="18.0" stroke-width="3.4" stroke-linecap="round"/><line class="tk" x1="137.5" y1="35.0" x2="141.0" y2="29.0" stroke-width="1.6" stroke-linecap="round"/><line class="tk" x1="165.0" y1="62.5" x2="171.0" y2="59.0" stroke-width="1.6" stroke-linecap="round"/><line class="tk" x1="168.0" y1="100.0" x2="182.0" y2="100.0" stroke-width="3.4" stroke-linecap="round"/><line class="tk" x1="165.0" y1="137.5" x2="171.0" y2="141.0" stroke-width="1.6" stroke-linecap="round"/><line class="tk" x1="137.5" y1="165.0" x2="141.0" y2="171.0" stroke-width="1.6" stroke-linecap="round"/><line class="tk" x1="100.0" y1="168.0" x2="100.0" y2="182.0" stroke-width="3.4" stroke-linecap="round"/><line class="tk" x1="62.5" y1="165.0" x2="59.0" y2="171.0" stroke-width="1.6" stroke-linecap="round"/><line class="tk" x1="35.0" y1="137.5" x2="29.0" y2="141.0" stroke-width="1.6" stroke-linecap="round"/><line class="tk" x1="32.0" y1="100.0" x2="18.0" y2="100.0" stroke-width="3.4" stroke-linecap="round"/><line class="tk" x1="35.0" y1="62.5" x2="29.0" y2="59.0" stroke-width="1.6" stroke-linecap="round"/><line class="tk" x1="62.5" y1="35.0" x2="59.0" y2="29.0" stroke-width="1.6" stroke-linecap="round"/></g><text class="dt" font-size="11" font-weight="600" letter-spacing="1.2"><textPath href="#datearc" startOffset="9%" id="adate"></textPath></text><text class="dtr" x="100" y="140" text-anchor="middle" id="adate2"></text><circle class="dot" cx="46" cy="148" r="7"/><g id="ahr" stroke-linecap="round"><line x1="100" y1="100" x2="100" y2="58" stroke-width="13"/></g><g id="amn" stroke-linecap="round"><line x1="100" y1="100" x2="100" y2="34" stroke-width="13"/></g><g id="asc" stroke-linecap="round"><line x1="100" y1="114" x2="100" y2="20" stroke-width="1.6"/></g><circle class="c1" cx="100" cy="100" r="7"/><circle class="c2" cx="100" cy="100" r="3.5"/></svg></div><div class="clk sm" id="pxclock" aria-label="Current time"><div class="cd" id="cdate"></div><div class="ct"><span id="ch"></span><span class="cc">:</span><span id="cm"></span><small id="cap"></small></div></div><div class="spacer"></div><h1>Welcome to Los Purebreds</h1><p class="dim">Version 3.0</p>'+
@@ -10166,7 +10193,7 @@ function join(u,p){S.redo=false;
  G("g-go").click();
 }
 function loadScr(auto){
- scr(ic.hat,"Loading..",'<div class="prog"><i id="fill"></i></div><p id="pc" class="dim">0%</p><p id="sub" class="dim">Connecting to the room…</p>','<button class="link" id="b">Cancel</button>','');
+ app.innerHTML='<div class="screen ld"><div class="ldlg">LP</div><h1>Los Purebreds</h1><div class="ldsub">Room code remembered on this device</div><div class="ldcd"><div class="prog"><i id="fill"></i></div><p id="pc" class="dim">0%</p><p id="sub" class="dim">Connecting to the room…</p><button class="ldbtn" id="b">Cancel</button></div></div>';
  $("#b").onclick=function(){clearInterval(tm);var sk=G("al-skip");if(auto&&H.classList.contains("autoload")&&sk)sk.click();else if(window.__leave&&window.__entering)window.__leave("");S.err="";login()};
  var p=0,t0=Date.now(),started=!auto,offAdded=false;
  function paint(){var n=Math.round(p),f=$("#fill");if(!f)return;f.style.width=p+"%";$("#pc").textContent=n+"%";$("#sub").textContent=n>=100?"All done!":n<30?"Connecting to the room…":n<70?"Checking your name & password…":"Loading chat…"}
@@ -10843,30 +10870,32 @@ html body #stg.sx{background:var(--sx-bg);color:var(--sx-text);padding:env(safe-
     try{
 
       var PAGES = [
-        {id:"profile",    t:"Profile",           ic:"\uD83D\uDC64",         bg:"#8e8e93", prev:true},
-        {id:"messages",   t:"Messages",          ic:"\uD83D\uDCAC",         bg:"#34c759", prev:true},
-        {id:"appearance", t:"Appearance & Layout", ic:"\uD83C\uDFA8",         bg:"#007aff", prev:true},
-        {id:"access",     t:"Accessibility",     ic:"\u267F",              bg:"#0a84ff", prev:false},
-        {id:"account",    t:"Account & Privacy", ic:"\uD83D\uDD12",         bg:"#636366", prev:false},
-        {id:"anim",       t:"Animation Lab",     ic:"\uD83C\uDF9E\uFE0F",   bg:"#ff9f0a", prev:false},
-        {id:"exp",        t:"Experimental",      ic:"\uD83E\uDDEA",         bg:"#af52de", prev:false}
+        {id:"account",  t:"Account",           ic:"\uD83D\uDC64", bg:"#8e8e93", prev:true},
+        {id:"appearance",t:"Appearance",        ic:"\uD83C\uDFA8", bg:"#007aff", prev:true},
+        {id:"chat",     t:"Chat",              ic:"\uD83D\uDCAC", bg:"#34c759", prev:true},
+        {id:"home",     t:"Home & Dashboard",  ic:"\uD83C\uDFE0", bg:"#ff9f0a", prev:false},
+        {id:"privacy",  t:"Privacy & Safety",  ic:"\uD83D\uDD12", bg:"#636366", prev:false},
+        {id:"sound",    t:"Sound",             ic:"\uD83D\uDD0A", bg:"#ff375f", prev:false},
+        {id:"sync",     t:"Devices & Sync",    ic:"\uD83D\uDD04", bg:"#30b0c7", prev:false},
+        {id:"advanced", t:"Advanced",          ic:"\uD83D\uDEE0\uFE0F", bg:"#af52de", prev:false},
+        {id:"about",    t:"About",             ic:"\u2139\uFE0F", bg:"#8e8e93", prev:false}
       ], PMAP = {};
       PAGES.forEach(function(p){ PMAP[p.id] = p; });
 
       /* ---------- cards -> iOS grouped sections ---------- */
       function catOf(c){
-        var h = c.querySelector("h3"), t = h ? h.textContent : "";
-        if(c.id === "stg-cursor") return "appearance";   // appearance, layout and customization share one page
-        if(c.id === "stg-anim") return "anim";
-        if(c.id === "stg-exp") return "exp";
-        if(c.dataset.pbcat) return c.dataset.pbcat;     // a card can name its own page (e.g. Frame rate lives in Appearance & Layout)
-        if(c.dataset.a11y) return "access";
-        if(/read receipts|password|role tag|custom tag|account/i.test(t)) return "account";
-        if(/profile/i.test(t)) return "profile";
-        if(/messages/i.test(t)) return "messages";
+        var h = c.querySelector("h3"), t = h ? h.textContent : "", id = c.id || "", k = c.dataset.pbcat;
+        if(k) return {messages:"chat",profile:"account",access:"advanced",anim:"advanced",exp:"advanced"}[k] || k;
+        if(c.dataset.a11y || id === "stg-anim" || id === "stg-exp") return "advanced";
+        if(id === "stg-cursor") return "appearance";
+        if(id === "pk-card") return "privacy";
+        if(id === "stg-chats" || id === "stg-tools") return "home";
+        if(/panic|read receipts|role tag/i.test(t)) return "privacy";
+        if(/password|custom tag|account|profile/i.test(t)) return "account";
+        if(/messages/i.test(t)) return "chat";
         if(/appearance/i.test(t)) return "appearance";
-        if(/layout/i.test(t)) return "appearance";
-        return "account";
+        if(/layout/i.test(t)) return "home";
+        return "advanced";
       }
       function groupify(card){
         if(card.dataset.sx) return; card.dataset.sx = "1";
@@ -10885,7 +10914,7 @@ html body #stg.sx{background:var(--sx-bg);color:var(--sx-text);padding:env(safe-
         card.appendChild(g);
         if(h3) h3.textContent = h3.textContent.replace(/^[^\p{L}\p{N}]+/u, "").trim();
       }
-      var page = "profile";
+      var page = "account";
       function adopt(){
         Array.prototype.forEach.call(scroll.children, function(c){
           if(!c.classList || !c.classList.contains("stg-card") || c.dataset.cat) return;
@@ -10908,15 +10937,15 @@ html body #stg.sx{background:var(--sx-bg);color:var(--sx-text);padding:env(safe-
         b.innerHTML = '<span class="sx-ic" style="background:' + p.bg + '">' + p.ic + '</span><span class="sx-lb">' + p.t.replace(/&/g, "&amp;") + '</span><span class="sx-chev">\u203A</span>';
         b.onclick = function(){ go(p.id); }; rows.push(b); return b;
       }
-      var me = document.createElement("button"); me.type = "button"; me.className = "sx-row sx-me"; me.dataset.p = "profile";
+      var me = document.createElement("button"); me.type = "button"; me.className = "sx-row sx-me"; me.dataset.p = "account";
       me.innerHTML = '<span class="sx-av"></span><span class="sx-mt"><b class="sx-name"></b><small>Name, picture &amp; password</small></span><span class="sx-chev">\u203A</span>';
-      me.onclick = function(){ go("profile"); }; rows.push(me);
+      me.onclick = function(){ go("account"); }; rows.push(me);
       var av = me.querySelector(".sx-av"), nameEl = me.querySelector(".sx-name");
       function grp(items){ var g = document.createElement("div"); g.className = "sx-grp"; items.forEach(function(i){ g.appendChild(i); }); list.appendChild(g); groups.push({el:g, rows:items}); }
       grp([me]);
-      grp([mkRow(PMAP.messages), mkRow(PMAP.appearance), mkRow(PMAP.access)]);
-      grp([mkRow(PMAP.account)]);
-      grp([mkRow(PMAP.anim), mkRow(PMAP.exp)]);
+      grp([mkRow(PMAP.appearance), mkRow(PMAP.chat), mkRow(PMAP.home)]);
+      grp([mkRow(PMAP.privacy), mkRow(PMAP.sound), mkRow(PMAP.sync)]);
+      grp([mkRow(PMAP.advanced), mkRow(PMAP.about)]);
       var empty = document.createElement("div"); empty.className = "sx-empty"; empty.hidden = true; empty.textContent = "No results"; list.appendChild(empty);
 
       /* ---------- detail page ---------- */
@@ -10946,7 +10975,7 @@ html body #stg.sx{background:var(--sx-bg);color:var(--sx-text);padding:env(safe-
         if(hp && !prevOff) fixPrevScroll();
       }
       function setPage(id){
-        if(!PMAP[id]) id = "profile";
+        if(!PMAP[id]) id = "account";
         page = id; stg.dataset.page = id;
         cards().forEach(function(c){ c.classList.toggle("sx-off", c.dataset.cat !== id); });
         rows.forEach(function(r){ r.classList.toggle("on", r.dataset.p === id); });
@@ -11008,7 +11037,7 @@ html body #stg.sx{background:var(--sx-bg);color:var(--sx-text);padding:env(safe-
       var mqChange = function(){ if(wasOpen) setView("detail"); };   // resizing keeps you on the page you were on
       if(mqPad.addEventListener) mqPad.addEventListener("change", mqChange); else if(mqPad.addListener) mqPad.addListener(mqChange);
 
-      setView(mqPad.matches ? "detail" : "list"); setPage("profile");
+      setView(mqPad.matches ? "detail" : "list"); setPage("account");
       stg.classList.add("sx");
     }catch(e){
       console.error("settings layout failed, using the old layout", e);
@@ -21845,6 +21874,290 @@ body.lay-canvas.cv-newdash #home .hm-wrap,body.lay-canvas.cv-newdash #home .cv-s
   var stEl = $("status"); if(stEl){ try{ new MutationObserver(function(){ if(isOn) vis(); }).observe(stEl, {childList: true, characterData: true, subtree: true}); }catch(e){} }
   setInterval(function(){ if(isOn && !d.hidden) vis(); }, 1500);
   sync(false);
+})();
+</script>
+<style id="v3-css">
+/* ===== Start screens + Settings 3.0 ===== */
+#stg.sx{--sx-bg:#0e0e10;--sx-card:#151517;--sx-fill:#1c1c1f;--sx-sep:#26262a;--sx-text:#f2f2f4;--sx-muted:#9a9aa3;--sx-blue:#1f6feb;--sx-chev:#555}
+html body #stg.sx .sx-ic{display:none}
+#stg.sx .sx-row{border-radius:10px}
+#stg.sx .sx-row.on{background:#18284a;color:#cfe0ff}
+#stg.sx .sx-group,#stg.sx .stg-card{background:none;border:0;box-shadow:none}
+#stg.sx .stg-card>h3{font-size:12px;letter-spacing:.6px;text-transform:uppercase;color:var(--sx-muted);margin:18px 0 6px}
+.pbd{display:inline-block;margin:4px 0 0 0;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600;line-height:1.3;white-space:nowrap}
+.pbd.g{background:#17352a;color:#6fd3a0}.pbd.b{background:#18284a;color:#9cc0ff}.pbd.y{background:#3a2f12;color:#f0c46a}
+#stg .sx-fr>label:first-child .pbd,#stg .sx-chk .pbd{display:table}
+.v3r{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 0;border-bottom:1px solid var(--sx-sep);flex-wrap:wrap}
+.v3l{display:flex;flex-direction:column;gap:4px;font-size:17px;font-weight:700}.v3l small{font-weight:400;font-size:13px;color:var(--sx-muted);max-width:420px}
+.v3c{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.v3seg{display:flex;padding:4px;border-radius:14px;background:#141416;border:1px solid var(--sx-sep)}
+.v3seg button{border:0;background:none;color:#b4b4bc;font:600 15px Inter,-apple-system,'Segoe UI',Roboto,sans-serif;padding:10px 20px;border-radius:10px;cursor:pointer}
+.v3seg button.on{background:#1f6feb;color:#fff}
+.v3chip{border:1px solid #34343a;background:none;color:#d8d8de;font:500 15px Inter,-apple-system,'Segoe UI',Roboto,sans-serif;padding:9px 16px;border-radius:999px;cursor:pointer}
+.v3def{display:none}html[data-lay="docs"] .v3def,html[data-lay="canvas"] .v3def{display:inline-block}
+.v3chip.on{border-color:#1f6feb;background:#18284a;color:#cfe0ff}
+.v3sw{width:28px;height:28px;border-radius:50%;border:2px solid transparent;cursor:pointer;padding:0}
+.v3sw.on{border-color:#fff;box-shadow:0 0 0 2px #0e0e10 inset}
+.v3c input[type=range]{width:min(440px,60vw);accent-color:#1f6feb}
+#stg.sx .stg-foot{display:none;align-items:center;margin:0 16px 16px;border:1px solid var(--sx-sep);border-radius:16px;background:#151517}
+#stg.sx[data-dirty="1"] .stg-foot{display:flex}
+.v3t{flex:1;font-size:16px;color:#f2f2f4}
+/* ---- start overlay ---- */
+#pbs-host{position:fixed;inset:0;z-index:2147483002}
+</style>
+<script id="v3-js">
+(function(){
+  var D=document,H=D.documentElement,L=localStorage;
+  function ls(k){try{return L.getItem(k)||""}catch(e){return ""}}
+  function st(k,v){try{L.setItem(k,v)}catch(e){}}
+  var RC=(typeof ROOM_CODE==="string")?ROOM_CODE:"lospurebro";
+  try{var A0=window.Audio;window.Audio=function(s){var a=new A0(s);if(ls("pb_mute")==="1")a.muted=true;return a};window.Audio.prototype=A0.prototype}catch(e){}   /* Sound > mute effects */
+  function applyLayout(v){try{var s=D.getElementById("layoutsel");if(s){s.value=v;s.dispatchEvent(new Event("change",{bubbles:true}))}else st("pb_layout",v)}catch(e){}}
+  function curLayout(){try{return pbLayout()}catch(e){return "docs"}}
+  var THEMES=[["imessage","iMessage","#1c1c1e","#3a3a3c"],["discord","Discord","#313338","#4e5058"],["whatsapp","WhatsApp","#0b141a","#202c33"],["tiktok","TikTok","#000","#262626"],["roblox","Roblox","#232527","#3a3d40"],["ios6","iOS 6","#c7ccd6","#8a93a6"]];
+  var LAYS=[["docs","Google Docs"],["lp","Los Purebreds"],["canvas","Canvas"]];
+
+  /* ================= SETTINGS ================= */
+  function settings(){
+    var sc=D.querySelector(".stg-scroll"),stg=D.getElementById("stg"),th=D.getElementById("theme"),wc=D.getElementById("wcol"),wd=D.getElementById("wdim"),foot=D.querySelector(".stg-foot");
+    if(!sc||!stg) return;
+    function card(id,cat,h,html){var c=D.createElement("div");c.className="stg-card";c.id=id;c.dataset.pbcat=cat;c.dataset.sx="1";c.innerHTML="<h3>"+h+"</h3><div class=\"sx-group\">"+html+"</div>";return c}
+    function row(t,badge,sub,ctl){return "<div class=\"v3r\"><div class=\"v3l\">"+t+(badge?"<span class=\"pbd "+badge[0]+"\">"+badge[1]+"</span>":"")+(sub?"<small>"+sub+"</small>":"")+"</div><div class=\"v3c\">"+ctl+"</div></div>"}
+    var G=["g","Syncs to my devices"],E=["b","Everyone sees this"],T=["y","This device only"];
+    var SW=["#1f6feb","#be185d","#0f9267","#c2631a","#6b4ba1"];
+    /* Appearance: Layout, Theme, Accent, Dimming. They drive the original controls, so nothing else changes. */
+    var qa=card("v3-qa","appearance","Appearance",
+      row("Layout",G,"","<div class=\"v3seg\" data-k=\"lay\">"+LAYS.map(function(l){return "<button type=\"button\" data-v=\""+l[0]+"\">"+l[1].replace("Google ","").replace("Los ","")+"</button>"}).join("")+"</div>")+
+      row("Theme",E,"","<div data-k=\"th\" class=\"v3c\"><button type=\"button\" class=\"v3chip v3def\" data-v=\"gdocs\">Default</button>"+THEMES.map(function(t){return "<button type=\"button\" class=\"v3chip\" data-v=\""+t[0]+"\">"+t[1]+"</button>"}).join("")+"</div>")+
+      row("Accent color",T,"","<div data-k=\"ac\" class=\"v3c\">"+SW.map(function(c){return "<button type=\"button\" class=\"v3sw\" data-v=\""+c+"\" style=\"background:"+c+"\" aria-label=\"Accent "+c+"\"></button>"}).join("")+"</div>")+
+      row("Wallpaper dimming",G,"","<input type=\"range\" min=\"0\" max=\"80\" data-k=\"wd\">"));
+    sc.insertBefore(qa,sc.firstChild);
+    sc.appendChild(card("v3-si","account","Sign-in on this device",row("Sign me in automatically",T,"Skips the Welcome back screen next time.","<input type=\"checkbox\" id=\"v3-auto\">")));
+    sc.appendChild(card("v3-snd","sound","Sound",row("Mute effect sounds",T,"Silences the jumpscare, game and splat effects. Music and videos you press play on are not affected.","<input type=\"checkbox\" id=\"v3-mute\">")));
+    sc.appendChild(card("v3-sync","sync","Where your settings live",
+      row("Syncs to my devices",G,"Follows your account to your other phones and computers.","")+row("Everyone sees this",E,"Other people in the room see this, like your name, picture and theme.","")+row("This device only",T,"Stays on this phone or computer.","")));
+    sc.appendChild(card("v3-ab","about","About",row("Los Purebreds","","Version 3.0","<button type=\"button\" class=\"btn alt\" id=\"v3-new\">What's new</button><button type=\"button\" class=\"btn alt\" id=\"v3-redo\">Redo first-time setup</button>")));
+    function q(s){return stg.querySelector(s)}
+    function sync(){
+      var l=curLayout();[].forEach.call(stg.querySelectorAll("[data-k=lay] button"),function(b){b.classList.toggle("on",b.dataset.v===l)});
+      var t=th?th.value:"";[].forEach.call(stg.querySelectorAll("[data-k=th] button"),function(b){b.classList.toggle("on",b.dataset.v===t)});
+      var c=wc?wc.value.toLowerCase():"";[].forEach.call(stg.querySelectorAll("[data-k=ac] button"),function(b){b.classList.toggle("on",b.dataset.v===c)});
+      var r=q("[data-k=wd]");if(r&&wd)r.value=wd.value;
+      var a=D.getElementById("v3-auto"),m=D.getElementById("v3-mute");if(a)a.checked=ls("pb_autologin")==="1";if(m)m.checked=ls("pb_mute")==="1";
+    }
+    function fire(el,ts){ts.forEach(function(t){el.dispatchEvent(new Event(t,{bubbles:true}))})}
+    function dirty(){stg.dataset.dirty="1"}
+    qa.addEventListener("click",function(e){
+      var b=e.target.closest("button[data-v]");if(!b)return;var k=b.parentNode.dataset.k,v=b.dataset.v;
+      if(k==="lay")applyLayout(v);
+      else if(k==="th"&&th){th.disabled=false;th.value=v;fire(th,["input","change"])}
+      else if(k==="ac"&&wc){wc.value=v;fire(wc,["input","change"])}
+      dirty();sync();
+    });
+    qa.addEventListener("input",function(e){var r=e.target;if(r.dataset&&r.dataset.k==="wd"&&wd){wd.value=r.value;fire(wd,["input","change"]);dirty()}});
+    D.getElementById("v3-auto").onchange=function(){st("pb_autologin",this.checked?"1":"0")};
+    D.getElementById("v3-mute").onchange=function(){st("pb_mute",this.checked?"1":"0")};
+    D.getElementById("v3-new").onclick=function(){var b=D.getElementById("cl-open");if(b)b.click()};
+    D.getElementById("v3-redo").onclick=function(){if(confirm("Run the first-time setup again on this device?")){st("pb_wizard","1");location.reload()}};
+    /* scope badges on the original controls: "(everyone sees it)" -> a badge */
+    function badges(){[].forEach.call(sc.querySelectorAll("label"),function(lb){
+      if(lb.dataset.pbd)return;lb.dataset.pbd="1";
+      [].some.call(lb.childNodes,function(n){
+        if(n.nodeType!==3)return false;var m=n.data.match(/\s*\((everyone sees it|syncs to your other devices|on this device)\)/i);if(!m)return false;
+        n.data=n.data.replace(m[0],"");var k=/everyone/i.test(m[1])?E:/syncs/i.test(m[1])?G:T,s=D.createElement("span");s.className="pbd "+k[0];s.textContent=k[1];lb.appendChild(s);return true;
+      });
+    })}
+    /* unsaved-changes bar = the original Cancel / Save footer, shown only after a change */
+    if(foot){var t=D.createElement("span");t.className="v3t";t.textContent="You have unsaved changes";foot.insertBefore(t,foot.firstChild);var c=D.getElementById("stgcancel");if(c)c.textContent="Discard"}
+    ["input","change"].forEach(function(ev){sc.addEventListener(ev,function(e){if(e.isTrusted&&!e.target.id.match(/^v3-(auto|mute)$/))dirty()},true)});
+    new MutationObserver(function(){if(stg.classList.contains("open")&&!stg.classList.contains("closing")){delete stg.dataset.dirty;sync();badges()}}).observe(stg,{attributes:true,attributeFilter:["class"]});
+    badges();sync();
+  }
+
+  /* ================= START SCREENS ================= */
+  var name=ls("chat_usr"),hasName=name&&name!=="User",hasCode=ls("pb_code")===RC;
+  if(H.classList.contains("autoload"))return start(false);
+  var wiz=ls("pb_wizard")==="1"||!hasCode||!hasName,back=hasCode&&hasName&&!!ls("pb_pwh")&&!wiz;
+  start(wiz?"wiz":back?"back":false);
+  function start(mode){
+    if(D.readyState==="loading")D.addEventListener("DOMContentLoaded",settings);else settings();
+    if(!mode)return;
+    var host=D.createElement("div");host.id="pbs-host";var sh=host.attachShadow({mode:"open"});
+    sh.innerHTML="<style>*{box-sizing:border-box}:host{all:initial}.r{position:absolute;inset:0;overflow:auto;color:#f2f2f4;font-family:Inter,-apple-system,'Segoe UI',Roboto,sans-serif;background:radial-gradient(120% 60% at 50% 0,#16213a,#0e0e10 60%) #0e0e10;display:flex;flex-direction:column;align-items:center;padding:clamp(24px,8vh,110px) 20px 28px}"+
+    ".lg{flex:none;width:128px;height:128px;border-radius:50%;background:#1f6feb;display:grid;place-items:center;font-size:48px;font-weight:700;margin-bottom:28px}h1{margin:0;font-size:clamp(34px,6vw,52px)}.sub{color:#9a9aa3;font-size:18px;margin:10px 0 40px;text-align:center}"+
+    ".cd{width:min(760px,100%);background:#1b1b1d;border:1px solid #2c2c30;border-radius:36px;padding:56px;display:flex;flex-direction:column;align-items:center;gap:18px}.av{flex:none;width:144px;height:144px;border-radius:50%;background:#38383c;display:grid;place-items:center;font-size:52px;font-weight:700}"+
+    "h2{margin:6px 0 0;font-size:clamp(24px,4.6vw,40px);text-align:center}.mu{color:#9a9aa3;font-size:18px;text-align:center}.btn{width:100%;border:0;border-radius:20px;background:#1f6feb;color:#fff;font:700 24px Inter,-apple-system,'Segoe UI',Roboto,sans-serif;padding:28px;cursor:pointer}.btn:hover{background:#3b82f6}"+
+    ".ck{display:flex;gap:16px;align-items:center;font-size:21px;color:#c9c9d0;cursor:pointer}.ck input{width:36px;height:36px;accent-color:#1f6feb}.lk{background:none;border:0;color:#8ab4ff;font:inherit;font-size:24px;text-decoration:underline;cursor:pointer;margin-top:14px}"+
+    ".ch{display:flex;gap:16px;margin-top:32px;flex-wrap:wrap;justify-content:center}.chip{border:2px solid #2e2e33;background:none;color:#d8d8de;font:inherit;font-size:20px;padding:18px 30px;border-radius:999px;cursor:pointer}.chip.on{border-color:#1f6feb;background:#16233f;color:#cfe0ff}.ver{color:#77777f;margin-top:22px;font-size:17px}"+
+    ".w{width:min(1100px,100%);align-self:flex-start;margin:0 auto}.st{display:flex;gap:16px;align-items:center;color:#9a9aa3;font-size:20px}.st i{width:56px;height:10px;border-radius:9px;background:#26262a}.st i.on{background:#1f6feb}"+
+    ".w h1{margin:34px 0 8px}.w .mu{text-align:left}.f{width:100%;max-width:560px;display:block;background:#151517;border:1px solid #34343a;border-radius:16px;color:#fff;font:inherit;font-size:22px;padding:20px;margin:12px 0}.er{color:#ff9a9a;min-height:26px;font-size:18px}"+
+    ".g{display:flex;gap:28px;flex-wrap:wrap;margin:36px 0}.th{width:300px;height:280px;border:3px solid #2c2c30;border-radius:28px;overflow:hidden;background:#1b1b1d;color:#f2f2f4;font:600 24px Inter,-apple-system,'Segoe UI',Roboto,sans-serif;text-align:left;padding:0;cursor:pointer;display:flex;flex-direction:column}.th.on{border-color:#1f6feb}"+
+    ".th div{flex:1;padding:24px;display:flex;flex-direction:column;gap:14px}.th b{display:block;height:24px;border-radius:12px;width:60%}.th b.m{background:#1f6feb;width:64%;align-self:flex-end}.th span{padding:20px 24px;background:#1b1b1d;color:#f2f2f4}"+
+    ".sg{display:flex;padding:8px;border:2px solid #2c2c30;border-radius:28px;background:#151517;width:min(1140px,100%)}.sg button{flex:1;border:0;background:none;color:#d8d8de;font:600 26px Inter,-apple-system,'Segoe UI',Roboto,sans-serif;padding:22px;border-radius:20px;cursor:pointer}.sg button.on{background:#1f6feb;color:#fff}"+
+    ".ft{display:flex;justify-content:space-between;margin-top:44px}.bk{border:2px solid #34343a;background:none;color:#fff;font:700 24px Inter,-apple-system,'Segoe UI',Roboto,sans-serif;padding:26px 36px;border-radius:20px;cursor:pointer}.ft .btn{width:360px}h3{font-size:22px;color:#c9c9d0;margin:0 0 14px}"+
+    "@media(min-width:701px){.r{zoom:.66}}@media(max-width:700px){.cd{padding:32px 22px;border-radius:28px}.th{width:calc(50% - 10px);height:200px;font-size:18px}.g{gap:14px}.btn{font-size:20px;padding:22px}.ft .btn{width:auto;flex:1;margin-left:14px}.sg button{font-size:17px;padding:16px 6px}}</style><div class=\"r\" id=\"r\"></div>";
+    var r=sh.getElementById("r");D.body.appendChild(host);
+    function $(s){return sh.querySelector(s)}
+    function close(){host.remove()}
+    function chips(cur){return LAYS.map(function(l){return "<button type=\"button\" class=\"chip"+(cur===l[0]?" on":"")+"\" data-v=\""+l[0]+"\">"+(l[0]==="lp"?"Purebred":l[1])+" Layout</button>"}).join("")}
+    if(mode==="back"){
+      var lay=curLayout(),on=ls("pb_last_online");
+      r.innerHTML="<div class=\"lg\">LP</div><h1>Los Purebreds</h1><div class=\"sub\">Room code remembered on this device</div><div class=\"cd\"><div class=\"av\"></div><h2></h2><div class=\"mu\">"+(on?on+" online last time":"Ready when you are")+"</div><button class=\"btn\" id=\"go\">Continue</button><label class=\"ck\"><input type=\"checkbox\" id=\"au\">Sign me in automatically</label><button class=\"lk\" id=\"sw\">Not you? Switch account</button></div><div class=\"ch\" id=\"ch\">"+chips(lay)+"</div><div class=\"ver\">Version 3.0</div>";
+      $(".av").textContent=name.charAt(0).toUpperCase();$("h2").textContent="Welcome back, "+name;$("#au").checked=ls("pb_autologin")==="1";
+      $("#au").onchange=function(){st("pb_autologin",this.checked?"1":"0")};
+      $("#ch").onclick=function(e){var b=e.target.closest("[data-v]");if(!b)return;applyLayout(b.dataset.v);[].forEach.call($("#ch").children,function(c){c.classList.toggle("on",c===b)})};
+      $("#go").onclick=function(){close();if(window.__pbSignIn)window.__pbSignIn()};
+      $("#sw").onclick=function(){["pb_pwh","chat_pwh","chat_usr","pb_autologin","pb_admin"].forEach(function(k){st(k,"")});st("pb_wizard","1");location.reload()};
+      return;
+    }
+    /* first run: 1 room code, 2 account, 3 pick a look */
+    var S={step:hasCode?2:1,user:hasName?name:"",pass:"",have:false,theme:"imessage",lay:curLayout()};
+    function bar(n){return "<div class=\"st\"><i class=\""+(n>=1?"on":"")+"\"></i><i class=\""+(n>=2?"on":"")+"\"></i><i class=\""+(n>=3?"on":"")+"\"></i>Step "+n+" of 3</div>"}
+    function show(){
+      var n=S.step;
+      if(n===1){
+        r.innerHTML="<div class=\"w\">"+bar(1)+"<h1>Enter room code</h1><div class=\"mu\">Ask a Los Purebreds member for the room code.</div><input class=\"f\" id=\"a\" type=\"password\" placeholder=\"Room code\" autocomplete=\"off\" autocapitalize=\"off\" spellcheck=\"false\"><div class=\"er\" id=\"e\"></div><div class=\"ft\"><span></span><button class=\"btn\" id=\"n\">Continue</button></div></div>";
+        var go=function(){if($("#a").value.trim().toLowerCase()!==RC.toLowerCase()){$("#e").textContent="That room code isn\u2019t right. Check it and try again.";return}st("pb_code",RC);S.step=2;show()};
+        $("#n").onclick=go;$("#a").onkeydown=function(e){if(e.key==="Enter")go()};setTimeout(function(){$("#a").focus()},50);
+      }else if(n===2){
+        r.innerHTML="<div class=\"w\">"+bar(2)+"<h1>"+(S.have?"Sign in":"Create your account")+"</h1><div class=\"mu\">"+(S.have?"Use the name and password you already have.":"Others will see this name in the chat. The password protects it.")+"</div><input class=\"f\" id=\"u\" maxlength=\"12\" placeholder=\"Username\" autocomplete=\"username\"><input class=\"f\" id=\"p\" type=\"password\" placeholder=\"Password\" autocomplete=\""+(S.have?"current":"new")+"-password\">"+(S.have?"":"<input class=\"f\" id=\"p2\" type=\"password\" placeholder=\"Confirm password\" autocomplete=\"new-password\">")+"<div class=\"er\" id=\"e\"></div><button class=\"lk\" id=\"h\" style=\"font-size:18px;margin:0\">"+(S.have?"I need a new account":"I already have an account")+"</button><div class=\"ft\"><button class=\"bk\" id=\"b\">Back</button><button class=\"btn\" id=\"n\">Continue</button></div></div>";
+        $("#u").value=S.user;var save2=function(){S.user=$("#u").value.trim();S.pass=$("#p").value};
+        $("#h").onclick=function(){save2();S.have=!S.have;show()};$("#b").onclick=function(){save2();S.step=1;show()};
+        var go2=function(){save2();var e=$("#e");if(S.user.length<2)return e.textContent="Use at least 2 characters for the username.";if(S.pass.length<4)return e.textContent="Use at least 4 characters for the password.";if(!S.have&&S.pass!==$("#p2").value)return e.textContent="Passwords don\u2019t match. Try again.";S.step=3;show()};
+        $("#n").onclick=go2;r.onkeydown=function(e){if(e.key==="Enter")go2()};setTimeout(function(){$(S.user?"#p":"#u").focus()},50);
+      }else{
+        r.onkeydown=null;
+        r.innerHTML="<div class=\"w\">"+bar(3)+"<h1>Pick a look</h1><div class=\"mu\">You can change this any time in Settings.</div><div class=\"g\" id=\"g\">"+THEMES.map(function(t){return "<button class=\"th"+(S.theme===t[0]?" on":"")+"\" data-t=\""+t[0]+"\"><div style=\"background:"+t[2]+"\"><b style=\"background:"+t[3]+"\"></b><b class=\"m\"></b></div><span>"+t[1]+(S.theme===t[0]?" \u00b7 selected":"")+"</span></button>"}).join("")+"</div><h3>Layout</h3><div class=\"sg\" id=\"sg\">"+LAYS.map(function(l){return "<button data-l=\""+l[0]+"\" class=\""+(S.lay===l[0]?"on":"")+"\">"+l[1]+"</button>"}).join("")+"</div><div class=\"ft\"><button class=\"bk\" id=\"b\">Back</button><button class=\"btn\" id=\"n\">Finish</button></div></div>";
+        $("#g").onclick=function(e){var b=e.target.closest("[data-t]");if(b){S.theme=b.dataset.t;show()}};
+        $("#sg").onclick=function(e){var b=e.target.closest("[data-l]");if(b){S.lay=b.dataset.l;show()}};
+        $("#b").onclick=function(){S.step=2;show()};
+        $("#n").onclick=function(){
+          applyLayout(S.lay);                                         /* layout first: it can reset the theme */
+          var gt=D.getElementById("g-theme");if(gt){gt.value=S.theme;gt.dispatchEvent(new Event("change",{bubbles:true}))}
+          st("pb_wizard","0");close();
+          if(window.__pbJoin)window.__pbJoin(S.user,S.pass);
+        };
+      }
+    }
+    show();
+  }
+  /* remember how many people were online, for the Welcome back card */
+  setInterval(function(){try{if(typeof lastRoster!=="undefined"&&lastRoster&&lastRoster.length)st("pb_last_online",String(lastRoster.length))}catch(e){}},5000);
+})();
+</script>
+
+<script id="tab-v3-js">
+/* Browser tab follows the layout: Canvas = "Dashboard" + Canvas icon, Google Docs = "<site> - Google Docs" + Docs icon */
+(function(){
+  var T={canvas:["Dashboard","assets/favicon_canvas.png"],docs:["Los Purebreds - Google Docs","assets/favicon_docs.png"],lp:["Los Purebreds","assets/favicon.png"]},last="";
+  function apply(){
+    try{
+      var l=pbLayout();document.documentElement.dataset.lay=l;if(l===last)return;
+      if(/Juan/.test(document.title))return;                      /* Juan mode owns the title */
+      last=l;var t=T[l]||T.lp,f=document.getElementById("fav");
+      document.title=t[0];
+      if(f){var n=f.cloneNode();n.href=t[1];f.replaceWith(n)}      /* replacing the link makes browsers refresh the icon */
+    }catch(e){}
+  }
+  apply();setInterval(apply,800);
+})();
+</script>
+<style id="lp-v3-css">
+/* ===== Los Purebreds layout, same design language as the new Settings and setup (flat rounded cards, Inter, soft glow). Colors still come from the theme. ===== */
+html[data-lay="lp"] body,html[data-lay="lp"] #home,html[data-lay="lp"] #home *{font-family:Inter,-apple-system,'Segoe UI',Roboto,sans-serif}
+html[data-lay="lp"] #home{background:radial-gradient(120% 55% at 50% 0,color-mix(in srgb,var(--accent) 16%,var(--bg)),var(--bg) 62%)}
+html[data-lay="lp"] #home :is(.hm-tri,.hm-scal,.hm-curve,.hm-curve2){display:none}
+html[data-lay="lp"] #home .hm-top{background:var(--row);color:var(--text);border:1px solid var(--line);border-top:0;box-shadow:none;border-radius:0 0 22px 22px;font-weight:700;font-size:clamp(16px,2.6vw,20px);padding:12px 32px}
+html[data-lay="lp"] #home .hm-mascot{filter:drop-shadow(0 6px 14px rgba(0,0,0,.3))}
+html[data-lay="lp"] #home .hm-banner{background:none;box-shadow:none;color:var(--text);font-weight:800;font-size:clamp(28px,5.4vw,46px);letter-spacing:-.5px;padding:0;margin:8px 0 34px}
+html[data-lay="lp"] #home .hm-ic{width:84px;height:84px;border-radius:24px;background:var(--row);border:1px solid var(--line);box-shadow:none;overflow:hidden}
+html[data-lay="lp"] #home .hm-ic img{border-radius:0;object-fit:cover}
+html[data-lay="lp"] #home .hm-it{font-weight:600;font-size:14px}
+html[data-lay="lp"] #home .hm-it:hover .hm-ic,html[data-lay="lp"] #home .hm-it:focus-visible .hm-ic{box-shadow:0 0 0 2px var(--accent)}
+html[data-lay="lp"] #home .hm-ed button{border:1px solid var(--line);box-shadow:none}
+html[data-lay="lp"] #hm-modal .hm-card{border-radius:24px;border:1px solid var(--line);box-shadow:0 20px 60px rgba(0,0,0,.5)}
+html[data-lay="lp"] #hm-modal :is(input[type=text],select),html[data-lay="lp"] #hm-modal button{border-radius:12px}
+@media(max-width:600px){html[data-lay="lp"] #home .hm-ic{width:64px;height:64px;border-radius:18px}}
+/* top bar: rounded-square icons, the open tab sits in a soft accent pill */
+html[data-lay="lp"] #hdr{border-bottom:1px solid var(--line)}
+html[data-lay="lp"]:not(.watch) body:not([data-theme="simple"]):not([data-theme="terminal"]):not([data-hp="left"]):not([data-hp="right"]) #chtabs button[data-ch]{border-radius:14px !important;padding:6px 10px !important;transition:background .15s}
+html[data-lay="lp"]:not(.watch) body:not([data-theme="simple"]):not([data-theme="terminal"]):not([data-hp="left"]):not([data-hp="right"]) #chtabs button[data-ch] .ti,html[data-lay="lp"]:not(.watch) body:not([data-theme="simple"]):not([data-theme="terminal"]):not([data-hp="left"]):not([data-hp="right"]) #chtabs button[data-ch] .tabimg{border-radius:10px !important}
+html[data-lay="lp"]:not(.watch) body:not([data-theme="simple"]):not([data-theme="terminal"]):not([data-hp="left"]):not([data-hp="right"]) #chtabs button[data-ch]:hover{background:color-mix(in srgb,var(--text) 8%,transparent) !important}
+html[data-lay="lp"]:not(.watch) body:not([data-theme="simple"]):not([data-theme="terminal"]):not([data-hp="left"]):not([data-hp="right"]) #chtabs button[data-ch].on{background:color-mix(in srgb,var(--accent) 18%,transparent) !important}
+html[data-lay="lp"]:not(.watch) body:not([data-theme="simple"]):not([data-theme="terminal"]):not([data-hp="left"]):not([data-hp="right"]) #chtabs button[data-ch].on .tabimg{box-shadow:none !important}
+html[data-lay="lp"]:not(.watch) body:not([data-theme="simple"]):not([data-theme="terminal"]):not([data-hp="left"]):not([data-hp="right"]) #chtabs button[data-ch].on .tl{color:var(--accent)}
+html[data-lay="lp"]:not(.watch) body:not([data-theme="simple"]):not([data-theme="terminal"]):not([data-hp="left"]):not([data-hp="right"]) #online{border:1px solid var(--line);border-radius:999px !important}
+html[data-lay="lp"]:not(.watch) body:not([data-theme="simple"]):not([data-theme="terminal"]):not([data-hp="left"]):not([data-hp="right"]) #chtabs button[data-ch] :is(img,.ti,.tabimg){border-radius:9px !important}
+</style>
+<script id="cv-pfp-js">
+/* Canvas rail: the round Account button shows your profile picture (falls back to the blue ball) */
+(function(){
+  var last=null;
+  function paint(){
+    try{
+      var a=(typeof myAvatar!=="undefined"&&myAvatar)||"";
+      document.querySelectorAll("#cv-nav .cv-av").forEach(function(el){
+        if(el.dataset.pfp===a)return;el.dataset.pfp=a;
+        if(a){el.style.backgroundImage='url("'+String(a).replace(/["\\\n]/g,"")+'")';el.classList.add("has")}
+        else{el.style.backgroundImage="";el.classList.remove("has")}
+      });
+    }catch(e){}
+  }
+  paint();setInterval(paint,700);
+})();
+</script>
+<script id="cv-theme-js">
+/* Themes in the Canvas layout. Canvas keeps its classic look until a theme is picked (Settings > Appearance > Theme, then Save).
+   The theme's own colours are read from its CSS (body[data-theme="..."]) and Canvas's stylesheet is re-pointed at them. */
+(function(){
+  var D=document,K="pb_cv_theme",cur="__none",keys=[],orig=null,tail="";
+  function ls(k){try{return localStorage.getItem(k)||""}catch(e){return ""}}
+  function palette(t){
+    var o={},sel='body[data-theme="'+t+'"]';
+    for(var i=0;i<D.styleSheets.length;i++){var rs;try{rs=D.styleSheets[i].cssRules}catch(e){continue}
+      for(var j=0;j<rs.length;j++){var r=rs[j];
+        if(r.selectorText&&r.selectorText.split(",").some(function(x){return x.trim()===sel}))
+          for(var k=0;k<r.style.length;k++){var n=r.style[k];if(n.indexOf("--")===0)o[n]=r.style.getPropertyValue(n).trim()}}}
+    return o;
+  }
+  function lum(v){var p=D.createElement("i");p.style.cssText="position:absolute;visibility:hidden;background:"+v;D.body.appendChild(p);
+    var m=getComputedStyle(p).backgroundColor.match(/[\d.]+/g)||[255,255,255];p.remove();return(.299*m[0]+.587*m[1]+.114*m[2])/255}
+  function put(k,v){D.body.style.setProperty(k,v);keys.push(k)}
+  function clear(){keys.forEach(function(k){D.body.style.removeProperty(k)});keys=[];
+    var el=D.getElementById("canvas-css");if(el&&orig!==null)el.textContent=orig}
+  function apply(t){
+    clear();var el=D.getElementById("canvas-css");if(!el)return;
+    if(orig===null){orig=el.textContent;var i=orig.indexOf("/* nothing below shows");tail=i>0?orig.slice(i):""}
+    var pal=palette(t);if(!tail||!(pal["--bg"]||pal["--accent"]))return;
+    for(var n in pal)if(!D.body.style.getPropertyValue(n))put(n,pal[n]);           /* keep a wallpaper/accent colour the person chose */
+    var dark=lum("var(--bg)")<.5;
+    put("--cv-ink","var(--text)");put("--cv-link","var(--accent)");put("--cv-line","var(--line,rgba(128,128,128,.35))");put("--cv-btn","var(--line,rgba(128,128,128,.35))");
+    put("--cvt-s","var(--bg)");put("--cvt-s2","var(--row,var(--bg))");put("--cvt-s3","color-mix(in srgb,var(--row,var(--bg)),var(--text) 10%)");
+    put("--cv-rail",dark?"color-mix(in srgb,var(--side,var(--bg)) 78%,#000)":"color-mix(in srgb,var(--accent) 60%,#000)");
+    put("color-scheme",dark?"dark":"light");
+    var head=orig.slice(0,orig.length-tail.length),css=tail
+      .replace(/background(-color)?:\s*#fff\b/g,"background$1:var(--cvt-s)")
+      .replace(/background(-color)?:\s*#(f2f4f4|f2f8fd)\b/g,"background$1:var(--cvt-s2)")
+      .replace(/background(-color)?:\s*#(e8eaec|eef1f3)\b/g,"background$1:var(--cvt-s3)")
+      .replace(/(border[a-z-]*:[^;{}]*?)#fff\b/g,"$1var(--cvt-s)")
+      .replace(/#(09508c|0b5a9c|2063c1)\b/g,"var(--cv-link)")
+      .replace(/#(273540|586874)\b/g,"var(--cv-ink)").replace(/#59646c\b/g,"var(--muted)")
+      .replace(/#(c7cdd1|d7dade|e8eaec|9ea6ad|8d959b)\b/g,"var(--cv-line)");
+    el.textContent=head+css;
+  }
+  function sync(){
+    var on=D.body&&D.body.dataset.theme==="canvas",t=on?ls(K):"";
+    if(t===cur)return;cur=t;try{apply(t)}catch(e){console.warn("canvas theme",e)}
+  }
+  /* Settings: Canvas shows the Canvas theme in the picker; Save stores it */
+  var th=D.getElementById("theme"),sv=D.getElementById("save"),stg=D.getElementById("stg");
+  function isCv(){try{return pbLayout()==="canvas"}catch(e){return false}}
+  if(th&&sv&&stg){
+    new MutationObserver(function(){if(stg.classList.contains("open")&&isCv()){th.disabled=false;[].forEach.call(th.options,function(o){if(o.value==="gdocs"){o.hidden=o.disabled=false;o.textContent="Canvas (default colors)"}});th.value=ls(K)||"gdocs"}}).observe(stg,{attributes:true,attributeFilter:["class"]});
+    sv.addEventListener("click",function(){if(isCv()){try{localStorage.setItem(K,th.value==="gdocs"||th.value==="canvas"?"":th.value)}catch(e){}sync()}},true);
+  }
+  new MutationObserver(sync).observe(D.body,{attributes:true,attributeFilter:["data-theme","class"]});
+  sync();setInterval(sync,1000);
 })();
 </script>
 </body>
